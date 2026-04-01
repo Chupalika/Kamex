@@ -1,0 +1,43 @@
+<div class="tournament-player-card mat-elevation-z4">
+  <ng-container *ngIf="player">
+    <div class="left-side">
+      <div class="info-username">
+        <img
+          *ngIf="player.country"
+          class="flag-icon"
+          [src]="'https://flagcdn.com/w20/' + player.country.toLowerCase() + '.png'"
+          [alt]="player.country ?? ''"
+        >
+        {{ player.username }}
+      </div>
+      <ng-container *ngIf="gameMode === GameMode.OSU || gameMode === GameMode.ALL">
+        <div class="info-rank"><mat-icon svgIcon="osu" class="icon"></mat-icon> #{{ player.osuRank }}</div>
+      </ng-container>
+      <ng-container *ngIf="gameMode === GameMode.TAIKO || gameMode === GameMode.ALL">
+        <div class="info-rank"><mat-icon svgIcon="taiko" class="icon"></mat-icon> #{{ player.taikoRank }}</div>
+      </ng-container>
+      <ng-container *ngIf="gameMode === GameMode.FRUITS || gameMode === GameMode.ALL">
+        <div class="info-rank"><mat-icon svgIcon="fruits" class="icon"></mat-icon> #{{ player.fruitsRank }}</div>
+      </ng-container>
+      <ng-container *ngIf="gameMode === GameMode.MANIA || gameMode === GameMode.ALL">
+        <div class="info-rank"><mat-icon svgIcon="mania" class="icon"></mat-icon> #{{ player.maniaRank }}</div>
+      </ng-container>
+      <div class="info-teams" *ngIf="teams.length > 0">
+        <div class="team-row" *ngFor="let team of teams">
+          <img class="team-image" [src]="team.imageLink" />
+          <span [hovercardComponent]="TournamentTeamCard" [hovercardData]="{ team: team, gameMode: gameMode }">{{ team.name }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="right-side">
+      <img
+        class="player-avatar"
+        [src]="'https://a.ppy.sh/' + player.playerId"
+        [hovercardComponent]="AppUserTooltip"
+        [hovercardData]="{ appUser: player.appUser, osuId: player.playerId }"
+        [addBackground]="true"
+      />
+      <div class="info-seed"><span class="material-symbols-outlined icon" [class.no-seed]="!player.seed">potted_plant</span> {{ player.seed ?? "" }}</div>
+    </div>
+  </ng-container>
+</div>

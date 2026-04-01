@@ -1,0 +1,29 @@
+<form [formGroup]="editStaffRoleForm" (ngSubmit)="updateStaffRole()" class="tourney-form" autocomplete="off">
+  <mat-form-field>
+    <mat-label>Role Name</mat-label>
+    <input matInput type="text" formControlName="name">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Permissions</mat-label>
+    <mat-select formControlName="permissions" multiple>
+      <mat-option *ngFor="let permission of permissionChoices" [value]="permission.value">{{ permission.label }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button
+      mat-raised-button
+      type="submit"
+      color="primary"
+      [disabled]="disabled || !editStaffRoleForm.valid || requestInProgress || !hasChanges()">
+    {{ staffRole ? "Update" : "Add" }}
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="primary"
+    (click)="removeStaffRole()"
+    [disabled]="disabled || !staffRole || requestInProgress"
+  >
+    Remove
+  </button>
+</form>

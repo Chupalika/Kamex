@@ -1,0 +1,25 @@
+<div class="tournament-staff-member-card mat-elevation-z4">
+  <ng-container *ngIf="staffMember">
+    <div class="left-side">
+      <div class="info-username">
+        <img
+          *ngIf="staffMember.country"
+          class="flag-icon"
+          [src]="'https://flagcdn.com/w20/' + staffMember.country.toLowerCase() + '.png'"
+          [alt]="staffMember.country ?? ''"
+        >
+        {{ staffMember.username }}
+      </div>
+      <div class="info-roles">{{ roles }}</div>
+    </div>
+    <div class="right-side">
+      <img
+        class="player-avatar"
+        [src]="'https://a.ppy.sh/' + staffMember.playerId"
+        [hovercardComponent]="AppUserTooltip"
+        [hovercardData]="{ appUser: staffMember.appUser, osuId: staffMember.playerId }"
+        [addBackground]="true"
+      />
+    </div>
+  </ng-container>
+</div>

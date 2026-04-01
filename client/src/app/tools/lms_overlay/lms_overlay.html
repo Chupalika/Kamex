@@ -1,0 +1,196 @@
+<div class="stream-area" [style]="{'background-image': 'url(' + background + ')', 'color': '#' + fontColor}">
+  <div class="header-area">
+    <div class="pick">{{ getCurrentPick() }}</div>
+    <div class="map-info">
+      <div class="map-info-row">Now Playing</div>
+      <div class="map-info-row">{{ mapMetadata() }}</div>
+      <div class="map-info-row">{{ mapStats() }}</div>
+    </div>
+    <div class="title">{{ title }}</div>
+  </div>
+  <div class="play-area">
+    <div class="clients-area">
+      <div #chatBox
+          class="chat-box"
+          [class.hide]="isPlaying()"
+          [style.background-color]="'#' + chatBoxSettings.backgroundColor"
+          [style.left.px]="chatBoxSettings.xpos"
+          [style.top.px]="chatBoxSettings.ypos"
+          [style.width.px]="chatBoxSettings.width"
+          [style.height.px]="chatBoxSettings.height"
+          [style.maxWidth.px]="chatBoxSettings.width"
+          [style.maxHeight.px]="chatBoxSettings.height">
+        <div *ngFor="let chatMessage of chatMessages" class="chat-message">
+          <span [style]="{'color': '#' + getChatPrefixColor(chatMessage)}">{{ chatMessage.time }} {{ chatMessage.username }}</span>: {{ chatMessage.message }}
+        </div>
+      </div>
+    </div>
+    <div class="scoreboard-area">
+      <div *ngFor="let competitor of competitors; let i = index"
+          class="player"
+          [style.top]="getCompetitorPosition(competitor.playerId)">
+        <img class="player-avatar" [src]="'https://a.ppy.sh/' + competitor.playerId" [alt]="competitor.playerId">
+        <div class="player-info">
+          <div class="player-info-row">
+            <div class="player-name">{{ competitor.username }}</div>
+            <div class="player-score" [class.hide]="!isPlaying() || !isOnResultScreen()">{{ tourneyClients.get(competitor.playerId)?.score ?? 0 }}</div>
+          </div>
+          <div class="player-info-row">
+            <div class="player-lives">
+              <ng-container *ngIf="getCompetitorLives(i) <= 3">
+                <img class="player-life" [src]="getHeartIcon()" [class.hide]="getCompetitorLives(i) < 1">
+                <img class="player-life" [src]="getHeartIcon()" [class.hide]="getCompetitorLives(i) < 2">
+                <img class="player-life" [src]="getHeartIcon()" [class.hide]="getCompetitorLives(i) < 3">
+              </ng-container>
+              <ng-container *ngIf="getCompetitorLives(i) > 3">
+                <img class="player-life" [src]="getHeartIcon()">
+                <div class="player-life-extra">x{{ getCompetitorLives(i) }}</div>
+              </ng-container>
+            </div>
+            <div class="player-mods" [class.hide]="!isPlaying() || !isOnResultScreen()">
+              <img class="player-mod" [src]="getModIcon('HD')" [class.hide]="!(tourneyClients.get(competitor.playerId)?.mods ?? []).includes('HD')">
+              <img class="player-mod" [src]="getModIcon('HR')" [class.hide]="!(tourneyClients.get(competitor.playerId)?.mods ?? []).includes('HR')">
+            </div>
+            <div class="player-hits" [class.hide]="!isPlaying() || !isOnResultScreen()">
+              <div class="hit ok">
+                <p class="counter-count">{{ tourneyClients.get(competitor.playerId)?.countOk ?? 0 }}</p><p class="counter-label">OK</p>
+              </div>
+              <div class="hit miss">
+                <p class="counter-count">{{ tourneyClients.get(competitor.playerId)?.countMiss ?? 0 }}</p><p class="counter-label">MISS</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="control-area">
+  <form [formGroup]="settingsForm" (ngSubmit)="updateSettings()" class="settings-form" autocomplete="off">
+    <div class="settings-columns">
+      <div class="settings-column">
+        <div class="mat-body-1 settings-header">
+          Settings
+          <mat-icon class="info-icon" matTooltip="Saved in browser local storage">info</mat-icon>
+        </div>
+        <div>
+          <mat-form-field>
+            <mat-label>Background URL</mat-label>
+            <input matInput type="text" formControlName="background">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Title</mat-label>
+            <input matInput type="text" formControlName="title">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Font Color</mat-label>
+            <input matInput type="text" formControlName="fontColor">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>
+              Tournament Acronym
+              <mat-icon class="info-icon" matTooltip="Used for custom assets">info</mat-icon>
+            </mat-label>
+            <input matInput type="text" formControlName="tournamentAcronym">
+          </mat-form-field>
+        </div>
+        <div class="mat-body-1 settings-header">Chat Box Settings</div>
+        <div formGroupName="chatBox">
+          <mat-form-field>
+            <mat-label>X Position</mat-label>
+            <input matInput type="number" formControlName="xpos">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Y Position</mat-label>
+            <input matInput type="number" formControlName="ypos">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Width</mat-label>
+            <input matInput type="number" formControlName="width">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Height</mat-label>
+            <input matInput type="number" formControlName="height">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Player Color</mat-label>
+            <input matInput type="text" formControlName="playerColor">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Bancho Color</mat-label>
+            <input matInput type="text" formControlName="banchoColor">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Other Color</mat-label>
+            <input matInput type="text" formControlName="otherColor">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Background Color</mat-label>
+            <input matInput type="text" formControlName="backgroundColor">
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="settings-column wide">
+        <ng-container formArrayName="competitors">
+          <div class="mat-body-1 settings-header">
+            Competitors
+            <button mat-icon-button type="button" color="primary" (click)="addCompetitor()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div *ngIf="getCompetitorsFormGroups().length == 0" class="mat-body-1">None</div>
+          <div *ngIf="getCompetitorsFormGroups().length > 0">
+            <ng-container *ngFor="let competitorForm of getCompetitorsFormGroups(); let i = index">
+              <div [formGroup]="competitorForm">
+                <mat-form-field>
+                  <mat-label>Player ID</mat-label>
+                  <input matInput type="number" formControlName="playerId">
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>Username</mat-label>
+                  <input matInput formControlName="username">
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>Lives</mat-label>
+                  <input matInput type="number" formControlName="lives">
+                </mat-form-field>
+                <button mat-icon-button type="button" (click)="deleteCompetitor(i)"><mat-icon>delete</mat-icon></button>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+      </div>
+      <div class="settings-column">
+        <ng-container formArrayName="picks">
+          <div class="mat-body-1 settings-header">
+            Mappool
+            <button mat-icon-button type="button" color="primary" (click)="addPick()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div *ngIf="getPicksFormGroups().length == 0" class="mat-body-1">None</div>
+          <div *ngIf="getPicksFormGroups().length > 0">
+            <ng-container *ngFor="let pickForm of getPicksFormGroups(); let i = index">
+              <div [formGroup]="pickForm">
+                <mat-form-field>
+                  <mat-label>Beatmap ID</mat-label>
+                  <input matInput type="number" formControlName="beatmapId">
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>Label</mat-label>
+                  <input matInput formControlName="label">
+                </mat-form-field>
+                <button mat-icon-button type="button" (click)="deletePick(i)"><mat-icon>delete</mat-icon></button>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+    <button
+        mat-raised-button
+        class="update-button"
+        type="submit"
+        color="primary"
+        [disabled]="!settingsForm.valid || !settingsHasChanges()">
+      Update
+    </button>
+  </form>
+</div>

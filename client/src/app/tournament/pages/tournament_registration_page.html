@@ -1,0 +1,102 @@
+<div *ngIf="loading" class="mat-headline-5">Loading...</div>
+<div *ngIf="!loading && !tournament" class="mat-headline-5">Tournament "{{ acronym }}" doesn't exist or failed to load!</div>
+<div *ngIf="!loading && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+  <div class="mat-headline-6">{{ tournament.name }} registration status</div>
+
+  <!--
+  <div class="mat-body-1 registration-info" *ngIf="(registrationStartCountdown$ | async) as t">
+    <ng-container *ngIf="t >= 0">
+      <div>Registration has not started yet.</div>
+      <div *ngIf="tournament.progress === TournamentProgress.PLANNING">
+        Tournament is still in planning phase.
+      </div>
+      <div *ngIf="tournament.progress === TournamentProgress.REGISTRATION">
+        Time until registration starts: {{ getTimeString(t) }}
+      </div>
+    </ng-container>
+  </div>
+  -->
+  
+  <div class="mat-body-1 registration-info" *ngIf="(countdowns$ | async) as countdowns">
+    <ng-container *ngIf="countdowns.start >= 0">
+      <div>Registration has not started yet.</div>
+      <div *ngIf="tournament.progress === TournamentProgress.PLANNING">
+        Tournament is still in planning phase.
+      </div>
+      <div *ngIf="tournament.progress === TournamentProgress.REGISTRATION">
+        Time until registration starts: {{ getTimeString(countdowns.start) }}
+      </div>
+    </ng-container>
+    <ng-container *ngIf="countdowns.start < 0 && countdowns.end >= 0">
+      <div *ngIf="tournament.progress === TournamentProgress.PLANNING">
+        Registration has not started yet. Tournament is still in planning phase.
+      </div>
+      <ng-container *ngIf="tournament.progress === TournamentProgress.REGISTRATION">
+        <div>Registration is open!</div>
+        <div>Time until registration ends: {{ getTimeString(countdowns.end) }}</div>
+        <button
+          mat-raised-button
+          class="register-button"
+          color="primary"
+          (click)="registerDialog()"
+          [disabled]="requestInProgress || getRegisterButtonDisabledStatus()"
+        >
+          {{ getRegisterButtonText() }}
+        </button>
+
+        <div class="mat-body-1" *ngIf="tournament.registrationSettings.enforceDiscord">
+          <p>Note: This tournament requires you to be a member of the Discord server before registering.</p>
+          <p>You can link your Discord account in your user settings at the top right.</p>
+        </div>
+      </ng-container>
+      <div *ngIf="[TournamentProgress.ONGOING, TournamentProgress.CONCLUDED].includes(tournament.progress)">
+        Registration has ended.
+      </div>
+    </ng-container>
+    <div *ngIf="countdowns.end < 0">Registration has ended.</div>
+  </div>
+
+  <div class="mat-body-1">Your registration status: <span class="tournament-progress">{{ getRegistrationStatus() }}</span></div>
+
+  <ng-container *ngIf="tournament.enableTeams">
+    <div class="mat-headline-6">Your team</div>
+    <ng-container *ngIf="!isLoggedIn()">Not logged in</ng-container>
+    <ng-container *ngIf="isRegistered()">
+      <div *ngIf="getCurrentTeam() as team; else noTeam">
+        <tournament-team-card [team]="team" [gameMode]="tournament.gameMode"></tournament-team-card>
+        <div *ngIf="canEditTeam" class="team-image-uploader mat-body-1">
+          Update team name
+          <button
+            mat-mini-fab
+            color="primary"
+            (click)="editTeamNameDialog()"
+            [disabled]="requestInProgress"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+        <input type="file" style="display: none;" (change)="onFileSelected($event)" #fileUpload>
+        <div *ngIf="canEditTeam" class="team-image-uploader mat-body-1">
+          {{ team.imageLink ? "Update" : "Upload" }} team image
+          <button
+            mat-mini-fab
+            color="primary"
+            (click)="fileUpload.click()"
+            [disabled]="requestInProgress"
+          >
+            <mat-icon>attach_file</mat-icon>
+          </button>
+        </div>
+        <!--
+        <tournament-team-editor
+          *ngIf="isTeamCaptain"
+          [team]="team"
+          [requestInProgress]="requestInProgress"
+          (submit)="submitUpdateTeamForm($event)">
+        </tournament-team-editor>
+        -->
+      </div>
+      <ng-template #noTeam><div class="mat-body-1">Not currently on a team</div></ng-template>
+    </ng-container>
+  </ng-container>
+</div>

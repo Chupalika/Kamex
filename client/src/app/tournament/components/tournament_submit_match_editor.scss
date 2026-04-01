@@ -1,0 +1,24 @@
+.tourney-form {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+
+  &.wide {
+    width: 600px;
+  }
+}
+
+.participants-header {
+  display: flex;
+  align-items: center;
+}
+
+.participant-form-row {
+  display: flex;
+  align-items: baseline;
+
+  * {
+    margin-right: 12px;
+    flex: 1;
+  }
+}

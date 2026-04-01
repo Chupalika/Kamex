@@ -1,0 +1,253 @@
+* {
+  transition: opacity 1s;
+}
+
+.hide {
+  opacity: 0;
+}
+
+.disable {
+  display: none;
+}
+
+.stream-area {
+  font-family: "Red Hat Display";
+  display: flex;
+  flex-direction: column;
+  width: 1600px;
+  height: 900px;
+  background-size: cover;
+
+  .header-area {
+    width: 100%;
+    height: 135px;
+    display: flex;
+  }
+
+  .pick {
+    width: 240px;
+    align-self: center;
+    text-align: center;
+    font-size: 48px;
+    font-weight: bold;
+  }
+  
+  .map-info {
+    width: 780px;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+
+    .map-info-row {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      // text-shadow: 2px 2px 5px #48906c;
+    }
+  }
+
+  .title {
+    width: 580px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: bold;
+  }
+
+  .play-area {
+    display: flex;
+
+    .clients-area {
+      width: 1020px;
+      height: 765px;
+
+      .chat-box {
+        position: relative;
+        font-weight: bold;
+        overflow: scroll;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+
+        .chat-message {
+          padding-left: 5px;
+        }
+      }
+
+      .chat-box::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    .scoreboard-area {
+      width: 580px;
+      height: 740px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      margin: 10px 0;
+    
+      .player {
+        width: 540px;
+        height: 90px;
+        padding: 0px 20px;
+        position: absolute;
+        display: flex;
+        transition: top 1s;
+    
+        .player-avatar {
+          width: 80px;
+          height: 80px;
+          margin-right: 10px;
+          align-self: center;
+        }
+    
+        .player-info {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+    
+          .player-info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 36px;
+            height: 50%;
+    
+            .player-name {
+              font-size: 36px;
+              text-shadow: 2px 2px 5px black;
+            }
+            
+            .player-score {
+              font-size: 36px;
+              text-shadow: 2px 2px 5px black;
+            }
+    
+            .player-lives {
+              display: flex;
+              flex-direction: row;
+              width: 140px;
+              align-items: center;
+    
+              .player-life {
+                width: 40px;
+              }
+    
+              .player-life-extra {
+                font-size: 24px;
+              }
+            }
+    
+            .player-mods {
+              width: 120px;
+              text-align: center;
+    
+              .player-mod {
+                width: 40px;
+              }
+            }
+            
+            .player-hits {
+              display: flex;
+              width: 185px;
+              justify-content: end;
+    
+              .hit {
+                display: flex;
+                align-items: end;
+                padding: 0px 5px;
+                align-self: center;
+                text-align: center;
+                min-width: 45px;
+                font-weight: bold;
+                -webkit-text-stroke-width: 0.5px;
+                -webkit-text-stroke-color: black;
+                text-shadow: 2px 2px 3px black;
+    
+                .counter-count {
+                  font-size: 24px;
+                }
+                
+                .counter-label {
+                  font-size: 16px;
+                }
+              }
+    
+              .perfect {
+                color: rgb(151, 236, 253);
+              }
+              
+              .great {
+                color: rgb(102, 204, 255);
+              }
+              
+              .good {
+                color: rgb(179, 216, 68);
+              }
+              
+              .ok {
+                color: rgb(135, 178, 0);
+              }
+              
+              .meh {
+                color: rgb(254, 203, 344);
+              }
+              
+              .miss {
+                color: rgb(233, 20, 33);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.control-area {
+  font-family: "Red Hat Display";
+  display: flex;
+  padding-top: 10px;
+  font-size: 24px;
+
+  .settings-form {
+    mat-form-field {
+      margin-right: 20px;
+      width: 160px;
+    }
+
+    .settings-columns {
+      display: flex;
+  
+      .settings-column {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        width: 440px;
+        max-height: 900px;
+        overflow-y: auto;
+
+        &.wide {
+          width: 620px;
+        }
+  
+        .settings-header {
+          height: 40px;
+          display: flex;
+          align-items: center;
+        }
+      
+        .competitor-form-row {
+          width: 750px;
+          * {
+            margin-right: 12px;
+          }
+        }
+      }
+    }
+
+    .update-button {
+      margin: 10px;
+    }
+  }
+}

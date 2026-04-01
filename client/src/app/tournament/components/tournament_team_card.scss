@@ -1,0 +1,95 @@
+.tournament-team-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg);
+  width: 220px;
+  min-height: 100px;
+  border-radius: 10px;
+  padding: 10px;
+
+  .top-side {
+    display: flex;
+    justify-content: space-between;
+
+    .top-right-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .team-image {
+        object-fit: contain;
+        width: 50px;
+        height: 50px;
+        border-radius: 7px;
+      }
+    }
+
+    .info-name {
+      font-size: 16px;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      height: 48px;
+      overflow: hidden;
+    }
+  }
+
+  .bottom-side {
+    .info-players {
+      font-size: 12px;
+      padding-top: 8px;
+
+      .player {
+        display: flex;
+        align-items: center;
+
+        .captain {
+          font-weight: bold;
+        }
+
+        .flag-icon {
+          width: 20px;
+          height: 15px;
+          margin-right: 5px;
+          border-radius: 2px;
+        }
+
+        button {
+          display: flex;
+          margin-left: 10px;
+          width: 16px;
+          height: 16px;
+
+          .mat-icon {
+            width: 12px;
+            height: 12px;
+            font-size: 12px;
+            line-height: 12px;
+          }
+        }
+      }
+    }
+  }
+
+  .info-seed {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+
+    .no-seed {
+      visibility: hidden;
+    }
+
+    .icon {
+      color: var(--custom-theme-palette-400);
+      font-size: 16px;
+      width: 16px;
+      margin-right: 2px;
+    }
+  }
+}
+
+::ng-deep .team-card-remove-button .mat-mdc-button-touch-target {
+  width: 16px !important;
+  height: 16px !important;
+}

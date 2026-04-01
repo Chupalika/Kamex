@@ -1,0 +1,21 @@
+.user-settings-dialog {
+  display: flex;
+  flex-direction: column;
+  margin: 20px;
+  background-color: unset;
+
+  .discord-info {
+    display: flex;
+    align-items: center;
+
+    button {
+      margin-left: 20px;
+    }
+  }
+
+  .user-settings-form {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+  }
+}

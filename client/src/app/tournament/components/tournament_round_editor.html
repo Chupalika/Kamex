@@ -1,0 +1,33 @@
+<form [formGroup]="tournamentRoundForm" (ngSubmit)="updateTournamentRound()" class="tourney-form" autocomplete="off">
+  <mat-form-field>
+    <mat-label>Name</mat-label>
+    <input matInput type="text" formControlName="name">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Start Date <mat-icon class="info-icon" matTooltip="Determines round order and which round is loaded by default when visiting other pages">info</mat-icon></mat-label>
+    <input matInput type="datetime-local" formControlName="startDate">
+  </mat-form-field>
+  <mat-checkbox formControlName="mappoolWip">Mappool WIP <mat-icon class="info-icon" matTooltip="Hides mappool from mappools and stats pages">info</mat-icon></mat-checkbox>
+  <mat-checkbox formControlName="scoresheetWip">Scoresheet WIP <mat-icon class="info-icon" matTooltip="Hides stats from stats page and MP links from matches page">info</mat-icon></mat-checkbox>
+  <mat-form-field>
+    <mat-label>Mappool Download URL</mat-label>
+    <input matInput type="text" formControlName="mappoolDownloadUrl">
+  </mat-form-field>
+  <button
+    mat-raised-button
+    type="submit"
+    color="primary"
+    [disabled]="disabled || !tournamentRoundForm.valid || requestInProgress || !hasChanges()">
+    {{ round ? "Update" : "Create" }}
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="primary"
+    (click)="removeTournamentRound()"
+    [disabled]="disabled || !round || requestInProgress"
+  >
+    Remove
+  </button>
+</form>

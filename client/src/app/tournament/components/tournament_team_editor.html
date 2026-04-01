@@ -1,0 +1,75 @@
+<form [formGroup]="editTeamForm" (ngSubmit)="updateTeam()" class="tourney-form" autocomplete="off">
+  <mat-form-field>
+    <mat-label>Team name</mat-label>
+    <input matInput type="text" formControlName="name">
+  </mat-form-field>
+  <div class="wrapper">
+    <mat-form-field>
+      <mat-label>Image link</mat-label>
+      <input matInput type="text" formControlName="imageLink">
+    </mat-form-field>
+    <input type="file" style="display: none;" (change)="onFileSelected($event)" #fileUpload>
+    <div
+      class="button-wrapper"
+      matTooltip="Upload an image. Must be an existing team, and saves immediately."
+      matTooltipPosition="right"
+    >
+      <button
+        mat-mini-fab
+        type="button"
+        color="primary"
+        (click)="fileUpload.click()"
+        [disabled]="disabled || requestInProgress || !team"
+      >
+        <mat-icon>attach_file</mat-icon>
+      </button>
+    </div>
+  </div>
+  <mat-form-field>
+    <mat-label>Players</mat-label>
+    <mat-select formControlName="players" multiple>
+      <mat-option *ngFor="let player of getSortedPlayers()" [value]="player._id">{{ player.username }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Captain</mat-label>
+    <mat-select formControlName="captain">
+      <mat-option *ngFor="let player of getSortedSelectedPlayers()" [value]="player._id">{{ player.username }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <!--
+  <div *ngIf="!isAdmin">
+    <div class="mat-body-1">Players</div>
+    <ng-container *ngFor="let player of team?.players ?? []">
+      <div class="player-row mat-body-2">
+        {{ player.username }}
+        <button mat-icon-button type="button"><mat-icon>crown</mat-icon></button>
+        <button mat-icon-button type="button"><mat-icon>close</mat-icon></button>
+      </div>
+    </ng-container>
+  </div>
+  -->
+  <mat-form-field>
+    <mat-label>Seed</mat-label>
+    <input matInput type="text" formControlName="seed">
+  </mat-form-field>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="submit"
+    color="primary"
+    [disabled]="disabled || !editTeamForm.valid || requestInProgress || !hasChanges()"
+  >
+    {{ team ? "Update" : "Add" }}
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="primary"
+    (click)="removeTeam()"
+    [disabled]="disabled || !team || requestInProgress"
+  >
+    Remove
+  </button>
+</form>

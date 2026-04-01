@@ -1,0 +1,95 @@
+.tournament-player-card {
+  display: flex;
+  background-color: var(--card-bg);
+  width: 220px;
+  min-height: 100px;
+  border-radius: 10px;
+  padding: 10px;
+
+  .left-side {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+    text-wrap: nowrap;
+
+    .info-username {
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+
+      .flag-icon {
+        width: 20px;
+        height: 15px;
+        margin-right: 5px;
+        border-radius: 2px;
+      }
+    }
+
+    .info-rank {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+
+      .icon {
+        color: var(--custom-theme-palette-400);
+        font-size: 16px;
+        width: 16px;
+        margin-right: 2px;
+      }
+    }
+
+    .info-teams {
+      font-size: 12px;
+
+      .team-row {
+        display: flex;
+
+        .team-image {
+          object-fit: contain;
+          width: 16px;
+          height: 16px;
+          border-radius: 3px;
+          align-self: center;
+          margin-right: 3px;
+        }
+
+        span {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+        }
+      }
+    }
+  }
+
+  .right-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .player-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 7px;
+    }
+
+    .info-seed {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      margin-top: 5px;
+
+      .no-seed {
+        visibility: hidden;
+      }
+
+      .icon {
+        color: var(--custom-theme-palette-400);
+        font-size: 16px;
+        width: 16px;
+        margin-right: 2px;
+      }
+    }
+  }
+}

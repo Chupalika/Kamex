@@ -1,0 +1,38 @@
+<div class="stream-area" [style.backgroundImage]="getBackgroundImage()">
+  <!--<div class="mat-headline-2 label">TTF Team Reveal</div>-->
+  <div class="slots-area">
+    <div *ngFor="let slot of slots; index as i" class="slot">
+      <div class="slot-label">{{ getCurrentPlayer(i) }}</div>
+      <span
+          *ngFor="let slotRow of slot.slotRows"
+          class="slot-row"
+          [ngStyle]="{'margin-left': getMargin(slotRow.offset),
+                      'transition-duration.ms': slot.spinSpeed,
+                      'opacity': slotRow.visible ? 1 : 0
+                    }">
+        <img class="flag" [src]="slot.flagUrls[slotRow.playerIndex]" alt="">
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="control-area">
+  <div *ngFor="let slot of slots; index as i" class="slot-control">
+    <div class="mat-headline-5">Slot {{ i+1 }}</div>
+    <button mat-raised-button (click)="toggleSpin(i)">Toggle Spin</button>
+    <button mat-raised-button (click)="stopSpin(i)">Slow down and stop</button>
+    <mat-form-field class="slot-input">
+      <mat-label>Teams</mat-label>
+      <textarea #playersInput matInput rows="16" (keyup)="onPlayersChange(i, playersInput.value)"></textarea>
+    </mat-form-field>
+  </div>
+  <div class="current-team-control">
+    <div class="mat-headline-5 label-2">Teams</div>
+    <button mat-raised-button (click)="saveTeam()">Save selected team</button>
+    <div class="teams">
+      <div *ngFor="let team of teams; index as i">
+        {{ team.join(" / ") }}
+      </div>
+    </div>
+  </div>
+</div>

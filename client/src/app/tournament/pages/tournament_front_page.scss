@@ -1,0 +1,94 @@
+.front-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tournament-progress {
+  font-weight: bold;
+}
+
+.registration-info {
+  display: flex;
+  flex-direction: column;
+
+  button {
+    width: fit-content;
+  }
+}
+
+.tourney-banner {
+  max-width: 87vw;
+  max-height: 87vh;
+}
+
+.front-page-header {
+  margin-top: 20px;
+  text-align: center;
+
+  .links-button {
+    margin-top: 40px;
+  }
+}
+
+.front-page-body {
+  margin-top: 64px;
+  padding: 20px;
+  border-radius: 10px;
+
+  ::ng-deep img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+.scoresheet-title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.settings-row {
+  padding-bottom: 10px;
+}
+
+.scoresheet-test {
+  min-width: unset;
+}
+
+.scoresheet-header-beatmap {
+  text-align: center;
+  width: 500px;
+}
+
+.scoresheet-header-player {
+  text-align: center;
+  width: 200px;
+}
+
+.scoresheet-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.scoresheet-row {
+  display: flex;
+}
+
+.scoresheet-beatmap-item {
+  display: flex;
+  justify-content: center;
+  align-self: center;
+  padding: 10px;
+  min-width: 500px;
+  max-width: 500px;
+}
+
+.scoresheet-player-item {
+  display: flex;
+  justify-content: center;
+  align-self: center;
+  padding: 10px;
+  min-width: 200px;
+  max-width: 200px;
+}

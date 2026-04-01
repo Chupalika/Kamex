@@ -1,0 +1,18 @@
+.tourney-form {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+
+  mat-checkbox {
+    .info-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
+    }
+  }
+
+  .add-button {
+    margin-top: 20px;
+  }
+}

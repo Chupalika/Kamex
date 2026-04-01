@@ -1,0 +1,31 @@
+.section-label {
+  margin-top: 20px;
+}
+
+.selector {
+  display: flex;
+  flex-wrap: wrap;
+  width: 800px;
+  margin-bottom: 20px;
+  padding: 10px;
+  height: unset;
+
+  button {
+    margin: 10px;
+  }
+}
+
+.tourney-form {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  margin-bottom: 20px;
+}
+
+.round-selector {
+  margin-top: 20px;
+}
+
+.refresh-players-button {
+  margin-top: 20px;
+}

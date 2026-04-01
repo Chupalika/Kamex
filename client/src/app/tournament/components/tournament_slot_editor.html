@@ -1,0 +1,43 @@
+<form [formGroup]="editSlotForm" (ngSubmit)="updateSlot()" class="tourney-form" autocomplete="off">
+  <mat-form-field>
+    <mat-label>Slot Label</mat-label>
+    <input matInput type="text" formControlName="label">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Beatmap ID</mat-label>
+    <input matInput type="number" formControlName="beatmapId">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Category</mat-label>
+    <input matInput type="text" formControlName="category">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Required Mods</mat-label>
+    <mat-select formControlName="requiredMods" multiple>
+      <mat-option *ngFor="let mod of modChoices" [value]="mod">{{ mod }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field *ngIf="isMultiMode">
+    <mat-label>Game Mode</mat-label>
+    <mat-select formControlName="gameMode">
+      <mat-option *ngFor="let gameMode of ['osu', 'taiko', 'catch', 'mania']" [value]="gameMode">{{ gameMode }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button
+      mat-raised-button
+      type="submit"
+      color="primary"
+      [disabled]="disabled || !editSlotForm.valid || requestInProgress || !hasChanges()">
+    {{ slot ? "Update" : "Add" }}
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="primary"
+    (click)="removeSlot()"
+    [disabled]="disabled || !slot || requestInProgress"
+  >
+    Remove
+  </button>
+</form>

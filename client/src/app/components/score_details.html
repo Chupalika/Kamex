@@ -1,0 +1,86 @@
+<form [formGroup]="editScoreForm" (ngSubmit)="updateScore()" class="score-container" autocomplete="off">
+  <div class="score-detail">
+    <div class="detail-label">Score:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ score.score }}</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput inputmode="decimal" formControlName="score">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">Accuracy:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ (scoreAccuracy * 100).toFixed(2) }}%</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput inputmode="decimal" formControlName="accuracy">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">Great:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ scoreGreatCount }}</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput inputmode="decimal" formControlName="countGreat">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">OK:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ scoreOkCount }}</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput inputmode="decimal" formControlName="countOk">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">Miss:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ scoreMissCount }}</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput inputmode="decimal" formControlName="countMiss">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">Combo:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ scoreMaxCombo }}</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput inputmode="decimal" formControlName="maxCombo">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">Mods:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ getModsString(scoreMods) }}</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput formControlName="mods">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">Time:</div>
+    <div class="detail-value" *ngIf="!editMode">{{ scoreTimestamp | date:'yyyy-MM-dd HH:mm' }}</div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput type="datetime-local" formControlName="timestamp">
+    </mat-form-field>
+  </div>
+  <div class="score-detail">
+    <div class="detail-label">MP:</div>
+    <div class="detail-value" *ngIf="!editMode && scoreMatchId"><a target="_blank" [href]="'https://osu.ppy.sh/mp/' + scoreMatchId">{{ scoreMatchId }}</a></div>
+    <mat-form-field *ngIf="editMode" class="detail-editor" appearance="outline" subscriptSizing="dynamic">
+      <input matInput inputmode="decimal" formControlName="matchId">
+    </mat-form-field>
+  </div>
+  <div class="edit-buttons" *ngIf="editMode">
+    <button
+      mat-raised-button
+      class="edit-button"
+      type="submit"
+      color="primary"
+      [disabled]="!editScoreForm.valid || requestInProgress || !hasChanges()"
+    >
+      Save
+    </button>
+    <button
+      mat-raised-button
+      class="edit-button"
+      type="button"
+      color="warn"
+      (click)="cancelEdit()"
+      [disabled]="requestInProgress"
+    >
+      Cancel
+    </button>
+  </div>
+</form>

@@ -1,0 +1,24 @@
+.header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  &.mobile-mode {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .option-dropdown {
+    margin-right: 20px;
+  }
+}
+
+.players-page-container {
+  display: flex;
+
+  .participants-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+}

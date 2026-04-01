@@ -1,0 +1,57 @@
+<div *ngIf="loadingTournament" class="mat-headline-5">Loading...</div>
+<div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">Tournament "{{ acronym }}" doesn't exist or failed to load!</div>
+
+<div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+  <div class="mat-headline-5">{{ tournament.name }} Participants</div>
+
+  <div class="header" [ngClass]="{'mobile-mode': mobileMode}">
+    <mat-form-field class="option-dropdown" *ngIf="displayFormControl.value !== 'staff'" appearance="outline">
+      <mat-label>Sort By</mat-label>
+      <mat-select [formControl]="sortMethodFormControl" (selectionChange)="switchSortMethod($event)">
+        <mat-option value="rank">Rank</mat-option>
+        <mat-option value="name">Name</mat-option>
+        <mat-option value="country">Country</mat-option>
+        <mat-option value="seed">Seed</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="option-dropdown" *ngIf="displayFormControl.value === 'staff'" appearance="outline">
+      <mat-label>Filter</mat-label>
+      <mat-select [formControl]="filterFormControl" (selectionChange)="switchSortMethod($event)">
+        <mat-option value="">All</mat-option>
+        <mat-option *ngFor="let role of tournament.staffRoles" [value]="role.name">{{ role.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="option-dropdown" appearance="outline">
+      <mat-label>Display</mat-label>
+      <mat-select [formControl]="displayFormControl">
+        <mat-option value="players">Players</mat-option>
+        <mat-option value="teams" *ngIf="tournament.enableTeams">Teams</mat-option>
+        <mat-option value="staff">Staff</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="mat-body-1">{{ participantsCountText }}</div>
+  </div>
+  
+  <div class="players-page-container">
+    <div *ngIf="displayFormControl.value === 'players'" class="participants-container">
+      <div *ngIf="players.length === 0" class="mat-headline-6">No registered players yet!</div>
+      <div *ngFor="let player of players">
+        <tournament-player-card class="tournament-card" [player]="player" [teams]="getPlayerTeams(player.playerId)" [gameMode]="tournament.gameMode" [mobileMode]="mobileMode"></tournament-player-card>
+      </div>
+    </div>
+
+    <div *ngIf="displayFormControl.value === 'teams'" class="participants-container">
+      <div *ngIf="teams.length === 0" class="mat-headline-6">No registered teams yet!</div>
+      <div *ngFor="let team of teams">
+        <tournament-team-card class="tournament-card" [team]="team" [gameMode]="tournament.gameMode" [mobileMode]="mobileMode"></tournament-team-card>
+      </div>
+    </div>
+
+    <div *ngIf="displayFormControl.value === 'staff'" class="participants-container">
+      <div *ngIf="staffMembers.length === 0" class="mat-headline-6">No staff members yet!</div>
+      <div *ngFor="let staffMember of staffMembers">
+        <tournament-staff-member-card class="tournament-card" [staffMember]="staffMember" [mobileMode]="mobileMode"></tournament-staff-member-card>
+      </div>
+    </div>
+  </div>
+</div>

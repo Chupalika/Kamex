@@ -1,0 +1,26 @@
+.tournament-progress {
+  font-weight: bold;
+}
+
+.registration-info {
+  display: flex;
+  flex-direction: column;
+
+  button {
+    width: fit-content;
+    margin: 15px 0;
+  }
+}
+
+.team-image-uploader {
+  display: flex;
+  align-items: center;
+
+  button {
+    margin-left: 10px;
+  }
+}
+
+::ng-deep .dialog-wrapper {
+  margin: 10px 20px;
+}

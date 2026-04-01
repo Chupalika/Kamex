@@ -1,0 +1,29 @@
+<div class="mat-headline-6">Tournaments</div>
+
+<mat-table [dataSource]="tournaments" class="tournaments-table">
+  <ng-container matColumnDef="name">
+    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
+      <span class="tournaments-table-header-text">Name</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let element" class="tournaments-table-cell">
+      <a [routerLink]="['/tournament', element.acronym]">{{ element.name }} ({{ element.acronym }})</a>
+    </mat-cell>
+  </ng-container>
+  <ng-container matColumnDef="gameMode">
+    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
+      <span class="tournaments-table-header-text">Game Mode</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let element" class="tournaments-table-cell">{{ element.gameMode }}</mat-cell>
+  </ng-container>
+  <ng-container matColumnDef="progress">
+    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
+      <span class="tournaments-table-header-text">Progress</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let element" class="tournaments-table-cell">{{ element.progress }}</mat-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="tournamentsTableColumns"></mat-header-row>
+  <mat-row *matRowDef="let row; columns: tournamentsTableColumns;"></mat-row>
+</mat-table>
+
+<div class="mat-body-3">To create a tournament, please contact Chupalika on osu! or ryko_ on discord.</div>

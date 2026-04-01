@@ -1,0 +1,30 @@
+.wrapper {
+  padding: 0px 8px;
+
+  .row {
+    display: flex;
+    align-items: center;
+
+    .icon {
+      color: var(--custom-theme-palette-400);
+      width: 16px;
+      margin-right: 2px;
+    }
+
+    a {
+      text-decoration: none;
+    }
+  }
+
+  .info-buttons {
+    padding-top: 3px;
+    display: flex;
+    justify-content: space-evenly;
+
+    * {
+      color: var(--custom-theme-palette-400);
+      cursor: pointer;
+      font-size: 20px;
+    }
+  }
+}

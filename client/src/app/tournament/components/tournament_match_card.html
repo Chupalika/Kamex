@@ -1,0 +1,354 @@
+<div *ngIf="(match || isHeader) && !mobileMode" class="tournament-match-card mat-body-1 mat-elevation-z4">
+  <div class="match-details">
+    <div class="match-detail">{{ isHeader ? 'ID' : match!.id }}</div>
+    <div class="match-detail time">{{ isHeader ? "Time (" + timezoneLabel + ")" : getFormattedMatchTime(match!.time) }}</div>
+    <ng-container *ngIf="!isLobby">
+      <div
+        class="match-detail score"
+        [ngClass]="{ 'winner': match ? (match.participants[0]?.score ?? 0) > (match.participants[1]?.score ?? 0) : false }"
+      >
+        {{ isHeader ? '' : (match!.participants[0]?.score ?? '') }}
+      </div>
+      <div class="match-detail name">
+        <span *ngIf="isHeader">{{ participantType }} 1</span>
+        <ng-container *ngIf="!isHeader && match!.participants.length > 0">
+          <ng-container *ngTemplateOutlet="participantInfo; context: { participant: match!.participants[0] }"></ng-container>
+        </ng-container>
+        <ng-container *ngIf="!isHeader">
+          <ng-container *ngTemplateOutlet="signupButton"></ng-container>
+        </ng-container>
+      </div>
+      <div class="match-detail name right">
+        <span *ngIf="isHeader">{{ participantType }} 2</span>
+        <ng-container *ngIf="!isHeader && match!.participants.length > 1">
+          <ng-container *ngTemplateOutlet="participantInfo; context: { participant: match!.participants[1], flipped: true }"></ng-container>
+        </ng-container>
+      </div>
+      <div
+        class="match-detail score"
+        [ngClass]="{ 'winner': match ? (match.participants[0]?.score ?? 0) < (match.participants[1]?.score ?? 0) : false }"
+      >
+        {{ isHeader ? '' : (match!.participants[1]?.score ?? '') }}
+      </div>
+    </ng-container>
+    <ng-container *ngIf="isLobby">
+      <div *ngIf="isHeader" class="match-detail name lobby-mode">Participants</div>
+      <div *ngIf="!isHeader" class="match-detail name lobby-mode">
+        <div *ngFor="let participant of match!.participants" class="lobby-participant">
+          <ng-container *ngTemplateOutlet="participantInfo; context: { participant: participant }"></ng-container>
+          <div
+            class="match-detail score"
+            [ngClass]="{ 'winner': match ? getMatchHighestScore() > 0 && participant.score === getMatchHighestScore() : false }"
+          >
+            {{ participant?.score ? participant.score : '' }}
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="signupButton"></ng-container>
+      </div>
+    </ng-container>
+    <div class="match-detail staff">
+      <div *ngIf="isHeader">Referees</div>
+      <ng-container *ngIf="!isHeader">
+        <div *ngFor="let referee of match!.referees">
+          <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: referee }"></ng-container>
+        </div>
+        <button
+          *ngIf="refereeStatus !== ''"
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          [matTooltip]="refereeStatus === 'can_register' ? 'Register as a referee' : 'Unregister as a referee'"
+          [disabled]="requestInProgress"
+          (click)="toggleRefereeHelper()"
+        >
+          <mat-icon>{{ refereeStatus === 'can_register' ? 'add' : 'remove' }}</mat-icon>
+        </button>
+      </ng-container>
+    </div>
+    <div class="match-detail staff">
+      <div *ngIf="isHeader">Streamers</div>
+      <ng-container *ngIf="!isHeader">
+        <div *ngFor="let streamer of match!.streamers">
+          <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: streamer }"></ng-container>
+        </div>
+        <button
+          *ngIf="streamerStatus !== ''"
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          [matTooltip]="streamerStatus === 'can_register' ? 'Register as a streamer' : 'Unregister as a streamer'"
+          [disabled]="requestInProgress"
+          (click)="toggleStreamerHelper()"
+        >
+          <mat-icon>{{ streamerStatus === 'can_register' ? 'add' : 'remove' }}</mat-icon>
+        </button>
+      </ng-container>
+    </div>
+    <div class="match-detail staff">
+      <div *ngIf="isHeader">Commentators</div>
+      <ng-container *ngIf="!isHeader">
+        <div *ngFor="let commentator of match!.commentators">
+          <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: commentator }"></ng-container>
+        </div>
+        <button
+          *ngIf="commentatorStatus !== ''"
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          [matTooltip]="commentatorStatus === 'can_register' ? 'Register as a commentator' : 'Unregister as a commentator'"
+          [disabled]="requestInProgress"
+          (click)="toggleCommentatorHelper()"
+        >
+          <mat-icon>{{ commentatorStatus === 'can_register' ? 'add' : 'remove' }}</mat-icon>
+        </button>
+      </ng-container>
+    </div>
+    <div class="match-detail link">
+      <div *ngIf="isHeader">MP</div>
+      <ng-container *ngIf="!isHeader && !hideLinks">
+        <a *ngFor="let matchId of match!.matchIds" target="_blank" [href]="'https://osu.ppy.sh/mp/' + matchId">
+          <mat-icon>link</mat-icon>
+        </a>
+      </ng-container>
+    </div>
+    <div class="match-detail link">
+      <div *ngIf="isHeader">VOD</div>
+      <ng-container *ngIf="!isHeader">
+        <a *ngFor="let vodLink of match!.vodLinks" target="_blank" [href]="vodLink">
+          <mat-icon>link</mat-icon>
+        </a>
+      </ng-container>
+    </div>
+    <div class="match-detail link">
+      <div *ngIf="isHeader"></div>
+      <div *ngIf="!isHeader && refereeStatus === 'can_unregister' || (match?.matchProgression || []).length > 0">
+        <button mat-icon-button color="primary" [matMenuTriggerFor]="menu" class="small-icon-button">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item *ngIf="refereeStatus === 'can_unregister'" (click)="openSubmitMatchEditor()">Submit match</button>
+          <button mat-menu-item *ngIf="(match!.matchProgression || []).length > 0" (click)="openMatchProgression()">View match progression</button>
+        </mat-menu>
+      </div>
+    </div>
+    <!--
+    <div class="match-detail link">
+      <div *ngIf="isHeader"></div>
+      <div *ngIf="!isHeader && match!.matchProgression && match!.matchProgression.length > 0">
+        <button
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          matTooltip="View match progression"
+          (click)="openMatchProgression()"
+        >
+          <mat-icon>description</mat-icon>
+        </button>
+      </div>
+      <div *ngIf="!isHeader">
+        <button
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          matTooltip="Submit match results"
+          (click)="openSubmitMatchEditor()"
+        >
+          <mat-icon>description</mat-icon>
+        </button>
+      </div>
+    </div>
+    -->
+  </div>
+</div>
+
+<div *ngIf="mobileMode" class="tournament-match-card mat-body-1 mat-elevation-z4">
+  <div class="match-details mobile-mode">
+    <div class="match-details-row">
+      <div class="match-detail id mobile-mode">{{ match!.id }}</div>
+      <div class="match-detail time mobile-mode">{{ getFormattedMatchTime(match!.time) }}</div>
+      <div class="match-detail link mobile-mode">
+        <div *ngIf="isHeader">MP</div>
+        <ng-container *ngIf="!isHeader && ((match!.matchIds.length > 0 && !hideLinks) || match!.vodLinks.length > 0 || refereeStatus === 'can_unregister' || (match?.matchProgression || []).length > 0)">
+          <button mat-icon-button color="primary" [matMenuTriggerFor]="menu" class="small-icon-button">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <a *ngFor="let matchId of match!.matchIds" mat-menu-item target="_blank" [href]="'https://osu.ppy.sh/mp/' + matchId">Match link</a>
+            <a *ngFor="let vodLink of match!.vodLinks" mat-menu-item target="_blank" [href]="vodLink">VOD link</a>
+            <button mat-menu-item *ngIf="refereeStatus === 'can_unregister'" (click)="openSubmitMatchEditor()">Submit match</button>
+            <button mat-menu-item *ngIf="(match!.matchProgression || []).length > 0" (click)="openMatchProgression()">View match progression</button>
+          </mat-menu>
+        </ng-container>
+      </div>
+    </div>
+    <div class="match-details-row">
+      <ng-container *ngIf="!isLobby">
+        <div
+          class="match-detail score mobile-mode"
+          [ngClass]="{ 'winner': match ? ((match.participants[0]?.score ?? 0) > (match.participants[1]?.score ?? 0)) : false }"
+        >
+          {{ match!.participants[0]?.score ?? '' }}
+        </div>
+        <div class="match-detail name mobile-mode">
+          <ng-container *ngIf="match!.participants.length > 0">
+            <ng-container *ngTemplateOutlet="participantInfo; context: { participant: match!.participants[0], hideExtraInfo: true, hideIcon: true }"></ng-container>
+          </ng-container>
+          <ng-container *ngIf="match!.participants.length === 0">
+            <ng-container *ngTemplateOutlet="signupButton"></ng-container>
+          </ng-container>
+        </div>
+        <div class="match-detail name right mobile-mode">
+          <ng-container *ngIf="match!.participants.length > 1">
+            <ng-container *ngTemplateOutlet="participantInfo; context: { participant: match!.participants[1], hideExtraInfo: true, hideIcon: true, flipped: true }"></ng-container>
+          </ng-container>
+          <ng-container *ngIf="match!.participants.length <= 1">
+            <ng-container *ngTemplateOutlet="signupButton"></ng-container>
+          </ng-container>
+        </div>
+        <div
+          class="match-detail score mobile-mode"
+          [ngClass]="{ 'winner': match ? ((match.participants[0]?.score ?? 0) < (match.participants[1]?.score ?? 0)) : false }"
+        >
+          {{ match!.participants[1]?.score ?? '' }}
+        </div>
+      </ng-container>
+      <ng-container *ngIf="isLobby">
+        <div class="match-detail name mobile-mode">
+          <div *ngFor="let participant of match!.participants" class="participant-name">
+            <ng-container *ngTemplateOutlet="participantInfo; context: { participant: participant, hideExtraInfo: true }"></ng-container>
+          </div>
+          <ng-container *ngTemplateOutlet="signupButton"></ng-container>
+        </div>
+      </ng-container>
+    </div>
+    <mat-divider class="divider"></mat-divider>
+    <div class="match-details-row">
+      <div class="match-detail staff mobile-mode">
+        <div *ngFor="let referee of match!.referees">
+          <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: referee, hideIcon: true }"></ng-container>
+        </div>
+        <button
+          *ngIf="refereeStatus !== ''"
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          [matTooltip]="refereeStatus === 'can_register' ? 'Register as a referee' : 'Unregister as a referee'"
+          [disabled]="requestInProgress"
+          (click)="toggleRefereeHelper()"
+        >
+          <mat-icon>{{ refereeStatus === 'can_register' ? 'add' : 'remove' }}</mat-icon>
+        </button>
+      </div>
+      <div class="match-detail staff mobile-mode">
+        <div *ngFor="let streamer of match!.streamers">
+          <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: streamer, hideIcon: true }"></ng-container>
+        </div>
+        <button
+          *ngIf="streamerStatus !== ''"
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          [matTooltip]="streamerStatus === 'can_register' ? 'Register as a streamer' : 'Unregister as a streamer'"
+          [disabled]="requestInProgress"
+          (click)="toggleStreamerHelper()"
+        >
+          <mat-icon>{{ streamerStatus === 'can_register' ? 'add' : 'remove' }}</mat-icon>
+        </button>
+      </div>
+      <div class="match-detail staff mobile-mode">
+        <div *ngFor="let commentator of match!.commentators">
+          <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: commentator, hideIcon: true }"></ng-container>
+        </div>
+        <button
+          *ngIf="commentatorStatus !== ''"
+          class="register-button small-icon-button"
+          mat-button
+          type="button"
+          color="primary"
+          [matTooltip]="commentatorStatus === 'can_register' ? 'Register as a commentator' : 'Unregister as a commentator'"
+          [disabled]="requestInProgress"
+          (click)="toggleCommentatorHelper()"
+        >
+          <mat-icon>{{ commentatorStatus === 'can_register' ? 'add' : 'remove' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #participantInfo let-participant="participant" let-flipped="flipped" let-hideExtraInfo="hideExtraInfo" let-hideIcon="hideIcon">
+  <div class="participant">
+    <img
+      *ngIf="!hideExtraInfo && !hideIcon && !flipped"
+      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam), 'flag-avatar': !isPlayer(participant.playerOrTeam), 'flipped': flipped}"
+      [src]="getParticipantImage(participant)"
+    >
+    <span *ngIf="!hideExtraInfo && flipped && participant.playerOrTeam.seed" class="seed">
+      <span class="material-symbols-outlined icon">potted_plant</span> {{ participant.playerOrTeam.seed }}
+    </span>
+    <span *ngIf="flipped" class="filler"></span>
+    <span
+      *ngIf="isPlayer(participant.playerOrTeam)"
+      class="participant-name"
+      [hovercardComponent]="TournamentPlayerCard"
+      [hovercardData]="{ player: participant.playerOrTeam, gameMode: gameMode }"
+    >
+      {{ participant.playerOrTeam.username }}
+    </span>
+    <span
+      *ngIf="!isPlayer(participant.playerOrTeam)"
+      class="participant-name"
+      [hovercardComponent]="TournamentTeamCard"
+      [hovercardData]="{ team: participant.playerOrTeam, gameMode: gameMode }"
+    >
+      {{ participant.playerOrTeam.name }}
+    </span>
+    <span *ngIf="!flipped" class="filler"></span>
+    <span *ngIf="!hideExtraInfo && !flipped && participant.playerOrTeam.seed" class="seed">
+      <span class="material-symbols-outlined icon">potted_plant</span> {{ participant.playerOrTeam.seed }}
+    </span>
+    <img
+      *ngIf="!hideExtraInfo && !hideIcon && flipped"
+      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam), 'flag-avatar': !isPlayer(participant.playerOrTeam), 'flipped': flipped}"
+      [src]="getParticipantImage(participant)"
+    >
+  </div>
+</ng-template>
+
+<ng-template #staffMemberName let-staffMember let-hideIcon="hideIcon">
+  <div class="staff-member">
+    <img
+      *ngIf="!hideIcon"
+      class="square-avatar"
+      [src]="getStaffMemberImage(staffMember)"
+    >
+    <span
+      [hovercardComponent]="TournamentStaffMemberCard"
+      [hovercardData]="{ staffMember: staffMember }"
+    >
+      {{ staffMember.username }}
+    </span>
+  </div>
+</ng-template>
+
+<ng-template #signupButton>
+  <button
+    *ngIf="signupStatus !== ''"
+    class="register-button small-icon-button"
+    mat-button
+    type="button"
+    color="primary"
+    [matTooltip]="signupStatus === 'can_register' ? 'Register for this match' : 'Unregister from this match'"
+    [disabled]="requestInProgress"
+    (click)="toggleSignupHelper()"
+  >
+    <mat-icon>{{ signupStatus === 'can_register' ? 'add' : 'remove' }}</mat-icon>
+  </button>
+</ng-template>

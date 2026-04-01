@@ -1,0 +1,32 @@
+.tourney-form {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+
+  .auto-confirm-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .add-button {
+    margin-top: 20px;
+  }
+  
+  .wrapper {
+    display: flex;
+
+    mat-form-field {
+      flex-grow: 1;
+    }
+
+    button {
+      margin: 10px;
+    }
+  }
+}
+
+.info-icon {
+  font-size: 20px;
+  text-align: center;
+  color: grey;
+}

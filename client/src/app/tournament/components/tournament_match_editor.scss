@@ -1,0 +1,46 @@
+.tourney-form {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+
+  .add-button {
+    margin-top: 20px;
+  }
+}
+
+mat-checkbox {
+  margin-bottom: 20px;
+}
+
+.participants-header {
+  display: flex;
+  align-items: center;
+
+  button {
+    margin-left: 12px;
+  }
+}
+
+.participant-form-row {
+  display: flex;
+  align-items: baseline;
+
+  * {
+    margin-right: 12px;
+  }
+
+  mat-icon {
+    min-width: 24px;
+  }
+
+  .drag-handle {
+    cursor: grab;
+  }
+}
+
+.info-icon {
+  font-size: 20px;
+  text-align: center;
+  vertical-align: middle;
+  color: grey;
+}

@@ -1,0 +1,62 @@
+<form [formGroup]="editProgressionForm" (ngSubmit)="updateProgression()" class="score-container" autocomplete="off">
+  <ng-container formArrayName="matchEvents">
+    <div cdkDropList (cdkDropListDropped)="rearrangeMatchEvents($event)">
+      <ng-container *ngFor="let matchEventForm of getMatchEventsFormGroups(); let i = index">
+        <div class="match-event-form-row" [formGroup]="matchEventForm" cdkDrag [cdkDragDisabled]="!editMode">
+          <mat-icon *ngIf="editMode" cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+          <div class="match-event-value" *ngIf="!editMode">
+            <ng-container *ngIf="matchEventForm.value.participant">
+              <span [style.color]="getParticipantColor(matchEventForm.value.participant)">{{ getParticipantName(matchEventForm.value.participant) }}</span>
+              &nbsp;
+              {{ getPastTense(matchEventForm.value.action) }}
+              {{ matchEventForm.value.value }}
+            </ng-container>
+            <ng-container *ngIf="!matchEventForm.value.participant">
+              {{ matchEventForm.value.value }} was {{ getPastTense(matchEventForm.value.action) }}
+            </ng-container>
+          </div>
+          <ng-container *ngIf="editMode">
+            <mat-form-field class="value-editor" appearance="outline">
+              <mat-label>Participant</mat-label>
+              <mat-select formControlName="participant">
+              <mat-option value=""></mat-option>
+              <mat-option *ngFor="let participant of match?.participants || []" [value]="participant.playerOrTeam._id">
+                {{ getParticipantName(participant.playerOrTeam._id) }}
+              </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field class="value-editor" appearance="outline">
+              <mat-label>Action</mat-label>
+              <input matInput formControlName="action">
+            </mat-form-field>
+            <mat-form-field class="value-editor" appearance="outline">
+              <mat-label>Value</mat-label>
+              <input matInput formControlName="value">
+            </mat-form-field>
+          </ng-container>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+  <div class="edit-buttons" *ngIf="editMode">
+    <button
+      mat-raised-button
+      class="edit-button"
+      type="submit"
+      color="primary"
+      [disabled]="!editProgressionForm.valid || requestInProgress || !hasChanges()"
+    >
+      Save
+    </button>
+    <button
+      mat-raised-button
+      class="edit-button"
+      type="button"
+      color="warn"
+      (click)="cancelEdit()"
+      [disabled]="requestInProgress"
+    >
+      Cancel
+    </button>
+  </div>
+</form>

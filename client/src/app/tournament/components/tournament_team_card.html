@@ -1,0 +1,49 @@
+<div class="tournament-team-card mat-body-1 mat-elevation-z4">
+  <ng-container *ngIf="team">
+    <div class="top-side">
+      <div class="info-name" #teamName [matTooltip]="isNameOverflowing ? team.name : ''" matTooltipPosition="above">{{ team.name }}</div>
+      <div class="top-right-side">
+        <img class="team-image" [src]="team.imageLink" />
+        <div class="info-seed"><span class="material-symbols-outlined icon" [class.no-seed]="!team.seed">potted_plant</span> {{ team.seed ?? "" }}</div>
+      </div>
+    </div>
+    <div class="bottom-side">
+      <div class="info-players">
+        <div *ngFor="let player of team.players; index as i" class="player">
+          <img
+            *ngIf="player.country"
+            class="flag-icon"
+            [src]="'https://flagcdn.com/w20/' + player.country.toLowerCase() + '.png'"
+            [alt]="player.country ?? ''"
+          >
+          <span
+            [class.captain]="i === 0"
+            [hovercardComponent]="TournamentPlayerCard"
+            [hovercardData]="{ player: player, gameMode: gameMode }"
+          >
+            {{ player.username }}
+          </span>
+          &nbsp;
+          <span *ngIf="gameMode === GameMode.OSU">(#{{ player.osuRank }})</span>
+          <span *ngIf="gameMode === GameMode.TAIKO">(#{{ player.taikoRank }})</span>
+          <span *ngIf="gameMode === GameMode.FRUITS">(#{{ player.fruitsRank }})</span>
+          <span *ngIf="gameMode === GameMode.MANIA">(#{{ player.maniaRank }})</span>
+          <span *ngIf="gameMode === GameMode.ALL">(#{{ player.osuRank }}/#{{ player.taikoRank }}/#{{ player.fruitsRank }}/#{{ player.maniaRank }})</span>
+          &nbsp;
+          <div class="info-seed"><span class="material-symbols-outlined icon" [class.no-seed]="!player.seed">potted_plant</span> {{ player.seed ?? "" }}</div>
+          <button
+            *ngIf="editable"
+            mat-mini-fab
+            class="team-card-remove-button"
+            color="accent"
+            (click)="removePlayer(i)"
+            [disabled]="requestInProgress"
+            matTooltip="remove"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

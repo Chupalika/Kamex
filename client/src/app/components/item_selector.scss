@@ -1,0 +1,21 @@
+.selector {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  margin-bottom: 20px;
+  padding: 10px;
+  height: unset;
+
+  button {
+    margin: 10px;
+
+    &.vertical {
+      width: 100%;
+    }
+  }
+
+  &.column {
+    flex-direction: column;
+    padding: unset;
+  }
+}

@@ -1,0 +1,241 @@
+<div *ngIf="loading" class="mat-headline-5">Loading...</div>
+<div *ngIf="!loading && !tournament" class="mat-headline-5">Tournament "{{ acronym }}" doesn't exist or failed to load!</div>
+<div *ngIf="!loading && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+  <ng-container *ngIf="!hasPermission(TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS) &&
+                       !hasPermission(TournamentStaffPermission.MANAGE_PLAYERS) &&
+                       !hasPermission(TournamentStaffPermission.MANAGE_TEAMS) &&
+                       !hasPermission(TournamentStaffPermission.MANAGE_STAFF_MEMBERS) &&
+                       !hasPermission(TournamentStaffPermission.MANAGE_STAFF_ROLES) &&
+                       !hasPermission(TournamentStaffPermission.MANAGE_ROUNDS) &&
+                       !hasPermission(TournamentStaffPermission.MANAGE_SLOTS) &&
+                       !hasPermission(TournamentStaffPermission.MANAGE_MATCHES) &&
+                       !hasPermission(TournamentStaffPermission.SUBMIT_MATCHES)">
+    <div class="mat-headline-5">You are not a staff member or you don't have any permissions right now.</div>
+  </ng-container>
+
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS)">
+    <div class="mat-headline-5">Settings for {{ tournament.name }}</div>
+    <tournament-settings-editor
+      [initialTournament]="tournament"
+      [requestInProgress]="requestInProgress"
+      (submit)="submitEditTournamentForm($event)"
+      (uploadBanner)="uploadTourneyBanner($event)"
+      (uploadCategoryIcon)="uploadCategoryIcon($event)">
+    </tournament-settings-editor>
+  </ng-container>
+
+  <!--
+  <ng-container *ngIf="hasPermission(TournamentStaffRolePermission.ADD_PLAYER)">
+    <div class="mat-headline-5 section-label">Add Player</div>
+    <form [formGroup]="addPlayerForm" (ngSubmit)="addPlayer()" class="tourney-form">
+      <mat-form-field>
+        <mat-label>Player ID</mat-label>
+        <input matInput type="number" formControlName="playerId">
+      </mat-form-field>
+      <button
+        mat-raised-button
+        type="submit"
+        color="primary"
+        [disabled]="!addPlayerForm.valid || requestInProgress">Add</button>
+    </form>
+  </ng-container>
+
+  <ng-container *ngIf="hasPermission(TournamentStaffRolePermission.REMOVE_PLAYER)">
+    <div class="mat-headline-5 section-label">Remove Player</div>
+    <form [formGroup]="removePlayerForm" (ngSubmit)="removePlayer()" class="tourney-form">
+      <mat-form-field>
+        <mat-label>Player</mat-label>
+        <mat-select formControlName="playerId">
+          <mat-option *ngFor="let player of getSortedPlayers()" [value]="player.playerId">{{ player.username }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button
+        mat-raised-button
+        type="submit"
+        color="primary"
+        [disabled]="!removePlayerForm.valid || requestInProgress">Remove</button>
+    </form>
+  </ng-container>
+  -->
+
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_PLAYERS)">
+    <div class="mat-headline-5 section-label">Player Editor</div>
+    <form [formGroup]="playerEditorForm" class="tourney-form">
+      <mat-form-field>
+        <mat-label>Player</mat-label>
+        <mat-select formControlName="selectedPlayer" (selectionChange)="switchSelectedPlayer($event.value)">
+          <mat-option value="-1">{{ "\<New\>" }}</mat-option>
+          <mat-option *ngFor="let player of players" [value]="player.playerId">{{ player.username }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
+    <tournament-player-editor
+      [player]="selectedPlayer"
+      [requestInProgress]="requestInProgress"
+      [disabled]="isTourneyConcluded"
+      (submit)="submitUpdatePlayerForm($event)"
+      (remove)="removePlayer($event)">
+    </tournament-player-editor>
+  </ng-container>
+
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_PLAYERS)">
+    <button
+      mat-raised-button
+      class="refresh-players-button"
+      type="button"
+      color="primary"
+      [disabled]="isTourneyConcluded || requestInProgress"
+      (click)="refreshPlayers()"
+    >
+      Refresh Players
+    </button>
+  </ng-container>
+
+  <ng-container *ngIf="isTeamsEnabled && hasPermission(TournamentStaffPermission.MANAGE_TEAMS)">
+    <div class="mat-headline-5 section-label">Team Editor</div>
+    <item-selector
+      class="selector"
+      [labels]="teamLabels"
+      [selectedIndex]="selectedTeamIndex"
+      (selectedIndexChange)="switchSelectedTeam($event)"
+      [defaultLabel]="'New'"
+    ></item-selector>
+    <tournament-team-editor
+      [team]="selectedTeam"
+      [players]="tournament.players"
+      [requestInProgress]="requestInProgress"
+      [disabled]="isTourneyConcluded"
+      (submit)="submitUpdateTeamForm($event)"
+      (remove)="removeTeam($event)"
+      (uploadImage)="uploadTeamImage($event)">
+    </tournament-team-editor>
+  </ng-container>
+
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_STAFF_MEMBERS)">
+    <div class="mat-headline-5 section-label">Staff Member Editor</div>
+    <item-selector
+      class="selector"
+      [labels]="staffMemberLabels"
+      [selectedIndex]="selectedStaffMemberIndex"
+      (selectedIndexChange)="switchSelectedStaffMember($event)"
+      [defaultLabel]="'New'"
+    ></item-selector>
+    <tournament-staff-member-editor
+      [staffMember]="selectedStaffMember"
+      [staffRoles]="tournament.staffRoles"
+      [requestInProgress]="requestInProgress"
+      [disabled]="isTourneyConcluded"
+      (submit)="submitUpdateStaffMemberForm($event)"
+      (remove)="removeStaffMember($event)">
+    </tournament-staff-member-editor>
+  </ng-container>
+
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_STAFF_ROLES)">
+    <div class="mat-headline-5 section-label">Staff Role Editor</div>
+    <item-selector
+      class="selector"
+      [labels]="staffRoleLabels"
+      [selectedIndex]="selectedStaffRoleIndex"
+      (selectedIndexChange)="switchSelectedStaffRole($event)"
+      [defaultLabel]="'New'"
+    ></item-selector>
+    <tournament-staff-role-editor
+      [staffRole]="selectedStaffRole"
+      [requestInProgress]="requestInProgress"
+      [disabled]="isTourneyConcluded"
+      (submit)="submitUpdateStaffRoleForm($event)"
+      (remove)="removeStaffRole($event)">
+    </tournament-staff-role-editor>
+  </ng-container>
+
+  <div class="round-selector">
+    <item-selector
+      *ngIf="hasPermission(TournamentStaffPermission.MANAGE_ROUNDS) ||
+            hasPermission(TournamentStaffPermission.MANAGE_SLOTS) ||
+            hasPermission(TournamentStaffPermission.MANAGE_MATCHES) ||
+            hasPermission(TournamentStaffPermission.SUBMIT_MATCHES)"
+      [defaultLabel]="'New'"
+      [labels]="roundLabels"
+      [selectedIndex]="selectedRoundIndex"
+      (selectedIndexChange)="switchSelectedTournamentRound($event)"
+    ></item-selector>
+  </div>
+
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_ROUNDS)">
+    <div class="mat-headline-5 section-label">Round Editor</div>
+    <ng-container *ngIf="isLoadingTourneyRound">
+      <div class="mat-headline-6 section-label">Loading Tourney Round...</div>
+    </ng-container>
+    <tournament-round-editor
+      [round]="selectedRound"
+      [requestInProgress]="requestInProgress"
+      [disabled]="isTourneyPlanning || isTourneyConcluded"
+      (submit)="submitUpdateRoundForm($event)"
+      (remove)="removeRound($event)">
+    </tournament-round-editor>
+  </ng-container>
+
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_SLOTS) && selectedRound">
+    <div class="mat-headline-5 section-label">Slot Editor</div>
+    <item-selector
+      class="selector"
+      [labels]="slotLabels"
+      [selectedIndex]="selectedSlotIndex"
+      (selectedIndexChange)="switchSelectedTournamentSlot($event)"
+      [defaultLabel]="'New'"
+    ></item-selector>
+    <tournament-slot-editor
+      [slot]="selectedSlot"
+      [requestInProgress]="requestInProgress"
+      [isMultiMode]="isMultiMode()"
+      [disabled]="isTourneyConcluded"
+      (submit)="submitUpdateSlotForm($event)"
+      (remove)="removeSlot($event)">
+    </tournament-slot-editor>
+  </ng-container>
+
+  <ng-container *ngIf="selectedRound && (hasPermission(TournamentStaffPermission.MANAGE_MATCHES))">
+    <div class="mat-headline-5 section-label">Match Editor</div>
+    <item-selector
+      class="selector"
+      [labels]="matchLabels"
+      [selectedIndex]="selectedMatchIndex"
+      (selectedIndexChange)="switchSelectedTournamentMatch($event)"
+      [defaultLabel]="'New'"
+    ></item-selector>
+    <tournament-match-editor
+      [match]="selectedMatch"
+      [enableTeams]="tournament.enableTeams"
+      [players]="tournament.players"
+      [teams]="tournament.teams"
+      [staffMembers]="tournament.staffMembers"
+      [matches]="selectedRound.matches"
+      [requestInProgress]="requestInProgress"
+      [disabled]="isTourneyConcluded"
+      (submit)="submitUpdateMatchForm($event)"
+      (remove)="removeMatch($event)">
+    </tournament-match-editor>
+  </ng-container>
+
+  <ng-container *ngIf="!isTourneyConcluded && selectedRound && hasPermission(TournamentStaffPermission.SUBMIT_MATCHES)">
+    <div class="mat-headline-5 section-label">Submit Match</div>
+    <tournament-submit-match-editor
+      [matches]="matches"
+      [requestInProgress]="requestInProgress"
+      (submit)="submitMatch($event)">
+    </tournament-submit-match-editor>
+    <!--
+    <form [formGroup]="submitMatchForm" (ngSubmit)="submitMatch()" class="tourney-form">
+      <mat-form-field>
+        <mat-label>Match ID</mat-label>
+        <input matInput type="number" formControlName="matchId">
+      </mat-form-field>
+      <button
+        mat-raised-button
+        type="submit"
+        color="primary"
+        [disabled]="!submitMatchForm.valid || requestInProgress">Submit</button>
+    </form>
+    -->
+  </ng-container>
+</div>

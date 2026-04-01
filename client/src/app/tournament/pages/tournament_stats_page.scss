@@ -1,0 +1,140 @@
+.settings-container {
+  margin-top: 20px;
+
+  .selector {
+    margin-top: 10px;
+  }
+
+  .settings-options {
+    margin-bottom: 10px;
+
+    mat-form-field {
+      width: 170px;
+      margin-left: 20px;
+    }
+
+    button {
+      margin-left: 20px;
+    }
+  }
+}
+
+.stats-container {
+  display: flex;
+  flex-direction: row;
+  margin-top: 20px;
+  width: fit-content;
+  //max-width: -webkit-fill-available;
+  //max-width: -moz-available;
+  border: lightgray 1px solid;
+
+  .overall-column {
+    min-width: 500px;
+
+    &.spreadsheet-view {
+      min-width: unset;
+    }
+  }
+
+  &.mobile-mode {
+    width: calc(100vw - 42px);
+    overflow-x: scroll;
+
+    .overall-column {
+      min-width: unset;
+    }
+  }
+}
+
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  border: lightgray 1px solid;
+}
+
+.stats-header {
+  display: flex;
+  height: 60px;
+}
+
+.stats-cell-s {
+  flex-grow: 1;
+}
+
+.stats-cell-m {
+  flex-grow: 2;
+}
+
+.stats-cell-l {
+  flex-grow: 3;
+}
+
+.stats-cell-xl {
+  flex-grow: 4;
+}
+
+.stats-cell {
+  height: 40px;
+
+  &.scoresheet-view {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.slot-info {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  padding: 4px;
+  justify-content: unset !important;
+
+  &.spreadsheet-view {
+    width: 160px;
+  }
+}
+
+.header-text {
+  font-size: 18px;
+}
+
+.header-subtext {
+  font-size: 10px;
+  //text-wrap: nowrap;
+  line-height: 12px;
+}
+
+.center-text {
+  flex-grow: 1;
+  text-align: center;
+  justify-content: center;
+}
+
+.score-text {
+  text-wrap: nowrap;
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+}
+
+.scoresheet-score-wrapper {
+  display: flex;
+}
+
+.scoresheet-score {
+  cursor: pointer;
+
+  &.add-score-icon {
+    height: 16px;
+
+    mat-icon {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+    }
+  }
+
+  &:hover {
+    color: var(--custom-theme-palette-400);
+  }
+}

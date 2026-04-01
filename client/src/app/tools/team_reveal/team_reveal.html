@@ -1,0 +1,96 @@
+<div *ngIf="!teamView" class="stream-area" [style]="{'background-image': 'url(' + background + ')'}">
+  <!--<div class="mat-headline-2 label">TTF Team Reveal</div>-->
+  <div class="slots-area">
+    <div *ngFor="let slot of slots; index as i" class="slot">
+      <span
+          *ngFor="let slotRow of slot.slotRows"
+          class="slot-row"
+          [ngStyle]="{'margin-top': getMargin(slotRow.offset),
+                      'transition-duration.ms': slot.spinSpeed,
+                      'opacity': slotRow.visible ? 1 : 0,
+                      'color': slotRow.offset == 0 ? 'rgb(179,61,4)' : 'rgb(207,85,37)'
+                    }">
+        {{ getPlayer(i, slotRow.playerIndex) }}
+      </span>
+    </div>
+  </div>
+  <div class="teams-area">
+    <!--<div class="mat-headline-3 label">Teams</div>-->
+    <div class="teams">
+      <ng-container *ngFor="let team of teams; index as j">
+        <div *ngIf="isOnCurrentPage(j)" class="team" [ngClass]="{'current-team': j == currentTeamIndex}">
+          <div *ngFor="let player of team" class="team-player">{{ player }}</div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>
+<div *ngIf="teamView" class="stream-area-2" [style]="{'background-image': 'url(' + background2 + ')'}">
+  <div class="team-view-teams">
+    <div *ngFor="let team of teams" class="team-view-team">
+      <div *ngFor="let player of team" class="team-view-player">{{ player }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="control-area">
+  <div *ngFor="let slot of slots; index as i" class="slot-control">
+    <div class="mat-headline-5">Slot {{ i+1 }}</div>
+    <button mat-raised-button (click)="toggleSpin(i)">Toggle Spin</button>
+    <button mat-raised-button (click)="stopSpin(i)">Slow down and stop</button>
+    <button mat-raised-button (click)="spinSlot(i)">Move one</button>
+    <button mat-raised-button (click)="moveToTeam(i)">Move to team</button>
+    <mat-checkbox [(ngModel)]="slot.stopOnPlayer">Stop on player</mat-checkbox>
+    <mat-form-field>
+      <mat-select [(ngModel)]="slot.playerToStopOn">
+        <mat-option *ngFor="let playerName of slot.players; index as j" [value]="j">{{ playerName }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Players</mat-label>
+      <textarea #playersInput matInput rows="16" (keyup)="onPlayersChange(i, playersInput.value)"></textarea>
+    </mat-form-field>
+  </div>
+  <div class="current-team-control">
+    <div class="mat-headline-5 label-2">Current Team</div>
+    <mat-form-field>
+      <mat-label>Current Team</mat-label>
+      <input matInput type="number" min="0" [max]="numTeams - 1" [(ngModel)]="currentTeamIndex">
+    </mat-form-field>
+    <button mat-raised-button (click)="moveAllToTeam()">Move all to team</button>
+    <button mat-raised-button (click)="pageUp()">Page Up</button>
+    <button mat-raised-button (click)="pageDown()">Page Down</button>
+    <button mat-raised-button (click)="toggleTeamView()">Toggle Team View</button>
+  </div>
+  <div class="teams-control">
+    <div class="mat-headline-5 label-2">Teams</div>
+    <div class="team-inputs">
+      <mat-form-field *ngFor="let unused of fillerArray; index as i">
+        <mat-label>Team {{ i }}</mat-label>
+        <input #teamInput matInput (keyup)="onTeamChange(i, teamInput.value)">
+      </mat-form-field>
+    </div>
+  </div>
+</div>
+
+<div class="settings-area">
+  <form [formGroup]="settingsForm" (ngSubmit)="updateSettings()" class="settings-form" autocomplete="off">
+    <mat-form-field>
+      <mat-label>Background URL</mat-label>
+      <input matInput type="text" formControlName="background">
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Background URL 2</mat-label>
+      <input matInput type="text" formControlName="background2">
+    </mat-form-field>
+    <button
+      mat-raised-button
+      class="update-button"
+      type="submit"
+      color="primary"
+      [disabled]="!settingsForm.valid || !settingsHasChanges()"
+    >
+      Update
+    </button>
+  </form>
+</div>

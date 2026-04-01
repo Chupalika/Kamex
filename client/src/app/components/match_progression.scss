@@ -1,0 +1,34 @@
+.score-container {
+  display: flex;
+  flex-direction: column;
+  width: 500px;
+  
+  .match-event-form-row {
+    display: flex;
+    flex-direction: row;
+    margin-top: 5px;
+
+    .drag-handle {
+      cursor: grab;
+      margin: 13px 13px 0 0;
+    }
+
+    .match-event-value {
+      //display: flex;
+    }
+
+    .value-editor {
+      margin-right: 10px;
+    }
+  }
+
+  .edit-buttons {
+    display: flex;
+    margin-top: 20px;
+    justify-content: end;
+
+    .edit-button {
+      margin-left: 10px;
+    }
+  }
+}

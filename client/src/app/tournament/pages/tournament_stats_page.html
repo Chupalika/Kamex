@@ -1,0 +1,316 @@
+<div *ngIf="loadingTournament" class="mat-headline-5">Loading...</div>
+<div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">Tournament "{{ acronym }}" doesn't exist or failed to load!</div>
+
+<div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+  <div class="mat-headline-5">Stats for {{ tournament.name }}</div>
+
+  <item-selector
+      [labels]="getRoundlabels()"
+      [selectedIndex]="selectedRoundIndex"
+      (selectedIndexChange)="switchSelectedRoundIndex($event)"
+  ></item-selector>
+
+  <div *ngIf="loadingRound" class="mat-headline-6">Loading Round...</div>
+  <div *ngIf="loadingStats" class="mat-headline-6">Loading Stats...</div>
+
+  <ng-container *ngIf="!loadingRound && !loadingStats">
+    <div *ngIf="selectedTournamentRound?.mappoolWip && !canViewHiddenMappool()" class="mat-headline-6">Mappool is not currently public!</div>
+    <div *ngIf="selectedTournamentRound?.scoresheetWip && !canViewHiddenScoresheet()" class="mat-headline-6">Scoresheet is not currently public!</div>
+  </ng-container>
+
+  <div *ngIf="selectedTournamentRound && !loadingRound && !loadingStats &&
+              (!selectedTournamentRound.mappoolWip || canViewHiddenMappool()) &&
+              (!selectedTournamentRound.scoresheetWip || canViewHiddenScoresheet())" class="round-container">
+    <form [formGroup]="settingsForm" class="settings-container">
+      <div class="settings-options">
+        <mat-form-field appearance="outline">
+          <mat-label>Display</mat-label>
+          <mat-select formControlName="displayMode">
+            <mat-option value="leaderboard">Leaderboard</mat-option>
+            <mat-option value="scoresheet">Scoresheet</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" *ngIf="tournament.enableTeams">
+          <mat-label>Whomst</mat-label>
+          <mat-select formControlName="playerOrTeamStats" (change)="recalcStats()">
+            <mat-option value="player">Players</mat-option>
+            <mat-option value="team">Teams</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field *ngIf="displayModeFormControl.value === 'leaderboard'" appearance="outline">
+          <mat-label>Sort Method</mat-label>
+          <mat-select formControlName="sortMethod" (selectionChange)="recalcStats()">
+            <mat-option value="ranksum">Rank Sum/Avg</mat-option>
+            <mat-option value="totalscore">Total Score</mat-option>
+            <mat-option value="zscore">Z-Score</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="combinedView">Combined View</mat-checkbox>
+        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="detailedStats">Detailed Stats</mat-checkbox>
+        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="ignoreZero" (change)="recalcStats()">Ignore Zero Scores</mat-checkbox>
+        <button *ngIf="displayModeFormControl.value === 'leaderboard' && canAssignSeeds" mat-raised-button type="button" color="primary" (click)="assignSeeds()" [disabled]="isTourneyConcluded">Assign Seeds</button>
+        <button
+          *ngIf="displayModeFormControl.value === 'leaderboard' && canAssignSeeds"
+          mat-raised-button type="button"
+          color="primary"
+          (click)="generateAndCopyBracketJson()"
+          matTooltip="Generate a bracket.json with seeding results using the leaderboard from the currently selected round and copy it to clipboard"
+        >
+          Copy Bracket JSON
+        </button>
+        <button
+          *ngIf="displayModeFormControl.value === 'leaderboard'"
+          mat-raised-button type="button"
+          color="primary"
+          (click)="copytable()"
+          matTooltip="Copy the currently displayed table to clipboard, formatted to be pasted into a spreadsheet"
+        >
+          Copy Table
+        </button>
+      </div>
+      <item-selector
+          *ngIf="!combinedViewFormControl.value && displayModeFormControl.value !== 'scoresheet'"
+          class="selector"
+          [labels]="getSlotLabels()"
+          [defaultLabel]="'Overall'"
+          [selectedIndex]="selectedSlotIndex"
+          (selectedIndexChange)="switchSelectedSlotIndex($event)"
+      ></item-selector>
+    </form>
+
+    <div *ngIf="displayModeFormControl.value === 'leaderboard'" class="stats-container" [class.mobile-mode]="mobileMode">
+      <div *ngIf="combinedViewFormControl.value || selectedSlotIndex == -1" class="stats-column overall-column">
+        <mat-table [dataSource]="playerOrTeamStatsFormControl.value === 'team' ? overallTeamRanking : overallPlayerRanking">
+          <ng-container matColumnDef="rank">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+              <span class="header-text">Rank</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.rank }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="playerName">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-m">
+              <span class="header-text">{{ playerOrTeamStatsFormControl.value === 'player' ? "Player" : "Team" }}</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">
+              <span
+                *ngIf="playerOrTeamStatsFormControl.value === 'player'"
+                [hovercardComponent]="TournamentPlayerCard"
+                [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
+              >
+                {{ element.playerName }}
+              </span>
+              <span
+                *ngIf="playerOrTeamStatsFormControl.value === 'team'"
+                [hovercardComponent]="TournamentTeamCard"
+                [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode }"
+              >
+                {{ element.teamName }}
+              </span>
+            </mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="numMaps">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+              <span class="header-text">Num Maps</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.numMaps }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="rankSum">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+              <span class="header-text">Rank {{ ignoreZeroFormControl.value ? 'Avg' : 'Sum' }}</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">
+              {{ ignoreZeroFormControl.value ? formatAvg(element.rankSum / element.numMaps) : element.rankSum }}
+            </mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="scoreSum">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
+              <span class="header-text">Score Sum</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element.scoreSum }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="zscoreSum">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
+              <span class="header-text">Z-Score Sum</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element.zscoreSum.toFixed(3) }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="overall">
+            <mat-header-cell *matHeaderCellDef class="stats-header center-text" [attr.colspan]="overallColumnNames.length">
+              <span class="header-text">Overall</span>
+            </mat-header-cell>
+          </ng-container>
+
+          <mat-header-row *matHeaderRowDef="['overall']"></mat-header-row>
+          <mat-header-row *matHeaderRowDef="overallColumnNames"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: overallColumnNames;"></mat-row>
+        </mat-table>
+      </div>
+    
+      <ng-container *ngFor="let slot of sortedSlots; index as i">
+        <div
+            class="stats-column"
+            *ngIf="combinedViewFormControl.value || selectedSlotIndex == i"
+            [style.minWidth.px]="400 - (combinedViewFormControl.value * 200) + (detailedStatsFormControl.value * 200)"
+        >
+          <mat-table [dataSource]="playerOrTeamStatsFormControl.value === 'team' ?
+                                   (combinedViewFormControl.value ? slotTeamRankingsSorted.get(slot.label)! : slotTeamRankings.get(slot.label)!) :
+                                   (combinedViewFormControl.value ? slotPlayerRankingsSorted.get(slot.label)! : slotPlayerRankings.get(slot.label)!)"
+          >
+            <ng-container matColumnDef="rank">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
+                <span class="header-text">Rank</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element.rank }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="playerName">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-l">
+                <span class="header-text">{{ playerOrTeamStatsFormControl.value === 'player' ? "Player" : "Team" }}</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">
+                <span
+                  *ngIf="playerOrTeamStatsFormControl.value === 'player'"
+                  [hovercardComponent]="TournamentPlayerCard"
+                  [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
+                >
+                  {{ element.playerName }}
+                </span>
+                <span
+                  *ngIf="playerOrTeamStatsFormControl.value === 'team'"
+                  [hovercardComponent]="TournamentTeamCard"
+                  [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode }"
+                >
+                  {{ element.teamName }}
+                </span>
+              </mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="score">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
+                <span class="header-text">Score</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">
+                <span class="score-text">
+                  <div [ngClass]="{ 'scoresheet-score': !!element?.score }" (click)="openScoreDetails2(slot, element)">{{ element?.score ?? "" }}</div>
+                  <div *ngIf="combinedViewFormControl.value && element">(#{{ element.rank }})</div>
+                </span>
+              </mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="zscore">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
+                <span class="header-text">Z-Score</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">
+                <span class="score-text">{{ element?.zscore.toFixed(3) ?? "" }}</span>
+              </mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="accuracy">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+                <span class="header-text">Accuracy</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element ? (element.accuracy * 100).toFixed(2) : "" }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="countOk">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+                <span class="header-text">100s</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element?.countOk ?? "" }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="countMeh">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+                <span class="header-text">50s</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element?.countMeh ?? "" }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="countMiss">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+                <span class="header-text">0s</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element?.countMiss ?? "" }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="mods">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
+                <span class="header-text">Mods</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element ? getModsString(element.mods) : "" }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="slotInfo">
+              <mat-header-cell *matHeaderCellDef class="stats-header slot-info center-text" [attr.colspan]="getSlotColumnNames().length">
+                <span class="header-text" [hovercardComponent]="TournamentSlotCard" [hovercardData]="{ slot: slot, category: getCategory(slot) }">{{ slot.label }}</span>
+                <span class="header-subtext">{{ slot.beatmap.artist }} - {{ slot.beatmap.title }} [{{ slot.beatmap.difficultyName }}]</span>
+              </mat-header-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="['slotInfo']"></mat-header-row>
+            <mat-header-row *matHeaderRowDef="getSlotColumnNames()"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: getSlotColumnNames();"></mat-row>
+          </mat-table>
+        </div>
+      </ng-container>
+    </div>
+
+    <div *ngIf="displayModeFormControl.value === 'scoresheet'" class="stats-container" [class.mobile-mode]="mobileMode">
+      <div class="stats-column overall-column spreadsheet-view" *ngIf="playerOrTeamStatsFormControl.value === 'team'">
+        <mat-table [dataSource]="alphaSortedTeams">
+          <ng-container matColumnDef="teamName">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-m">
+              <span class="header-text">Team</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element._id) + 'px'">
+              <span
+                [hovercardComponent]="TournamentTeamCard"
+                [hovercardData]="{ team: getTeam(element._id), gameMode: gameMode }"
+              >
+                {{ element.name }}
+              </span>
+            </mat-cell>
+          </ng-container>
+
+          <mat-header-row *matHeaderRowDef="['teamName']"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: ['teamName'];"></mat-row>
+        </mat-table>
+      </div>
+
+      <div class="stats-column overall-column spreadsheet-view" *ngIf="playerOrTeamStatsFormControl.value === 'player'">
+        <mat-table [dataSource]="alphaSortedPlayers">
+          <ng-container matColumnDef="playerName">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-m">
+              <span class="header-text">Player</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element.playerId) + 'px'">
+              <span
+                [hovercardComponent]="TournamentPlayerCard"
+                [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
+              >
+                {{ element.username }}
+              </span>
+            </mat-cell>
+          </ng-container>
+
+          <mat-header-row *matHeaderRowDef="['playerName']"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: ['playerName'];"></mat-row>
+        </mat-table>
+      </div>
+      
+      <ng-container *ngFor="let slot of sortedSlots; index as i">
+        <div class="stats-column">
+          <mat-table [dataSource]="playerOrTeamStatsFormControl.value === 'team' ? (alphaSortedSlotScoresForTeams.get(slot.label) || []) : (alphaSortedSlotScoresForPlayers.get(slot.label) || [])">
+            <ng-container matColumnDef="score">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m slot-info center-text spreadsheet-view">
+                <span class="header-text" [hovercardComponent]="TournamentSlotCard" [hovercardData]="{ slot: slot, category: getCategory(slot) }">{{ slot.label }}</span>
+                <span class="header-subtext">{{ slot.beatmap.artist }} - {{ slot.beatmap.title }} [{{ slot.beatmap.difficultyName }}]</span>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m scoresheet-view" [style.height]="getCellHeight(playerOrTeamStatsFormControl.value === 'team' ? element.team._id : element.player.playerId) + 'px'">
+                <div class="scoresheet-score-wrapper" *ngFor="let score of element?.scores ?? []">
+                  <div class="scoresheet-score" (click)="openScoreDetails(slot, element, score)">{{ score.score }}</div>
+                </div>
+                <div *ngIf="canEditStats" class="scoresheet-score add-score-icon" (click)="openScoreDetails(slot, element, undefined, true)"><mat-icon>add</mat-icon></div>
+              </mat-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="['score']"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: ['score'];"></mat-row>
+          </mat-table>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

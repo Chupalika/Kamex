@@ -1,0 +1,7 @@
+<mat-toolbar class="tournament-round-nav-bar">
+  <ng-container *ngFor="let round of rounds; index as i">
+    <mat-toolbar-row>
+      <button mat-button [color]="selectedRoundIndex == i ? 'accent' : 'primary'" (click)="switchRound.emit(i)">{{ round.name }}</button>
+    </mat-toolbar-row>
+  </ng-container>
+</mat-toolbar>

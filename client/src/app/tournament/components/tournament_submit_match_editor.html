@@ -1,0 +1,48 @@
+<form [formGroup]="submitMatchForm" (ngSubmit)="submitMatch()" class="tourney-form" autocomplete="off" [ngClass]="{'wide': generateMatchProgressionFormControl.value}">
+    <mat-form-field *ngIf="!this.match">
+      <mat-label>ID</mat-label>
+      <mat-select formControlName="id" (selectionChange)="switchSelectedMatch($event)">
+        <mat-option value=""></mat-option>
+        <mat-option *ngFor="let match of matches" [value]="match._id">{{ match.id }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-checkbox formControlName="generateMatchProgression">Generate Match Progression</mat-checkbox>
+    <ng-container formArrayName="participants">
+      <div class="mat-body-1 participants-header">Participants</div>
+      <div *ngIf="getParticipantsFormGroups().length == 0" class="mat-body-1">None</div>
+      <div *ngIf="getParticipantsFormGroups().length > 0">
+        <ng-container *ngFor="let participantForm of getParticipantsFormGroups()">
+          <div class="participant-form-row" [formGroup]="participantForm" cdkDrag>
+            <div class="participant-name">{{ idToNameMap.get(participantForm.value.playerOrTeam) }}</div>
+            <mat-form-field appearance="outline">
+              <mat-label>Score</mat-label>
+              <input matInput type="number" formControlName="score">
+            </mat-form-field>
+            <mat-form-field appearance="outline" *ngIf="generateMatchProgressionFormControl.value">
+              <mat-label>Roll</mat-label>
+              <input matInput type="number" formControlName="roll">
+            </mat-form-field>
+            <mat-form-field appearance="outline" *ngIf="generateMatchProgressionFormControl.value">
+              <mat-label>Ban</mat-label>
+              <input matInput type="text" formControlName="ban">
+            </mat-form-field>
+            <mat-form-field appearance="outline" *ngIf="generateMatchProgressionFormControl.value">
+              <mat-label>Turn Order</mat-label>
+              <input matInput type="number" formControlName="turnOrder">
+            </mat-form-field>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+    <mat-form-field>
+      <mat-label>Match IDs</mat-label>
+      <input matInput type="text" formControlName="matchIds">
+    </mat-form-field>
+    <button
+        mat-raised-button
+        type="submit"
+        color="primary"
+        [disabled]="!submitMatchForm.valid || requestInProgress || !hasChanges()">
+      Submit
+    </button>
+  </form>

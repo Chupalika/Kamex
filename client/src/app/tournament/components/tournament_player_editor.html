@@ -1,0 +1,29 @@
+<form [formGroup]="editPlayerForm" (ngSubmit)="updatePlayer()" class="tourney-form" autocomplete="off">
+  <mat-form-field>
+    <mat-label>Player ID</mat-label>
+    <input matInput type="number" formControlName="playerId">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Seed</mat-label>
+    <input matInput type="text" formControlName="seed">
+  </mat-form-field>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="submit"
+    color="primary"
+    [disabled]="disabled || !editPlayerForm.valid || requestInProgress || !hasChanges()"
+  >
+    {{ player ? "Update" : "Add" }}
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="primary"
+    (click)="removePlayer()"
+    [disabled]="disabled || !player || requestInProgress"
+  >
+    Remove
+  </button>
+</form>

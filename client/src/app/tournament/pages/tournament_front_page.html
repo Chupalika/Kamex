@@ -1,0 +1,20 @@
+<div class="custom-theme">
+  <div *ngIf="loading" class="mat-headline-5">Loading...</div>
+  <div *ngIf="!loading && !tournament" class="mat-headline-5">Tournament "{{ acronym }}" doesn't exist or failed to load!</div>
+  <div *ngIf="!loading && tournament" class="front-page-container">
+    <img *ngIf="tournament.bannerLink" class="tourney-banner" [src]="tournament.bannerLink" />
+    <div class="front-page-header">
+      <div class="mat-headline-4">{{ tournament.name }}</div>
+      <div class="mat-body-1">Current status: <span class="tournament-progress">{{ tournament.progress }}</span></div>
+      <div class="links-button" *ngIf="tournament.links.length > 0">
+        <button mat-raised-button color="primary" [matMenuTriggerFor]="linksMenu">Links</button>
+        <mat-menu #linksMenu="matMenu">
+          <a *ngFor="let link of tournament.links" mat-menu-item target="_blank" [href]="link.link">{{ link.label }}</a>
+        </mat-menu>
+      </div>
+    </div>
+    <div class="front-page-body mat-elevation-z4">
+      <markdown [data]="tournament.description"></markdown>
+    </div>
+  </div>
+</div>

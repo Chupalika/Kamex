@@ -1,0 +1,42 @@
+<mat-toolbar *ngIf="!isVertical" class="selector mat-elevation-z4" [class.custom-theme]="customThemeEnabled">
+  <span *ngIf="labels.length === 0 && !defaultLabel">No Items</span>
+  <button
+    *ngIf="defaultLabel"
+    mat-raised-button
+    [color]="selectedIndex == -1 ? 'accent' : 'primary'"
+    (click)="switchSelectedIndex(-1)"
+  >
+    {{ defaultLabel }}
+  </button>
+  <button
+    *ngFor="let label of labels; index as i"
+    mat-raised-button
+    [color]="selectedIndex == i ? 'accent' : 'primary'"
+    (click)="switchSelectedIndex(i)"
+  >
+    {{ label }}
+  </button>
+</mat-toolbar>
+
+<mat-toolbar *ngIf="isVertical" class="selector column mat-elevation-z4" [class.custom-theme]="customThemeEnabled">
+  <mat-toolbar-row *ngIf="defaultLabel">
+    <button
+      mat-button
+      class="vertical"
+      [color]="selectedIndex == -1 ? 'accent' : 'primary'"
+      (click)="switchSelectedIndex(-1)"
+    >
+      {{ defaultLabel }}
+    </button>
+  </mat-toolbar-row>
+  <mat-toolbar-row *ngFor="let label of labels; index as i">
+    <button
+      mat-button
+      class="vertical"
+      [color]="selectedIndex == i ? 'accent' : 'primary'"
+      (click)="switchSelectedIndex(i)"
+    >
+      {{ label }}
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>

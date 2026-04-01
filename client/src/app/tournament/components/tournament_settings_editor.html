@@ -1,0 +1,229 @@
+<form [formGroup]="tournamentForm" (ngSubmit)="updateTournament()" class="tourney-form" autocomplete="off">
+  <mat-form-field>
+    <mat-label>Name</mat-label>
+    <input matInput type="text" formControlName="name">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Acronym</mat-label>
+    <input matInput type="text" formControlName="acronym">
+  </mat-form-field>
+
+  <mat-checkbox formControlName="unlisted">Unlisted</mat-checkbox>
+
+  <div *ngIf="initialTournament" class="progress-stage-container">
+    <div class="mat-headline-6">Progress Stage</div>
+    <div class="mat-body-1 progress-stages">
+      <span [ngClass]="{'inactive': initialTournament.progress !== 'planning'}">Planning</span>
+      <mat-icon class="info-icon" matTooltip="Settings can be edited, but rounds can't be created yet">info</mat-icon> - 
+      <span [ngClass]="{'inactive': initialTournament.progress !== 'registration'}">Registration</span>
+      <mat-icon class="info-icon" matTooltip="Rounds can be created, and some main settings are locked in place">info</mat-icon> - 
+      <span [ngClass]="{'inactive': initialTournament.progress !== 'ongoing'}">Ongoing</span>
+      <mat-icon class="info-icon" matTooltip="Registraion settings are locked, while rounds, players, staff, etc. can still be edited">info</mat-icon> - 
+      <span [ngClass]="{'inactive': initialTournament.progress !== 'concluded'}">Concluded</span>
+      <mat-icon class="info-icon" matTooltip="Everything is locked in place">info</mat-icon>
+    </div>
+    <button
+        mat-raised-button
+        class="advance-stage-button"
+        type="button"
+        color="primary"
+        (click)="advanceToNextStage()"
+        [disabled]="initialTournament.progress === TournamentProgress.CONCLUDED || requestInProgress">
+      Advance to next stage
+    </button>
+  </div>
+  
+  <mat-form-field>
+    <mat-label>Game Mode</mat-label>
+    <mat-select formControlName="gameMode">
+      <mat-option value="osu">Osu</mat-option>
+      <mat-option value="taiko">Taiko</mat-option>
+      <mat-option value="catch">Catch</mat-option>
+      <mat-option value="mania">Mania</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div class="banner-link-wrapper">
+    <mat-form-field>
+      <mat-label>Banner</mat-label>
+      <input matInput type="text" formControlName="bannerLink">
+    </mat-form-field>
+    <input type="file" style="display: none;" (change)="onFileSelectedBanner($event)" #fileUploadBanner>
+    <div
+      class="button-wrapper"
+      [matTooltip]="hasChanges() ? 'Please save pending changes first.' : 'Upload an image for the tournament banner. Saves immediately.'"
+      matTooltipPosition="right"
+    >
+      <button
+        mat-mini-fab
+        type="button"
+        color="primary"
+        (click)="fileUploadBanner.click()"
+        [disabled]="isTourneyConcluded || requestInProgress || hasChanges()"
+      >
+        <mat-icon>attach_file</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-form-field>
+    <mat-label>Description <mat-icon class="info-icon" matTooltip="Markdown format">info</mat-icon></mat-label>
+    <textarea matInput type="text" formControlName="description"></textarea>
+  </mat-form-field>
+
+  <ng-container formArrayName="links">
+    <div class="mat-body-1 slot-categories-header">
+      Links
+      <button mat-icon-button type="button" color="primary" (click)="addLink()" [disabled]="isTourneyConcluded"><mat-icon>add</mat-icon></button>
+    </div>
+    <div *ngIf="getLinksFormGroups().length == 0" class="mat-body-1">None</div>
+    <div *ngIf="getLinksFormGroups().length > 0">
+      <ng-container *ngFor="let linkForm of getLinksFormGroups(); let i = index">
+        <div class="slot-category-form-row" [formGroup]="linkForm">
+          <mat-form-field>
+            <mat-label>Label</mat-label>
+            <input matInput formControlName="label">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Link</mat-label>
+            <input matInput formControlName="link">
+          </mat-form-field>
+          <button mat-icon-button type="button" (click)="deleteLink(i)" [disabled]="isTourneyConcluded"><mat-icon>delete</mat-icon></button>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <mat-checkbox formControlName="enableTeams">Enable teams</mat-checkbox>
+
+  <span class="mat-body-1 registration-settings-header">
+    Registration settings
+    <mat-icon class="info-icon" matTooltip="Dates are only for enforcement. Tournament progress stage is not affected and should be advanced separately.">info</mat-icon>
+  </span>
+  <mat-form-field>
+    <mat-label>Registration Start Date</mat-label>
+    <input matInput type="datetime-local" formControlName="registrationStartDate">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Registration End Date</mat-label>
+    <input matInput type="datetime-local" formControlName="registrationEndDate">
+  </mat-form-field>
+  <ng-container *ngIf="enableTeamsFormControl.value">
+    <mat-form-field>
+      <mat-label>Minimum Team Size</mat-label>
+      <input matInput type="number" formControlName="minTeamSize">
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Maximum Team Size</mat-label>
+      <input matInput type="number" formControlName="maxTeamSize">
+    </mat-form-field>
+  </ng-container>
+  <mat-form-field>
+    <mat-label>Minimum Rank Requirement <mat-icon class="info-icon" matTooltip="Minimum as in the lower number. 0 for no requirement.">info</mat-icon></mat-label>
+    <input matInput type="number" formControlName="minRank">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Maximum Rank Requirement <mat-icon class="info-icon" matTooltip="Maximum as in the higher number. 0 for no requirement.">info</mat-icon></mat-label>
+    <input matInput type="number" formControlName="maxRank">
+  </mat-form-field>
+  <mat-checkbox formControlName="enforceDiscord">Enforce Discord <mat-icon class="info-icon" matTooltip="If enabled, prevents player registration if the player is not found in the Discord server specified in the Discord settings.">info</mat-icon></mat-checkbox>
+
+  <span class="mat-body-1 registration-settings-header">Discord settings</span>
+  <span class="mat-body-3 discord-bot-link"><a target="_blank" [href]="'https://discord.com/oauth2/authorize?client_id=' + discordClientId + '&scope=bot'">Bot invite link</a></span>
+  <mat-form-field>
+    <mat-label>Server ID</mat-label>
+    <input matInput type="text" formControlName="discordServerId">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Log Channel ID</mat-label>
+    <input matInput type="text" formControlName="discordLogChannelId">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Player Role ID</mat-label>
+    <input matInput type="text" formControlName="discordPlayerRoleId">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Match Reminder Channel ID</mat-label>
+    <input matInput type="text" formControlName="discordMatchReminderChannelId">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Match Reminder Minutes</mat-label>
+    <input matInput type="text" formControlName="discordMatchReminderMinutes">
+  </mat-form-field>
+
+  <div class="mat-body-1 slot-categories-header">Theme</div>
+  <div class="slot-category-form-row">
+    <mat-form-field>
+      <mat-label>Primary Color (hex)</mat-label>
+      <input matInput formControlName="primaryColor">
+    </mat-form-field>
+    <mat-icon [style.color]="'#' + primaryColorFormControl.value">incomplete_circle</mat-icon>
+  </div>
+  <div class="slot-category-form-row">
+    <mat-form-field>
+      <mat-label>Accent Color (hex)</mat-label>
+      <input matInput formControlName="accentColor">
+    </mat-form-field>
+    <mat-icon [style.color]="'#' + accentColorFormControl.value">incomplete_circle</mat-icon>
+  </div>
+  <div class="slot-category-form-row">
+    <mat-form-field>
+      <mat-label>Custom font name <mat-icon class="info-icon" matTooltip="Should be available on Google Fonts">info</mat-icon></mat-label>
+      <input matInput formControlName="fontName">
+    </mat-form-field>
+  </div>
+
+  <ng-container formArrayName="slotCategories">
+    <div class="mat-body-1 slot-categories-header">
+      Slot Categories
+      <button mat-icon-button type="button" color="primary" (click)="addSlotCategory()" [disabled]="isTourneyConcluded"><mat-icon>add</mat-icon></button>
+    </div>
+    <div *ngIf="getSlotCategoriesFormGroups().length == 0" class="mat-body-1">None</div>
+    <div *ngIf="getSlotCategoriesFormGroups().length > 0" cdkDropList (cdkDropListDropped)="rearrangeSlotCategories($event)">
+      <ng-container *ngFor="let slotCategoryForm of getSlotCategoriesFormGroups(); let i = index">
+        <div class="slot-category-form-row" [formGroup]="slotCategoryForm" cdkDrag>
+          <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+          <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Color (hex)</mat-label>
+            <input matInput formControlName="color">
+          </mat-form-field>
+          <mat-icon class="color-icon" [style.color]="'#' + getColor(i)">incomplete_circle</mat-icon>
+          <mat-form-field>
+            <mat-label>Icon Link</mat-label>
+            <input matInput formControlName="iconLink">
+            <input type="file" style="display: none;" (change)="onFileSelectedCategoryIcon(slotCategoryForm.get('name')!.value, $event)" #fileUploadCategoryIcon>
+          </mat-form-field>
+          <div
+            class="button-wrapper"
+            [matTooltip]="hasChanges() ? 'Please save pending changes first.' : 'Upload an image for a slot category. Saves immediately.'"
+            matTooltipPosition="right"
+          >
+            <button
+              mat-mini-fab
+              type="button"
+              color="primary"
+              (click)="fileUploadCategoryIcon.click()"
+              [disabled]="isTourneyConcluded || requestInProgress || hasChanges()"
+            >
+              <mat-icon>attach_file</mat-icon>
+            </button>
+          </div>
+          <button mat-icon-button type="button" (click)="deleteSlotCategory(i)" [disabled]="isTourneyConcluded"><mat-icon>delete</mat-icon></button>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <button
+      mat-raised-button
+      class="submit-button"
+      type="submit"
+      color="primary"
+      [disabled]="!tournamentForm.valid || requestInProgress || !hasChanges()">
+    {{ initialTournament ? "Apply Changes" : "Create" }}
+  </button>
+</form>

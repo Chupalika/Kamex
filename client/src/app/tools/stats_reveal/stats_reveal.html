@@ -1,0 +1,70 @@
+<div *ngIf="loading" class="mat-headline-5">Loading...</div>
+<div *ngIf="!loading && !tournamentRound" class="mat-headline-5">Tournament Round "{{ roundId }}" doesn't exist!</div>
+
+<ng-container *ngIf="!loading && tournamentRound && stats">
+  <div class="stream-area" [style]="{'background-image': 'url(' + background + ')'}">
+    <div class="stats-container">
+      <div class="stats-column overall-column">
+        <mat-table [dataSource]="getOverallRanking()">
+          <ng-container matColumnDef="rank">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+              <span class="header-text">Rank</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.rank }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="playerName">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-l">
+              <span class="header-text">Player</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">{{ element.playerName }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="rankSum">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
+              <span class="header-text">Sum</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.rankSum }}</mat-cell>
+          </ng-container>
+          <mat-header-row *matHeaderRowDef="overallColumnNames"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: overallColumnNames;"></mat-row>
+        </mat-table>
+      </div>
+    
+      <div class="stats-column" *ngFor="let slot of tournamentRound.mappool.slots">
+        <mat-table [dataSource]="getSlotRankings(slot.label)">
+          <ng-container matColumnDef="score">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-l">
+              <span class="header-text center-text">
+                <img class="mod-icon" [src]="getCategoryIcon(slot)">
+              </span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">
+              <span class="score-text center-text" [ngClass]="getRankColor(element?.rank)">{{ element?.score ?? 0 }} (#{{ element?.rank ?? 0 }})</span>
+            </mat-cell>
+          </ng-container>
+          <mat-header-row *matHeaderRowDef="slotColumnNames"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: slotColumnNames;"></mat-row>
+        </mat-table>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-area">
+    <form [formGroup]="settingsForm" (ngSubmit)="updateSettings()" class="settings-form" autocomplete="off">
+      <mat-form-field>
+        <mat-label>Background URL</mat-label>
+        <input matInput type="text" formControlName="background">
+      </mat-form-field>
+      <button
+        mat-raised-button
+        class="update-button"
+        type="submit"
+        color="primary"
+        [disabled]="!settingsForm.valid || !settingsHasChanges()"
+      >
+        Update
+      </button>
+    </form>
+    <button mat-raised-button (click)="pageUp()">Page Up</button>
+    <button mat-raised-button (click)="pageDown()">Page Down</button>
+  </div>
+</ng-container>

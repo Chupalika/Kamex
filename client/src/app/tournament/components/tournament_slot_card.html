@@ -1,0 +1,43 @@
+<div class="tournament-slot-card mat-body-1 mat-elevation-z4">
+  <ng-container *ngIf="slot">
+    <div class="card-header mat-elevation-z2" [style.background-color]="'#' + backgroundColor" [style.color]="'#' + textColor">
+      <div class="download-button">
+        <a mat-icon-button type="button" [href]="'osu://b/' + slot.beatmap.beatmapId">
+          <mat-icon>download</mat-icon>
+        </a>
+      </div>
+      <div class="slot-mods">
+        <!--<img *ngFor="let mod of slot.requiredMods" class="mod-icon" [src]="getCustomModIcon(mod)" (error)="replaceWithDefaultModIcon($event, mod)" />-->
+        <img *ngIf="iconLink" class="mod-icon" [src]="iconLink">
+      </div>
+      <div class="slot-label">{{ slot.label }}</div>
+    </div>
+    <div class="card-body">
+      <div class="info-main">
+        <div class="left-side">
+          <div class="info-artist">{{ slot.beatmap.artist }}</div>
+          <div class="info-title">{{ slot.beatmap.title }}</div>
+          <div class="info-difficulty">{{ slot.beatmap.difficultyName }}</div>
+          <div class="info-mapper">Mapped by: {{ slot.beatmap.mapper }}</div>
+        </div>
+        <div class="right-side">
+          <a target="_blank" [href]="'https://osu.ppy.sh/b/' + slot.beatmap.beatmapId">
+            <img class="info-thumbnail" [src]="'https://b.ppy.sh/thumb/' + slot.beatmap.beatmapSetId + 'l.jpg'" />
+          </a>
+          <div class="info-beatmap-id"><mat-icon class="icon">confirmation_number</mat-icon> {{ slot.beatmap.beatmapId }}</div>
+        </div>
+      </div>
+      <div class="info-stats">
+        <div class="stats-star"><mat-icon>star</mat-icon> {{ starRating }}</div>
+        <div class="stats-length"><mat-icon>schedule</mat-icon> {{ displayLength }}</div>
+        <div class="stats-bpm"><mat-icon>speed</mat-icon> {{ bpm }}</div>
+      </div>
+      <div class="info-attributes">
+        <div *ngIf="[GameMode.OSU, GameMode.FRUITS].includes(slot.gameMode!)" class="attributes-cs">CS {{ cs }}</div>
+        <div class="attributes-hp">HP {{ hp }}</div>
+        <div class="attributes-od">OD {{ od }}</div>
+        <div *ngIf="[GameMode.OSU, GameMode.FRUITS].includes(slot.gameMode!)" class="attributes-ar">AR {{ ar }}</div>
+      </div>
+    </div>
+  </ng-container>
+</div>

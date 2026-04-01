@@ -1,0 +1,70 @@
+.tourney-form {
+  display: flex;
+  flex-direction: column;
+  width: 600px;
+
+  .progress-stage-container {
+    margin-bottom: 20px;
+
+    .inactive {
+      color: lightgrey;
+    }
+  }
+
+  .banner-link-wrapper {
+    display: flex;
+
+    mat-form-field {
+      flex-grow: 1;
+    }
+
+    button {
+      margin: 10px;
+    }
+  }
+}
+
+.info-icon {
+  font-size: 20px;
+  text-align: center;
+  vertical-align: middle;
+  color: grey;
+}
+
+mat-checkbox {
+  margin-bottom: 20px;
+}
+
+.slot-categories-header {
+  display: flex;
+  align-items: center;
+
+  button {
+    margin-left: 12px;
+  }
+}
+
+.slot-category-form-row {
+  display: flex;
+  align-items: baseline;
+
+  mat-form-field, .drag-handle, .color-icon, .button-wrapper {
+    margin-right: 12px;
+  }
+
+  mat-icon {
+    min-width: 24px;
+  }
+
+  .drag-handle {
+    cursor: grab;
+  }
+}
+
+.discord-bot-link {
+  margin-bottom: 10px;
+
+  a {
+    color: var(--custom-theme-palette-400);
+  }
+}

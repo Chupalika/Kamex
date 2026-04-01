@@ -1,0 +1,137 @@
+.tournament-slot-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg);
+  width: 350px;
+  height: 240px;
+  border-radius: 10px;
+  padding: 10px;
+  margin: unset;
+
+  .card-header {
+    background-color: darkgrey;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 20px;
+    position: relative;
+
+    .download-button {
+      position: absolute;
+      left: 12px;
+
+      a {
+        color: inherit;
+      }
+    }
+
+    .slot-mods {
+      position: absolute;
+      right: 12px;
+
+      .mod-icon {
+        width: 24px;
+      }
+    }
+
+    .slot-label {
+      align-self: center;
+    }
+  }
+
+  .card-body {
+    padding: 10px;
+
+    .info-main {
+      display: flex;
+      flex-direction: row;
+      height: 120px;
+      margin-bottom: 12px;
+
+      .left-side {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+
+        .info-artist, .info-difficulty, .info-mapper {
+          font-size: 12px;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          height: 24px;
+          overflow: hidden;
+        }
+    
+        .info-title {
+          font-size: 16px;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          height: 48px;
+          overflow: hidden;
+        }
+      }
+
+      .right-side {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .info-thumbnail {
+          width: 80px;
+        }
+
+        .info-buttons {
+          padding-top: 10px;
+          display: flex;
+          justify-content: space-evenly;
+
+          * {
+            cursor: pointer;
+          }
+        }
+
+        .info-beatmap-id {
+          display: flex;
+          align-items: center;
+          font-size: 12px;
+
+          .icon {
+            color: var(--custom-theme-palette-400);
+            font-size: 16px;
+            width: 16px;
+            line-height: 24px;
+            margin-right: 4px;
+          }
+        }
+      }
+    }
+
+    .info-stats {
+      display: flex;
+      flex-direction: row;
+      font-size: 14px;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        vertical-align: middle;
+      }
+
+      * {
+        flex-grow: 1;
+      }
+    }
+
+    .info-attributes {
+      display: flex;
+      flex-direction: row;
+      font-size: 14px;
+      
+      * {
+        flex-grow: 1;
+      }
+    }
+  }
+}

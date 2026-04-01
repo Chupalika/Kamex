@@ -1,0 +1,146 @@
+* {
+  font-family: "Kozuka Gothic Pro";
+  font-weight: 600;
+  color: white;
+}
+
+.mat-mdc-table {
+  background: unset;
+}
+
+.stream-area {
+  background-color: white;
+  background-size: cover;
+  width: 1600px;
+  height: 900px;
+  display: flex;
+}
+
+.stats-container {
+  display: flex;
+  flex-direction: row;
+  padding-top: 50px;
+  justify-content: center;
+}
+
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  width: 160px;
+}
+
+.overall-column {
+  min-width: 300px;
+}
+
+.stats-header {
+  display: flex;
+  height: 60px;
+}
+
+.stats-cell-s {
+  flex-grow: 1;
+}
+
+.stats-cell-m {
+  flex-grow: 2;
+}
+
+.stats-cell-l {
+  flex-grow: 3;
+}
+
+.stats-cell-xl {
+  flex-grow: 4;
+}
+
+.stats-cell {
+  height: 40px;
+}
+
+.header-text {
+  font-size: 18px;
+}
+
+.center-text {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.score-text {
+  border-radius: 15px;
+  padding: 5px 10px;
+  text-wrap: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mod-icon {
+  width: 50px;
+}
+
+.highlight-gold {
+  background-color: #FFD720;
+  color: black;
+}
+
+.highlight-silver {
+  background-color: #C0C0C0;
+  color: black;
+}
+
+.highlight-bronze {
+  background-color: #CD7F32;
+  color: black;
+}
+
+.score-percentile-10 {
+  background-color: #58bb8b;
+}
+
+.score-percentile-20 {
+  background-color: #6cb878;
+}
+
+.score-percentile-30 {
+  background-color: #80b368;
+}
+
+.score-percentile-40 {
+  background-color: #94ae5a;
+}
+
+.score-percentile-50 {
+  background-color: #a6a751;
+}
+
+.score-percentile-60 {
+  background-color: #b79f4e;
+}
+
+.score-percentile-70 {
+  background-color: #c79750;
+}
+
+.score-percentile-80 {
+  background-color: #d58e58;
+}
+
+.score-percentile-90 {
+  background-color: #e08564;
+}
+
+.score-percentile-100 {
+  background-color: #e77d73;
+}
+
+.control-area {
+  margin-top: 20px;
+  gap: 20px;
+  display: flex;
+
+  .settings-form {
+    display: flex;
+    flex-direction: column
+  }
+}

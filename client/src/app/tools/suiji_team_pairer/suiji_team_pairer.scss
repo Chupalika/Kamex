@@ -1,0 +1,106 @@
+* {
+  font-family: "Red Hat Display";
+}
+
+.label {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.label-2 {
+  margin-bottom: 20px;
+}
+
+.stream-area {
+  //margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 1600px;
+  height: 900px;
+  background-color: white;
+  background-size: cover;
+  align-items: center;
+}
+
+.slots-area {
+  //background-color: red;
+  //border: 3px solid black;
+  //border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  margin-top: 270px;
+}
+
+.slot {
+  //background-color: green;
+  //border: 3px solid black;
+  //border-radius: 3px;
+  width: 200px;
+  height: 150px;
+  display: flex;
+  flex-direction: row;
+  transition: margin 1s;
+}
+
+.slot-row {
+  width: 200px;
+  color: white;
+  font-family: "Kozuka Gothic Pro";
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 40px;
+  text-align: center;
+  position: absolute;
+  transition: margin linear, opacity linear, color linear;
+  margin-top: 48px;
+}
+
+.slot-label {
+  text-align: center;
+  width: 100%;
+  color: white;
+  font-size: 32px;
+  text-wrap: nowrap;
+}
+
+.flag {
+  width: 140px;
+  height: 94px;
+  object-fit: cover;
+}
+
+.control-area {
+  padding-top: 20px;
+  display: flex;
+  flex-direction: row;
+  background-color: white;
+
+  button {
+    margin-bottom: 10px;
+  }
+}
+
+.slot-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-right: 20px;
+
+  button {
+    margin-top: 10px;
+  }
+
+  .slot-input {
+    width: 300px;
+  }
+}
+
+.current-team-control {
+  display: flex;
+  flex-direction: column;
+  margin-right: 20px;
+
+  button {
+    margin: 10px 0 20px;
+  }
+}

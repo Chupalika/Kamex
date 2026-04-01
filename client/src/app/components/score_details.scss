@@ -1,0 +1,30 @@
+.score-container {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  
+  .score-detail {
+    display: flex;
+
+    .detail-label {
+      width: 100px;
+      align-content: center;
+    }
+
+    .detail-editor {
+      width: 270px;
+      --mat-form-field-container-height: 32px;
+      --mat-form-field-container-vertical-padding: 4px;
+    }
+  }
+
+  .edit-buttons {
+    display: flex;
+    margin-top: 20px;
+    justify-content: end;
+
+    .edit-button {
+      margin-left: 10px;
+    }
+  }
+}
