@@ -152,6 +152,16 @@ export class TournamentController {
     return await this.tournamentService.refreshPlayers(acronym);
   }
 
+  @Post(':acronym/refreshPlayer/:playerId')
+  @UseGuards(TournamentStaffRolesGuard)
+  @Permissions(TournamentStaffPermission.MANAGE_PLAYERS)
+  async refreshPlayer(
+      @Param('acronym') acronym: string,
+      @Param('playerId') playerId: string): Promise<TournamentPlayer> {
+    // console.log("refreshPlayer");
+    return await this.tournamentService.refreshPlayer(acronym, parseInt(playerId));
+  }
+
   @Post(':acronym/createTeam')
   @UseGuards(OsuAuthenticatedGuard)
   async createTeam(

@@ -1,6 +1,6 @@
 import { Component, NgModule, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { TournamentPlayer } from '../../models/models';
+import { GameMode, TournamentPlayer } from '../../models/models';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { TournamentPlayerCardModule } from 'src/app/tournament/components/tournament_player_card';
 
 @Component({
   selector: 'tournament-player-editor',
@@ -20,8 +21,10 @@ export class TournamentPlayerEditor implements OnInit, OnChanges {
   @Input() player?: TournamentPlayer;
   @Input() requestInProgress: boolean = false;
   @Input() disabled: boolean = false;
+  @Input() gameMode?: GameMode;
   @Output() submit: EventEmitter<any> = new EventEmitter();
   @Output() remove: EventEmitter<any> = new EventEmitter();
+  @Output() refresh: EventEmitter<any> = new EventEmitter();
   @Output() uploadImage: EventEmitter<any> = new EventEmitter();
 
   editPlayerForm: FormGroup;
@@ -62,6 +65,15 @@ export class TournamentPlayerEditor implements OnInit, OnChanges {
     this.submit.emit(updatedPlayer);
   }
 
+  refreshPlayer() {
+    const dialogRef = this.dialogService.open(RefreshPlayerDialog);
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.refresh.emit(this.player);
+      }
+    });
+  }
+
   removePlayer() {
     const dialogRef = this.dialogService.open(RemovePlayerDialog);
     dialogRef.afterClosed().subscribe(result => {
@@ -91,6 +103,19 @@ export class TournamentPlayerEditor implements OnInit, OnChanges {
 })
 export class RemovePlayerDialog {}
 
+@Component({
+  selector: 'refresh-player-dialog',
+  template: `<h2 mat-dialog-title>Refresh player data</h2>
+             <mat-dialog-content class="mat-typography">
+               Refresh the username, country, and rank of this player?
+             </mat-dialog-content>
+             <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
+               <button mat-raised-button color="secondary" [mat-dialog-close]="false">No</button>
+               <button mat-raised-button color="primary" [mat-dialog-close]="true">Yes</button>
+             </mat-dialog-actions>`,
+})
+export class RefreshPlayerDialog {}
+
 @NgModule({
   imports: [
     CommonModule,
@@ -103,8 +128,9 @@ export class RemovePlayerDialog {}
     MatInputModule,
     MatSelectModule,
     MatTooltipModule,
+    TournamentPlayerCardModule,
   ],
-  declarations: [ TournamentPlayerEditor, RemovePlayerDialog ],
+  declarations: [ TournamentPlayerEditor, RemovePlayerDialog, RefreshPlayerDialog ],
   exports:      [ TournamentPlayerEditor ],
   bootstrap:    [ TournamentPlayerEditor ]
 })

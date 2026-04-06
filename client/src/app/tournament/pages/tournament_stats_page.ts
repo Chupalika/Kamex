@@ -1,12 +1,13 @@
 import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import { Component, inject, Inject, NgModule, OnInit } from '@angular/core';
-import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { MatButtonModule } from "@angular/material/button";
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -151,7 +152,7 @@ export class TournamentStatsPage implements OnInit {
       this.tournament.players.forEach((player) => this.playerIdToPlayer.set(player.playerId, player));
       this.tournament.teams.forEach((team) => this.teamIdToTeam.set(team._id, team));
       this.sortedTournamentRounds = [...tournament.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
-      const latestRoundIndex = getLatestRoundIndex(tournament.rounds);
+      const latestRoundIndex = getLatestRoundIndex(this.sortedTournamentRounds);
       this.switchSelectedRoundIndex(latestRoundIndex);
       this.refreshCanEditStats();
     });
@@ -454,16 +455,16 @@ export class TournamentStatsPage implements OnInit {
   }
 
   assignSeeds() {
-    const dialogRef = this.dialogService.open(AssignSeedsDialog, { data: { type: this.playerOrTeamStatsFormControl.value } });
+    const dialogRef = this.dialogService.open(AssignSeedsDialog, { data: { type: this.playerOrTeamStatsFormControl.value, method: "overall ranking" } });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         if (this.playerOrTeamStatsFormControl.value === 'team') {
-          const seedsToAssign = this.overallTeamRanking.map((row) => ({ teamId: (row as OverallTeamStats).teamId, seed: row.rank.toString() }));
+          const seedsToAssign = this.overallTeamRanking.map((row) => ({ teamId: (row as OverallTeamStats).teamId, seed: row.rank.toString() })).filter((entry) => entry.seed <= result);
           this.tournamentsService.batchAssignTeamSeeds(this.tournament!.acronym, { teamSeeds: seedsToAssign }).subscribe(() => {
             this.snackBar.open("Team seeds assigned.", "", { duration: 10000 });
           });
         } else {
-          const seedsToAssign = this.overallPlayerRanking.map((row) => ({ playerId: (row as OverallPlayerStats).playerId, seed: row.rank.toString() }));
+          const seedsToAssign = this.overallPlayerRanking.map((row) => ({ playerId: (row as OverallPlayerStats).playerId, seed: row.rank.toString() })).filter((entry) => entry.seed <= result);
           this.tournamentsService.batchAssignPlayerSeeds(this.tournament!.acronym, { playerSeeds: seedsToAssign }).subscribe(() => {
             this.snackBar.open("Player seeds assigned.", "", { duration: 10000 });
           });
@@ -721,15 +722,18 @@ export class TournamentStatsPage implements OnInit {
 @Component({
   selector: 'assign-seeds-dialog',
   template: `<h2 mat-dialog-title>Assign {{ data.type }} seeds</h2>
-             <mat-dialog-content class="mat-typography">
-               Assign seeds to {{ data.type }}s based on the overall ranking currently shown?
+             <mat-dialog-content class="mat-typography" style="display: flex; flex-direction: column; gap: 16px;">
+               Assign seeds to {{ data.type }}s based on the {{ data.method }} currently shown?
+
+               <mat-form-field style="width: 200px;"><mat-label>Seed count</mat-label><input matInput type="number" [(ngModel)]="seedCount"></mat-form-field>
              </mat-dialog-content>
              <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
                <button mat-raised-button color="secondary" [mat-dialog-close]="false">No</button>
-               <button mat-raised-button color="primary" [mat-dialog-close]="true">Yes</button>
+               <button mat-raised-button color="primary" [mat-dialog-close]="seedCount">Yes</button>
              </mat-dialog-actions>`,
 })
 export class AssignSeedsDialog {
+  seedCount: number = 0;
   constructor(@Inject(MAT_DIALOG_DATA) public data: any) {}
 }
 
@@ -824,12 +828,14 @@ export class ScoreDetailsDialog implements OnInit {
 @NgModule({
   imports: [
     CommonModule,
+    FormsModule,
     ItemSelectorModule,
     MatButtonModule,
     MatCheckboxModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
     MatSelectModule,
     MatTableModule,
     MatToolbarModule,

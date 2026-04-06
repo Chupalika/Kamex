@@ -136,6 +136,13 @@ export class TournamentsService {
     return this.http.post(`${this.apiUrl}/${acronym}/refreshPlayers`, { withCredentials: true });
   }
 
+  refreshPlayer(acronym: string, playerId: number): Observable<TournamentPlayer> {
+    return this.http.post(`${this.apiUrl}/${acronym}/refreshPlayer/${playerId}`, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentPlayer;
+      }));
+  }
+
   removeTournamentPlayer(acronym: string, playerId: number) {
     return this.http.delete(`${this.apiUrl}/${acronym}/player/${playerId}`, { withCredentials: true });
   }

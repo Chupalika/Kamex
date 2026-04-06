@@ -1,4 +1,5 @@
 <form [formGroup]="editPlayerForm" (ngSubmit)="updatePlayer()" class="tourney-form" autocomplete="off">
+  <tournament-player-card *ngIf="player" class="tournament-card" [player]="player" [gameMode]="gameMode"></tournament-player-card>
   <mat-form-field>
     <mat-label>Player ID</mat-label>
     <input matInput type="number" formControlName="playerId">
@@ -25,5 +26,15 @@
     [disabled]="disabled || !player || requestInProgress"
   >
     Remove
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="primary"
+    (click)="refreshPlayer()"
+    [disabled]="disabled || !player || requestInProgress"
+  >
+    Refresh player data
   </button>
 </form>

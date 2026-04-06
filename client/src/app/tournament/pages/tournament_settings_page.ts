@@ -70,6 +70,12 @@ export class TournamentSettingsPage implements OnInit {
 
   playerEditorForm: FormGroup;
   selectedPlayerFormControl: FormControl;
+  teamEditorForm: FormGroup;
+  selectedTeamFormControl: FormControl;
+  staffMemberEditorForm: FormGroup;
+  selectedStaffMemberFormControl: FormControl;
+  staffRoleEditorForm: FormGroup;
+  selectedStaffRoleFormControl: FormControl;
 
   submitMatchForm: FormGroup;
   matchIdFormControl: FormControl;
@@ -87,6 +93,21 @@ export class TournamentSettingsPage implements OnInit {
       this.selectedPlayerFormControl = new FormControl("-1");
       this.playerEditorForm = new FormGroup({
         selectedPlayer: this.selectedPlayerFormControl,
+      });
+
+      this.selectedTeamFormControl = new FormControl("");
+      this.teamEditorForm = new FormGroup({
+        selectedTeam: this.selectedTeamFormControl,
+      });
+
+      this.selectedStaffMemberFormControl = new FormControl("-1");
+      this.staffMemberEditorForm = new FormGroup({
+        selectedStaffMember: this.selectedStaffMemberFormControl,
+      });
+
+      this.selectedStaffRoleFormControl = new FormControl("");
+      this.staffRoleEditorForm = new FormGroup({
+        selectedStaffRole: this.selectedStaffRoleFormControl,
       });
 
       this.matchIdFormControl = new FormControl("", [Validators.required, Validators.min(1)]);
@@ -160,8 +181,8 @@ export class TournamentSettingsPage implements OnInit {
   }
   */
 
-  refreshPlayers() {
-    const dialogRef = this.dialogService.open(RefreshPlayersDialog);
+  refreshAllPlayerData() {
+    const dialogRef = this.dialogService.open(RefreshPlayerDataDialog);
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.requestInProgress = true;
@@ -173,13 +194,31 @@ export class TournamentSettingsPage implements OnInit {
           })).subscribe((result: any) => {
             this.requestInProgress = false;
             if (result.statusCode === 207 && result.message) {
-              this.snackBar.open("Players refreshed. " + result.message, "", { duration: 20000 });
+              this.snackBar.open("Player data refreshed. " + result.message, "", { duration: 20000 });
             } else {
-              this.snackBar.open("Players refreshed.", "", { duration: 10000 });
+              this.snackBar.open("Player data refreshed.", "", { duration: 10000 });
             }
           });
       }
     });
+  }
+
+  refreshPlayerData(player: TournamentPlayer) {
+    console.log(player);
+    this.requestInProgress = true;
+        this.tournamentsService.refreshPlayer(this.acronym, player.playerId)
+          .pipe(catchError((error) => {
+            this.requestInProgress = false;
+            this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+            return throwError(error);
+          }))
+          .subscribe((refreshedPlayer) => {
+            this.requestInProgress = false;
+            const index = this.players.findIndex((p) => p.playerId === refreshedPlayer.playerId);
+            this.players[index] = refreshedPlayer;
+            this.selectedPlayer = refreshedPlayer;
+            this.snackBar.open("Player data refreshed.", "", { duration: 10000 });
+          });
   }
 
   refreshTournament(): Subscription {
@@ -258,7 +297,7 @@ export class TournamentSettingsPage implements OnInit {
     let successMessage = "";
     if (!this.selectedPlayer) {
       request = this.tournamentsService.addTournamentPlayer(this.acronym, partialPlayer.playerId, partialPlayer);
-      successMessage = "Successfully added tournament player.";
+      successMessage = "Successfully added {} as tournament player.";
     } else {
       request = this.tournamentsService.editTournamentPlayer(this.acronym, this.selectedPlayer.playerId, partialPlayer);
       successMessage = "Successfully edited tournament player.";
@@ -272,7 +311,7 @@ export class TournamentSettingsPage implements OnInit {
       this.refreshTournament().add(() => {
         this.requestInProgress = false;
         this.selectedPlayer = this.players[this.selectedPlayerIndex];
-        this.snackBar.open(successMessage, "", { duration: 10000 });
+        this.snackBar.open(successMessage.replace("{}", updatedTournamentPlayer.username), "", { duration: 10000 });
       });
     });
   }
@@ -296,8 +335,9 @@ export class TournamentSettingsPage implements OnInit {
   get teamLabels() {
     return this.teams.map((team) => team.name);
   }
-  
-  switchSelectedTeam(index: number) {
+
+  switchSelectedTeam(teamId: string) {
+    const index = this.teams.findIndex((team) => team._id === teamId);
     this.selectedTeamIndex = index;
     if (index < 0) this.selectedTeam = undefined;
     this.selectedTeam = this.teams[index];
@@ -341,7 +381,7 @@ export class TournamentSettingsPage implements OnInit {
         this.requestInProgress = false;
         const index = this.teams.findIndex((team2) => team2._id === team._id);
         if (index !== undefined) this.teams.splice(index, 1);
-        this.switchSelectedTeam(-1);
+        this.switchSelectedTeam("");
         this.snackBar.open("Successfully removed tournament team.", "", { duration: 10000 });
       });
   }
@@ -400,10 +440,11 @@ export class TournamentSettingsPage implements OnInit {
     return this.staffMembers.map((member) => member.username) ?? [];
   }
 
-  switchSelectedStaffMember(index: number) {
+  switchSelectedStaffMember(staffMemberId: number) {
+    const index = this.staffMembers.findIndex((member) => member.playerId === staffMemberId);
     this.selectedStaffMemberIndex = index;
     if (index < 0) this.selectedStaffMember = undefined;
-    else this.selectedStaffMember = this.staffMembers[index];
+    this.selectedStaffMember = this.staffMembers[index];
   }
 
   submitUpdateStaffMemberForm(formData: any) {
@@ -414,7 +455,7 @@ export class TournamentSettingsPage implements OnInit {
     let successMessage = "";
     if (!this.selectedStaffMember) {
       request = this.tournamentsService.addTournamentStaffMember(this.acronym, formData.playerId, formData.roles);
-      successMessage = "Successfully added staff member.";
+      successMessage = "Successfully added {} as staff member.";
     } else {
       request = this.tournamentsService.editTournamentStaffMember(this.acronym, formData.playerId, formData.roles);
       successMessage = "Successfully edited staff member.";
@@ -428,7 +469,7 @@ export class TournamentSettingsPage implements OnInit {
       this.refreshTournament().add(() => {
         this.requestInProgress = false;
         this.selectedStaffMember = this.staffMembers[this.selectedStaffMemberIndex];
-        this.snackBar.open(successMessage, "", { duration: 10000 });
+        this.snackBar.open(successMessage.replace("{}", updatedStaffMember.username), "", { duration: 10000 });
       });
     });
   }
@@ -453,10 +494,11 @@ export class TournamentSettingsPage implements OnInit {
     return this.staffRoles.map((role) => role.name);
   }
 
-  switchSelectedStaffRole(index: number) {
+  switchSelectedStaffRole(staffRoleId: string) {
+    const index = this.staffRoles.findIndex((role) => role._id === staffRoleId);
     this.selectedStaffRoleIndex = index;
     if (index < 0) this.selectedStaffRole = undefined;
-    else this.selectedStaffRole = this.staffRoles[index];
+    this.selectedStaffRole = this.staffRoles[index];
   }
 
   submitUpdateStaffRoleForm(formData: any) {
@@ -499,7 +541,7 @@ export class TournamentSettingsPage implements OnInit {
         this.requestInProgress = false;
         const index = this.staffRoles.findIndex((role) => role._id === staffRole._id);
         if (index !== undefined) this.staffRoles.splice(index, 1);
-        this.switchSelectedStaffRole(-1);
+        this.switchSelectedStaffRole("");
         this.snackBar.open("Successfully removed staff role.", "", { duration: 10000 });
       });
   }
@@ -763,8 +805,8 @@ export class TournamentSettingsPage implements OnInit {
 }
 
 @Component({
-  selector: 'refresh-players-dialog',
-  template: `<h2 mat-dialog-title>Refresh players</h2>
+  selector: 'refresh-player-data-dialog',
+  template: `<h2 mat-dialog-title>Refresh player data</h2>
              <mat-dialog-content class="mat-typography">
                Refresh the usernames, countries, and ranks of all registered players?
              </mat-dialog-content>
@@ -773,7 +815,7 @@ export class TournamentSettingsPage implements OnInit {
                <button mat-raised-button color="primary" [mat-dialog-close]="true">Yes</button>
              </mat-dialog-actions>`,
 })
-export class RefreshPlayersDialog {}
+export class RefreshPlayerDataDialog {}
 
 @NgModule({
   imports: [
@@ -798,7 +840,7 @@ export class RefreshPlayersDialog {}
     TournamentStaffRoleEditorModule,
     TournamentTeamEditorModule,
   ],
-  declarations: [ TournamentSettingsPage, RefreshPlayersDialog ],
+  declarations: [ TournamentSettingsPage, RefreshPlayerDataDialog ],
   exports: [ TournamentSettingsPage ],
   bootstrap: [ TournamentSettingsPage ]
 })

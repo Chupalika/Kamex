@@ -73,8 +73,10 @@
       [player]="selectedPlayer"
       [requestInProgress]="requestInProgress"
       [disabled]="isTourneyConcluded"
+      [gameMode]="tournament.gameMode"
       (submit)="submitUpdatePlayerForm($event)"
-      (remove)="removePlayer($event)">
+      (remove)="removePlayer($event)"
+      (refresh)="refreshPlayerData($event)">
     </tournament-player-editor>
   </ng-container>
 
@@ -85,21 +87,23 @@
       type="button"
       color="primary"
       [disabled]="isTourneyConcluded || requestInProgress"
-      (click)="refreshPlayers()"
+      (click)="refreshAllPlayerData()"
     >
-      Refresh Players
+      Refresh all player data
     </button>
   </ng-container>
 
   <ng-container *ngIf="isTeamsEnabled && hasPermission(TournamentStaffPermission.MANAGE_TEAMS)">
     <div class="mat-headline-5 section-label">Team Editor</div>
-    <item-selector
-      class="selector"
-      [labels]="teamLabels"
-      [selectedIndex]="selectedTeamIndex"
-      (selectedIndexChange)="switchSelectedTeam($event)"
-      [defaultLabel]="'New'"
-    ></item-selector>
+    <form [formGroup]="teamEditorForm" class="tourney-form">
+      <mat-form-field>
+        <mat-label>Team</mat-label>
+        <mat-select formControlName="selectedTeam" (selectionChange)="switchSelectedTeam($event.value)">
+          <mat-option value="">{{ "\<New\>" }}</mat-option>
+          <mat-option *ngFor="let team of teams" [value]="team._id">{{ team.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
     <tournament-team-editor
       [team]="selectedTeam"
       [players]="tournament.players"
@@ -113,13 +117,15 @@
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_STAFF_MEMBERS)">
     <div class="mat-headline-5 section-label">Staff Member Editor</div>
-    <item-selector
-      class="selector"
-      [labels]="staffMemberLabels"
-      [selectedIndex]="selectedStaffMemberIndex"
-      (selectedIndexChange)="switchSelectedStaffMember($event)"
-      [defaultLabel]="'New'"
-    ></item-selector>
+    <form [formGroup]="staffMemberEditorForm" class="tourney-form">
+      <mat-form-field>
+        <mat-label>Staff Member</mat-label>
+        <mat-select formControlName="selectedStaffMember" (selectionChange)="switchSelectedStaffMember($event.value)">
+          <mat-option value="-1">{{ "\<New\>" }}</mat-option>
+          <mat-option *ngFor="let staffMember of staffMembers" [value]="staffMember.playerId">{{ staffMember.username }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
     <tournament-staff-member-editor
       [staffMember]="selectedStaffMember"
       [staffRoles]="tournament.staffRoles"
@@ -132,13 +138,15 @@
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_STAFF_ROLES)">
     <div class="mat-headline-5 section-label">Staff Role Editor</div>
-    <item-selector
-      class="selector"
-      [labels]="staffRoleLabels"
-      [selectedIndex]="selectedStaffRoleIndex"
-      (selectedIndexChange)="switchSelectedStaffRole($event)"
-      [defaultLabel]="'New'"
-    ></item-selector>
+    <form [formGroup]="staffRoleEditorForm" class="tourney-form">
+      <mat-form-field>
+        <mat-label>Staff Role</mat-label>
+        <mat-select formControlName="selectedStaffRole" (selectionChange)="switchSelectedStaffRole($event.value)">
+          <mat-option value="">{{ "\<New\>" }}</mat-option>
+          <mat-option *ngFor="let staffRole of staffRoles" [value]="staffRole._id">{{ staffRole.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
     <tournament-staff-role-editor
       [staffRole]="selectedStaffRole"
       [requestInProgress]="requestInProgress"

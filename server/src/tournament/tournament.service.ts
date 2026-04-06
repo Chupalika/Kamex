@@ -332,7 +332,7 @@ export class TournamentService {
     }
     if (tourney.discordSettings.logChannelId) {
       const title = isForced ? "Player Added" : "Player Registered";
-      let description = `Username: ${createdTournamentPlayer.username}`;
+      let description = `Username: \`${createdTournamentPlayer.username}\``;
       if (assignRoleStatus === true) {
         description += `\nRole auto-assigned successfully`;
       }
@@ -384,7 +384,7 @@ export class TournamentService {
     }
     if (tourney.discordSettings.logChannelId) {
       const title = isForced ? "Player Removed" : "Player Unregistered";
-      let description = `Username: ${thePlayer.username}`;
+      let description = `Username: \`${thePlayer.username}\``;
       if (unassignRoleStatus === true) {
         description += `\nRole auto-unassigned successfully`;
       }
@@ -397,6 +397,30 @@ export class TournamentService {
         console.log(error);
       }
     }
+  }
+
+  async refreshPlayer(acronym: string, playerId: number): Promise<TournamentPlayer> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players");
+    if (tourney.progress === TournamentProgress.CONCLUDED) throw new ProgressLockedError();
+    // todo!
+    if (tourney.gameMode == GameMode.ALL) throw new NotImplementedException();
+
+    const player = tourney.players.find((x: TournamentPlayer) => x.playerId === playerId) as HydratedDocument<TournamentPlayer>;
+    if (!player) throw new PlayerNotRegisteredError();
+
+    const osuUser = await this.osuApiService.getUser(playerId, tourney.gameMode);
+    const fields: any = {
+      username: osuUser.username,
+      country: osuUser.country,
+    };
+    fields[`${tourney.gameMode}Rank`] = osuUser.statistics.globalRank;
+    fields[`${tourney.gameMode}PP`] = osuUser.statistics.pp;
+
+    player.username = fields.username;
+    player.country = fields.country;
+    player[`${tourney.gameMode}Rank`] = fields[`${tourney.gameMode}Rank`];
+    player[`${tourney.gameMode}PP`] = fields[`${tourney.gameMode}PP`];
+    return await player.save();
   }
 
   async refreshPlayers(acronym: string) {
@@ -1554,15 +1578,15 @@ export class TournamentService {
     // discord log
     if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
       const title = "Match submitted";
-      let description = `${caller.osuUsername} submitted results for match \`${tourneyMatch.id}\` in \`${tourneyRound.name}\`\n\n`;
+      let description = `\`${caller.osuUsername}\` submitted results for match \`${tourneyMatch.id}\` in \`${tourneyRound.name}\`\n\n`;
       description += `**Participants:**\n`;
       for (let participant of tourneyMatch.participants) {
         if (tourneyMatch.isTeamMatch) {
           const team = tourney.teams.find(t => (t as HydratedDocument<TournamentTeam>)._id.toString() === participant.playerOrTeam.toString());
-          description += `- ${team?.name}: ${participant.score}\n`;
+          description += `- \`${team?.name}\`: ${participant.score}\n`;
         } else {
           const player = tourney.players.find(p => (p as HydratedDocument<TournamentPlayer>)._id.toString() === participant.playerOrTeam.toString());
-          description += `- ${player?.username}: ${participant.score}\n`;
+          description += `- \`${player?.username}\`: ${participant.score}\n`;
         }
       }
       description += `\n**Match IDs:** ${submitMatchDto.matchIds.join(", ")}`;

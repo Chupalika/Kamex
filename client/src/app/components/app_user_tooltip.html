@@ -1,8 +1,5 @@
 <div class="wrapper">
-  <div class="row">
-    <mat-icon svgIcon="osu_logo" class="icon"></mat-icon>&nbsp;
-    <a target="_blank" [href]="href">{{ appUser?.osuId ?? osuId }}</a>
-  </div>
+  <div class="row"><mat-icon svgIcon="osu_logo" class="icon"></mat-icon>&nbsp;{{ appUser?.osuId ?? osuId }}</div>
   <div class="row" *ngIf="appUser"><mat-icon svgIcon="discord" class="icon"></mat-icon>&nbsp;{{ appUser.discordUsername || '\<unlinked\>' }}</div>
   <div class="row" *ngIf="appUser"><mat-icon svgIcon="timezone" class="icon"></mat-icon>&nbsp;UTC{{ appUser.timezone >= 0 ? '+' : '' }}{{ appUser.timezone }}</div>
 </div>

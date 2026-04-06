@@ -11,18 +11,27 @@
     flex-direction: column;
     flex-grow: 1;
     overflow: hidden;
-    text-wrap: nowrap;
 
     .info-username {
       display: flex;
       align-items: center;
       font-size: 16px;
+      text-wrap: nowrap;
 
       .flag-icon {
         width: 20px;
         height: 15px;
         margin-right: 5px;
         border-radius: 2px;
+      }
+
+      .username-text {
+        text-decoration: none;
+        color: inherit;
+
+        &:hover {
+          color: var(--custom-theme-palette-400);
+        }
       }
     }
 

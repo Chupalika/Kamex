@@ -29,7 +29,23 @@
         <mat-option value="staff">Staff</mat-option>
       </mat-select>
     </mat-form-field>
-    <div class="mat-body-1">{{ participantsCountText }}</div>
+    <div class="mat-body-1 participant-info-text">{{ participantsCountText }}</div>
+    <button
+      mat-icon-button
+      *ngIf="!isTourneyConcluded && hasPermission(TournamentStaffPermission.MANAGE_PLAYERS) && displayFormControl.value !== 'staff'"
+      color="primary"
+      [matMenuTriggerFor]="menu"
+      class="small-icon-button more-actions-button"
+    >
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item *ngIf="displayFormControl.value === 'players'" (click)="openPlayerEditor()">Player editor</button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'teams'" (click)="openTeamEditor()">Team editor</button>
+      <button mat-menu-item (click)="copyCSV()">Copy CSV</button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'players'" (click)="refreshPlayerData()">Refresh all player data</button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'players' && sortMethodFormControl.value === 'rank' && tournament.gameMode !== GameMode.ALL" (click)="assignSeeds()">Assign seeds by rank</button>
+    </mat-menu>
   </div>
   
   <div class="players-page-container">
