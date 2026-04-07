@@ -13,6 +13,11 @@ export enum TournamentProgress {
   CONCLUDED = "concluded",
 }
 
+export interface Page {
+  name: string;
+  contents: { key: string, value: string }[];
+}
+
 export interface AppUser {
   osuId: number;
   osuUsername: string;

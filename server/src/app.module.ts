@@ -10,12 +10,14 @@ import { TournamentModule } from './tournament/tournament.module';
 import { RequestLoggingMiddleware } from './log/request-logger.middleware';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { DiscordModule } from './discord/discord.module';
+import { ContentModule } from './content/content.module';
 
 @Module({
   imports: [
     AuthModule,
     CloudinaryModule,
     ConfigModule.forRoot(),
+    ContentModule,
     DiscordModule,
     LogModule,
     MongooseModule.forRootAsync({

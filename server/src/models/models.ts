@@ -10,6 +10,11 @@ export interface RequestWithUser extends Request {
 
 export type PlayerOrTeam = TournamentPlayer|TournamentTeam|Types.ObjectId;
 
+export class Content {
+  readonly key: string;
+  readonly value: string;
+}
+
 export class SlotCategory {
   readonly name?: string;
   readonly color?: string;
