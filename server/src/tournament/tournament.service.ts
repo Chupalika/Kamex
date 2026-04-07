@@ -565,6 +565,7 @@ export class TournamentService {
     await createdTournamentTeam.save();
     tourney.teams.push(createdTournamentTeam);
     await tourney.save();
+    await createdTournamentTeam.populate("players");
     return createdTournamentTeam;
   }
 
@@ -605,7 +606,7 @@ export class TournamentService {
   }
 
   async removeTeam(acronym: string, teamId: Types.ObjectId) {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("teams");
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("teams").populate({ path: "rounds", populate: { path: "matches" } });
 
     if (tourney.progress === TournamentProgress.CONCLUDED) throw new ProgressLockedError();
 
@@ -615,7 +616,8 @@ export class TournamentService {
     // remove from matches as well
     for (let round of tourney.rounds) {
       for (let match of round.matches) {
-        match.participants = match.participants.filter((participant: TournamentMatchParticipant) => `${(participant.playerOrTeam as any)._id}` !== `${teamId}`);
+        // playerOrTeam is an ObjectId here
+        match.participants = match.participants.filter((participant) => participant.playerOrTeam.toString() !== teamId.toString());
         await (match as HydratedDocument<TournamentMatch>).save();
       }
     }

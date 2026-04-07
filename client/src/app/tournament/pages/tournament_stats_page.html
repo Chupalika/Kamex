@@ -189,7 +189,7 @@
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">
                 <span class="score-text">
-                  <div [ngClass]="{ 'scoresheet-score': !!element?.score }" (click)="openScoreDetails2(slot, element)">{{ element?.score ?? "" }}</div>
+                  <div [ngClass]="{ 'scoresheet-score': !!element?.score }" (click)="openScoreDetailsViewOnly(slot, element)">{{ element?.score ?? "" }}</div>
                   <div *ngIf="combinedViewFormControl.value && element">(#{{ element.rank }})</div>
                 </span>
               </mat-cell>

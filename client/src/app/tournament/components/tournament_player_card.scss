@@ -10,7 +10,6 @@
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    overflow: hidden;
 
     .info-username {
       display: flex;
@@ -53,6 +52,7 @@
 
       .team-row {
         display: flex;
+        overflow: hidden;
 
         .team-image {
           object-fit: contain;

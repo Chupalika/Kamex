@@ -190,7 +190,7 @@ export class TournamentParticipantsPage implements OnInit {
 
   openPlayerEditor() {
     const dialogRef = this.dialogService.open(
-      PlayerEditorDialog, { data: { acronym: this.acronym, players: this.tournament!.players, gameMode: this.tournament!.gameMode } }
+      PlayerTeamEditorDialog, { data: { type: "Player", acronym: this.acronym, players: this.tournament!.players, gameMode: this.tournament!.gameMode } }
     );
     dialogRef.afterClosed().subscribe((updatedPlayers: TournamentPlayer[]) => {
       if (updatedPlayers) {
@@ -201,7 +201,15 @@ export class TournamentParticipantsPage implements OnInit {
   }
 
   openTeamEditor() {
-    const dialogRef = this.dialogService.open(TournamentTeamEditor, { data: { gameMode: this.tournament?.gameMode } });
+    const dialogRef = this.dialogService.open(
+      PlayerTeamEditorDialog, { data: { type: "Team", acronym: this.acronym, players: this.tournament!.players, teams: this.tournament!.teams, gameMode: this.tournament!.gameMode } }
+    );
+    dialogRef.afterClosed().subscribe((updatedTeams: TournamentTeam[]) => {
+      if (updatedTeams) {
+        this.tournament!.teams = updatedTeams;
+        this.sortTeams();
+      }
+    });
   }
 
   copyCSV() {
@@ -256,68 +264,118 @@ export class TournamentParticipantsPage implements OnInit {
 }
 
 @Component({
-  selector: 'player-editor-dialog',
-  template: `<h2 mat-dialog-title>Player editor</h2>
+  selector: 'player-team-editor-dialog',
+  template: `<h2 mat-dialog-title>{{ data.type }} editor</h2>
              <mat-dialog-content class="mat-typography">
-               <form [formGroup]="playerEditorForm" class="tourney-form">
-                 <mat-form-field>
-                   <mat-label>Player</mat-label>
-                   <mat-select formControlName="selectedPlayer" (selectionChange)="switchSelectedPlayer($event.value)">
-                     <mat-option value="-1">&lt;New&gt;</mat-option>
-                     <mat-option *ngFor="let player of sortedPlayers" [value]="player.playerId">{{ player.username }}</mat-option>
-                   </mat-select>
-                 </mat-form-field>
-               </form>
-               <tournament-player-editor
-                 [player]="selectedPlayer"
-                 [requestInProgress]="requestInProgress"
-                 [gameMode]="data.gameMode"
-                 (submit)="submitUpdatePlayerForm($event)"
-                 (remove)="removePlayer($event)"
-                 (refresh)="refreshPlayerData($event)">
-               </tournament-player-editor>
+               <ng-container *ngIf="data.type === 'Player'">
+                 <form [formGroup]="playerEditorForm" class="tourney-form">
+                   <mat-form-field>
+                     <mat-label>Player</mat-label>
+                     <mat-select formControlName="selectedPlayer" (selectionChange)="switchSelectedPlayer($event.value)">
+                       <mat-option value="-1">&lt;New&gt;</mat-option>
+                       <mat-option *ngFor="let player of sortedPlayers" [value]="player.playerId">{{ player.username }}</mat-option>
+                     </mat-select>
+                   </mat-form-field>
+                 </form>
+                 <tournament-player-editor
+                   [player]="selectedPlayer"
+                   [requestInProgress]="requestInProgress"
+                   [gameMode]="data.gameMode"
+                   (submit)="submitUpdatePlayerForm($event)"
+                   (remove)="removePlayer($event)"
+                   (refresh)="refreshPlayerData($event)">
+                 </tournament-player-editor>
+               </ng-container>
+               <ng-container *ngIf="data.type === 'Team'">
+                 <form [formGroup]="teamEditorForm" class="tourney-form">
+                   <mat-form-field>
+                     <mat-label>Team</mat-label>
+                     <mat-select formControlName="selectedTeam" (selectionChange)="switchSelectedTeam($event.value)">
+                       <mat-option value="-1">&lt;New&gt;</mat-option>
+                       <mat-option *ngFor="let team of sortedTeams" [value]="team._id">{{ team.name }}</mat-option>
+                     </mat-select>
+                   </mat-form-field>
+                 </form>
+                 <tournament-team-editor
+                   [team]="selectedTeam"
+                   [players]="workingPlayers"
+                   [requestInProgress]="requestInProgress"
+                   (submit)="submitUpdateTeamForm($event)"
+                   (remove)="removeTeam($event)"
+                   (uploadImage)="uploadTeamImage($event)">
+                 </tournament-team-editor>
+               </ng-container>
              </mat-dialog-content>
              <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
-               <button mat-raised-button color="secondary" [mat-dialog-close]="workingPlayers">Close</button>
+               <button mat-raised-button color="secondary" *ngIf="data.type === 'Player'" [mat-dialog-close]="workingPlayers">Close</button>
+               <button mat-raised-button color="secondary" *ngIf="data.type === 'Team'" [mat-dialog-close]="workingTeams">Close</button>
              </mat-dialog-actions>`,
 })
-export class PlayerEditorDialog {
+export class PlayerTeamEditorDialog {
   requestInProgress: boolean = false;
+
   selectedPlayer?: TournamentPlayer;
   selectedPlayerIndex = -1;
   playerEditorForm: FormGroup;
   selectedPlayerFormControl: FormControl;
   workingPlayers: TournamentPlayer[] = [];
-  
+
+  selectedTeam?: TournamentTeam;
+  selectedTeamIndex = -1;
+  teamEditorForm: FormGroup;
+  selectedTeamFormControl: FormControl;
+  workingTeams: TournamentTeam[] = [];
+
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { acronym: string, gameMode: GameMode, players: TournamentPlayer[] },
+    @Inject(MAT_DIALOG_DATA) public data: { type: "Player" | "Team", acronym: string, gameMode: GameMode, players: TournamentPlayer[], teams: TournamentTeam[] },
     private tournamentsService: TournamentsService,
     private snackBar: MatSnackBar,
-    private dialogRef: MatDialogRef<PlayerEditorDialog>
+    private dialogRef: MatDialogRef<PlayerTeamEditorDialog>
   ) {
     this.selectedPlayerFormControl = new FormControl("-1");
     this.playerEditorForm = new FormGroup({
       selectedPlayer: this.selectedPlayerFormControl,
     });
 
+    this.selectedTeamFormControl = new FormControl("-1");
+    this.teamEditorForm = new FormGroup({
+      selectedTeam: this.selectedTeamFormControl,
+    });
+
     this.dialogRef.backdropClick().subscribe(() => {
-      this.dialogRef.close(this.workingPlayers);
+      if (this.data.type === "Player") {
+        this.dialogRef.close(this.workingPlayers);
+      } else {
+        this.dialogRef.close(this.workingTeams);
+      }
     });
   }
 
   ngOnInit() {
     this.workingPlayers = [...this.data.players];
+    this.workingTeams = [...this.data.teams];
   }
 
   get sortedPlayers(): TournamentPlayer[] {
     return [...this.workingPlayers].sort((a,b) => a.username.toLowerCase() < b.username.toLowerCase() ? -1 : 1);
   }
 
+  get sortedTeams(): TournamentTeam[] {
+    return [...this.workingTeams].sort((a,b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
+  }
+
   switchSelectedPlayer(playerId: number) {
     const index = this.workingPlayers.findIndex((player) => player.playerId === playerId);
     this.selectedPlayerIndex = index;
     if (index < 0) this.selectedPlayer = undefined;
-    else this.selectedPlayer = this.data.players[index];
+    else this.selectedPlayer = this.workingPlayers[index];
+  }
+  
+  switchSelectedTeam(teamId: string) {
+    const index = this.workingTeams.findIndex((team) => team._id === teamId);
+    this.selectedTeamIndex = index;
+    if (index < 0) this.selectedTeam = undefined;
+    else this.selectedTeam = this.workingTeams[index];
   }
 
   submitUpdatePlayerForm(partialPlayer: Partial<TournamentPlayer>) {
@@ -339,6 +397,7 @@ export class PlayerEditorDialog {
       this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedTournamentPlayer) => {
+      this.requestInProgress = false;
       if (!this.selectedPlayer) {
         this.workingPlayers.push(updatedTournamentPlayer);
       } else {
@@ -346,6 +405,36 @@ export class PlayerEditorDialog {
         this.selectedPlayer = updatedTournamentPlayer;
       }
       this.snackBar.open(successMessage.replace("{}", updatedTournamentPlayer.username), "", { duration: 10000 });
+    });
+  }
+
+  submitUpdateTeamForm(partialTeam: Partial<TournamentTeam>) {
+    if (!partialTeam.name) return;
+    this.requestInProgress = true;
+
+    let request: Observable<TournamentTeam>;
+    let successMessage = "";
+    if (!this.selectedTeam) {
+      request = this.tournamentsService.addTournamentTeam(this.data.acronym, partialTeam);
+      successMessage = "Successfully added {} as tournament team.";
+    } else {
+      request = this.tournamentsService.editTournamentTeam(this.data.acronym, this.selectedTeam._id, partialTeam);
+      successMessage = "Successfully edited tournament team.";
+    }
+
+    request.pipe(catchError((error) => {
+      this.requestInProgress = false;
+      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      return throwError(error);
+    })).subscribe((updatedTournamentTeam) => {
+      this.requestInProgress = false;
+      if (!this.selectedTeam) {
+        this.workingTeams.push(updatedTournamentTeam);
+      } else {
+        this.workingTeams[this.selectedTeamIndex] = updatedTournamentTeam;
+        this.selectedTeam = updatedTournamentTeam;
+      }
+      this.snackBar.open(successMessage.replace("{}", updatedTournamentTeam.name), "", { duration: 10000 });
     });
   }
 
@@ -360,8 +449,26 @@ export class PlayerEditorDialog {
         this.requestInProgress = false;
         const index = this.workingPlayers.findIndex((player2) => player2.playerId === player.playerId);
         if (index !== undefined) this.workingPlayers.splice(index, 1);
+        this.selectedPlayerFormControl.setValue("-1");
         this.switchSelectedPlayer(-1);
         this.snackBar.open("Successfully removed tournament player.", "", { duration: 10000 });
+      });
+  }
+
+  removeTeam(team: TournamentTeam) {
+    this.requestInProgress = true;
+    this.tournamentsService.removeTournamentTeam(this.data.acronym, team._id)
+      .pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })).subscribe(() => {
+        this.requestInProgress = false;
+        const index = this.workingTeams.findIndex((team2) => team2._id === team._id);
+        if (index !== undefined) this.workingTeams.splice(index, 1);
+        this.selectedTeamFormControl.setValue("-1");
+        this.switchSelectedTeam("");
+        this.snackBar.open("Successfully removed tournament team.", "", { duration: 10000 });
       });
   }
 
@@ -379,6 +486,23 @@ export class PlayerEditorDialog {
         this.workingPlayers[index] = refreshedPlayer;
         this.selectedPlayer = refreshedPlayer;
         this.snackBar.open("Player data refreshed.", "", { duration: 10000 });
+      });
+  }
+
+  uploadTeamImage(event: any) {
+    this.requestInProgress = true;
+    const teamId = this.selectedTeam!._id;
+    this.tournamentsService.uploadTeamImage(this.data.acronym, teamId, event)
+      .pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      }))
+      .subscribe((updatedTournamentTeam) => {
+        this.requestInProgress = false;
+        this.workingTeams[this.selectedTeamIndex] = updatedTournamentTeam;
+        this.selectedTeam = updatedTournamentTeam;
+        this.snackBar.open("Successfully updated team image.", "", { duration: 10000 });
       });
   }
 }
@@ -401,7 +525,7 @@ export class PlayerEditorDialog {
         TournamentTeamEditorModule,
         TournamentStaffMemberCardModule,
     ],
-  declarations: [ TournamentParticipantsPage, PlayerEditorDialog ],
+  declarations: [ TournamentParticipantsPage, PlayerTeamEditorDialog ],
   exports: [ TournamentParticipantsPage ],
   bootstrap: [ TournamentParticipantsPage ]
 })

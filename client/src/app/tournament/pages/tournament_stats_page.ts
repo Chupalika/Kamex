@@ -473,7 +473,7 @@ export class TournamentStatsPage implements OnInit {
     });
   }
 
-  openScoreDetails2(slot: MappoolSlot, score: any) {
+  openScoreDetailsViewOnly(slot: MappoolSlot, score: any) {
     this.dialogService.open(ScoreDetailsDialog, { data: { slot, score, playerName: score.playerName ?? score.teamName, canEdit: false } });
   }
 
@@ -487,7 +487,7 @@ export class TournamentStatsPage implements OnInit {
       playerId = `${entry.team._id}`;
       playerName = this.getTeam(playerId)?.name ?? `{element.team._id}`;
     }
-    if (!isNew && (!score || score.score === 0)) return;
+    if (!isNew && !score) return;
     const slotScoresheet = this.mappedScoresheet.slotScoresheets.get(slot.label)!;
     const dialogRef = this.dialogService.open(ScoreDetailsDialog, { data: { slot, score, playerName, isNew, canEdit: this.canEditStats, acronym: this.acronym, roundId: this.selectedRoundId, slotScoresheetId: slotScoresheet._id, playerOrTeamId: playerId } });
     dialogRef.afterClosed().subscribe(result => {
