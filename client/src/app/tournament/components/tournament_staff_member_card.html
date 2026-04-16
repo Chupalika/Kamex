@@ -8,7 +8,7 @@
           [src]="'https://flagcdn.com/w20/' + staffMember.country.toLowerCase() + '.png'"
           [alt]="staffMember.country ?? ''"
         >
-        {{ staffMember.username }}
+        <a class="username-text" [href]="'https://osu.ppy.sh/users/' + staffMember.playerId" target="_blank">{{ staffMember.username }}</a>
       </div>
       <div class="info-roles">{{ roles }}</div>
     </div>

@@ -167,7 +167,7 @@ export class TournamentRegistrationPage implements OnInit {
   }
 
   get canEditTeam() {
-    return this.isTeamCaptain() && this.tournament?.progress === TournamentProgress.REGISTRATION;
+    return this.isTeamCaptain() && (this.tournament?.progress === TournamentProgress.REGISTRATION || this.tournament?.allowTeamEditAfterRegistration);
   }
 
   onFileSelected(event: any) {
@@ -175,7 +175,11 @@ export class TournamentRegistrationPage implements OnInit {
     const teamId = this.getCurrentTeam()!._id;
     this.tournamentsService.uploadTeamImage(
       this.acronym, teamId, event.target.files[0]
-    ).subscribe((updatedTeam) => {
+    ).pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+    })).subscribe((updatedTeam) => {
       this.requestInProgress = false;
       this.snackBar.open("Successfully updated team image", "", { duration: 10000 });
       const teamIndex = this.tournament?.teams.findIndex((team) => team._id === teamId);
@@ -190,7 +194,11 @@ export class TournamentRegistrationPage implements OnInit {
         this.requestInProgress = true;
         this.tournamentsService.updateTeamName(
           this.acronym, this.getCurrentTeam()!._id, result
-        ).subscribe((updatedTeam) => {
+        ).pipe(catchError((error) => {
+          this.requestInProgress = false;
+          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+          return throwError(error);
+        })).subscribe((updatedTeam) => {
           this.requestInProgress = false;
           this.snackBar.open("Successfully updated team name", "", { duration: 10000 });
           const teamIndex = this.tournament?.teams.findIndex((team) => team._id === updatedTeam._id);

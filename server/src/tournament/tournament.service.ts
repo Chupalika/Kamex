@@ -151,6 +151,7 @@ export class TournamentService {
       tourney.links = tournamentDto.links;
       tourney.slotCategories = tournamentDto.slotCategories;
       tourney.unlisted = tournamentDto.unlisted;
+      tourney.allowTeamEditAfterRegistration = tournamentDto.allowTeamEditAfterRegistration;
     }
 
     await tourney.save();
@@ -652,7 +653,7 @@ export class TournamentService {
     const theTeam = await this.tournamentTeamModel.findOne({_id: teamId}).orFail().populate("players");
 
     // Only allow team captain during registration to upload
-    if (tourney.progress !== TournamentProgress.REGISTRATION) throw new ProgressLockedError();
+    if (tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEditAfterRegistration) throw new ProgressLockedError();
     if (theTeam.players[0].playerId !== playerId) throw new NotTeamCaptainError();
 
     // Assert that the team is associated with the tourney
@@ -677,7 +678,7 @@ export class TournamentService {
     if (staffMemberUpload && [TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
     // If not a staff member upload, only allow team captain during registration to upload
-    if (!staffMemberUpload && tourney.progress !== TournamentProgress.REGISTRATION) throw new ProgressLockedError();
+    if (!staffMemberUpload && tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEditAfterRegistration) throw new ProgressLockedError();
     if (!staffMemberUpload && theTeam.players[0].playerId !== playerId) throw new NotTeamCaptainError();
 
     // Assert that the team is associated with the tourney

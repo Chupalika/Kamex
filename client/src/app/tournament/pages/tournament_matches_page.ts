@@ -155,13 +155,7 @@ export class TournamentMatchesPage implements OnInit {
 
   sortMatches() {
     if (this.sortMethodFormControl.value === "id") {
-      this.sortedMatches = this.matches.sort((a, b) => {
-        if (!Number.isNaN(parseInt(a.id)) && !Number.isNaN(parseInt(b.id))) {
-          return parseInt(a.id) < parseInt(b.id) ? -1 : 1;
-        } else {
-          return a.id < b.id ? -1 : 1;
-        }
-      });
+      this.sortedMatches = this.matches.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" }));
     } else if (this.sortMethodFormControl.value === "time") {
       this.sortedMatches = this.matches.sort((a, b) => a.time.getTime() < b.time.getTime() ? -1 : 1);
     }

@@ -21,9 +21,11 @@ export class TournamentDto {
   readonly _id: string;
   readonly name?: string;
   readonly acronym?: string;
+  readonly unlisted?: boolean;
   readonly progress?: TournamentProgress;
   readonly gameMode?: GameMode;
   readonly enableTeams?: boolean;
+  readonly allowTeamEditAfterRegistration?: boolean;
   readonly ownerId?: number;
   readonly challongeId?: string;
   readonly challongeUrl?: string;
@@ -35,7 +37,6 @@ export class TournamentDto {
   readonly description?: string;
   readonly links?: TournamentLink[];
   readonly slotCategories?: SlotCategory[];
-  readonly unlisted?: boolean;
 }
 
 export class TournamentRoundDto {

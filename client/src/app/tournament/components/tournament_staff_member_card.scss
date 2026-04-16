@@ -24,6 +24,15 @@
         margin-right: 5px;
         border-radius: 2px;
       }
+
+      .username-text {
+        text-decoration: none;
+        color: inherit;
+
+        &:hover {
+          color: var(--custom-theme-palette-400);
+        }
+      }
     }
 
     .info-roles {

@@ -33,6 +33,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
   unlistedFormControl: FormControl;
   gameModeFormControl: FormControl;
   enableTeamsFormControl: FormControl;
+  allowTeamEditAfterRegistrationFormControl: FormControl;
   bannerLinkFormControl: FormControl;
   descriptionFormControl: FormControl;
   linksFormControl: FormArray;
@@ -65,6 +66,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
     this.unlistedFormControl = new FormControl(false);
     this.gameModeFormControl = new FormControl(GameMode.OSU, [Validators.required]);
     this.enableTeamsFormControl = new FormControl(false, [Validators.required]);
+    this.allowTeamEditAfterRegistrationFormControl = new FormControl(false, [Validators.required]);
     this.bannerLinkFormControl = new FormControl("");
     this.descriptionFormControl = new FormControl("");
     this.linksFormControl = new FormArray<FormControl>([]);
@@ -93,6 +95,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       description: this.descriptionFormControl,
       links: this.linksFormControl,
       enableTeams: this.enableTeamsFormControl,
+      allowTeamEditAfterRegistration: this.allowTeamEditAfterRegistrationFormControl,
       minTeamSize: this.minTeamSizeFormControl,
       maxTeamSize: this.maxTeamSizeFormControl,
       minRank: this.minRankFormControl,
@@ -131,6 +134,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       this.bannerLinkFormControl.setValue(this.initialTournament.bannerLink);
       this.descriptionFormControl.setValue(this.initialTournament.description);
       this.enableTeamsFormControl.setValue(this.initialTournament.enableTeams);
+      this.allowTeamEditAfterRegistrationFormControl.setValue(this.initialTournament.allowTeamEditAfterRegistration);
       this.minTeamSizeFormControl.setValue(this.initialTournament.registrationSettings.minTeamSize);
       this.maxTeamSizeFormControl.setValue(this.initialTournament.registrationSettings.maxTeamSize);
       this.minRankFormControl.setValue(this.initialTournament.registrationSettings.minRank);
@@ -173,6 +177,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
         this.enforceDiscordFormControl.disable();
       }
       if ([TournamentProgress.CONCLUDED].includes(this.initialTournament.progress)) {
+        this.allowTeamEditAfterRegistrationFormControl.disable();
         this.discordServerIdFormControl.disable();
         this.discordLogChannelIdFormControl.disable();
         this.discordPlayerRoleIdFormControl.disable();
@@ -217,6 +222,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       description: formValues.description,
       links: formValues.links,
       enableTeams: formValues.enableTeams,
+      allowTeamEditAfterRegistration: formValues.allowTeamEditAfterRegistration,
       registrationSettings: {
         startDate: convertDatetimeLocalToDate(formValues.registrationStartDate),
         endDate: convertDatetimeLocalToDate(formValues.registrationEndDate),
@@ -252,6 +258,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       this.initialTournament.description !== this.descriptionFormControl.value ||
       JSON.stringify(this.initialTournament.links ?? []) !== JSON.stringify(this.linksFormControl.value) ||
       this.initialTournament.enableTeams !== this.enableTeamsFormControl.value ||
+      this.initialTournament.allowTeamEditAfterRegistration !== this.allowTeamEditAfterRegistrationFormControl.value ||
       this.initialTournament.registrationSettings.minTeamSize !== this.minTeamSizeFormControl.value ||
       this.initialTournament.registrationSettings.maxTeamSize !== this.maxTeamSizeFormControl.value ||
       this.initialTournament.registrationSettings.minRank !== this.minRankFormControl.value ||

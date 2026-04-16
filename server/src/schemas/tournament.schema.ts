@@ -19,6 +19,9 @@ export class Tournament {
   @Prop({ required: true, unique: true })
   acronym: string;
 
+  @Prop({ required: true, default: false })
+  unlisted: boolean;
+
   @Prop({ required: true, default: TournamentProgress.PLANNING })
   progress: TournamentProgress;
 
@@ -27,6 +30,9 @@ export class Tournament {
 
   @Prop({ required: true, default: false })
   enableTeams: boolean;
+
+  @Prop({ required: true, default: false })
+  allowTeamEditAfterRegistration: boolean;
 
   @Prop({ required: true, default: 1926383 })
   ownerId: number;
@@ -72,9 +78,6 @@ export class Tournament {
 
   @Prop({ required: true, default: [] })
   slotCategories: SlotCategory[];
-
-  @Prop({ required: true, default: false })
-  unlisted: boolean;
 }
 
 export const TournamentSchema = SchemaFactory.createForClass(Tournament);

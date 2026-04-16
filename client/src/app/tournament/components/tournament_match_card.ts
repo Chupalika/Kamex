@@ -88,7 +88,13 @@ export class TournamentMatchCard {
     const day = String(adjustedTime.getUTCDate()).padStart(2, "0");
     const hour = String(adjustedTime.getUTCHours()).padStart(2, "0");
     const minute = String(adjustedTime.getUTCMinutes()).padStart(2, "0");
-    return `${adjustedTime.getUTCFullYear()}-${month}-${day} ${hour}:${minute}`;
+    const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][adjustedTime.getUTCDay()];
+    const month2 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][adjustedTime.getUTCMonth()];
+    if (adjustedTime.getUTCFullYear() === new Date().getUTCFullYear()) {
+      return `${weekday} ${month2} ${day} ${hour}:${minute}`;
+    } else {
+      return `${adjustedTime.getUTCFullYear()}-${month}-${day} ${hour}:${minute}`;
+    }
   }
 
   getMatchHighestScore() {

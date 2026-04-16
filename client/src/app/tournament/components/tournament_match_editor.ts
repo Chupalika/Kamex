@@ -248,13 +248,19 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
 
   getSortedPlayers() {
     const dup = this.players.map(x => x);
-    dup.sort((a,b) => a.username < b.username ? -1 : 1);
+    dup.sort((a,b) => a.username.toLowerCase() < b.username.toLowerCase() ? -1 : 1);
     return dup;
   }
 
   getSortedTeams() {
     const dup = this.teams.map(x => x);
-    dup.sort((a,b) => a.name < b.name ? -1 : 1);
+    dup.sort((a,b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
+    return dup;
+  }
+
+  getSortedStaffMembers() {
+    const dup = this.staffMembers.map(x => x);
+    dup.sort((a,b) => a.username.toLowerCase() < b.username.toLowerCase() ? -1 : 1);
     return dup;
   }
 
@@ -285,12 +291,6 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
     const theControl = theArray.at(event.previousIndex);
     theArray.removeAt(event.previousIndex);
     theArray.insert(event.currentIndex, theControl);
-  }
-
-  getSortedStaffMembers() {
-    const dup = this.staffMembers.map(x => x);
-    dup.sort((a,b) => a.username < b.username ? -1 : 1);
-    return dup;
   }
 }
 

@@ -101,6 +101,7 @@ export interface Tournament {
   description: string;
   links: TournamentLink[];
   enableTeams: boolean;
+  allowTeamEditAfterRegistration: boolean;
   ownerId: number;
   rounds: TournamentRound[];
   players: TournamentPlayer[];
