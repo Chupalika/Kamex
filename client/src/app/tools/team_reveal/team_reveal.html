@@ -1,5 +1,4 @@
 <div *ngIf="!teamView" class="stream-area" [style]="{'background-image': 'url(' + background + ')'}">
-  <!--<div class="mat-headline-2 label">TTF Team Reveal</div>-->
   <div class="slots-area">
     <div *ngFor="let slot of slots; index as i" class="slot">
       <span
@@ -8,17 +7,21 @@
           [ngStyle]="{'margin-top': getMargin(slotRow.offset),
                       'transition-duration.ms': slot.spinSpeed,
                       'opacity': slotRow.visible ? 1 : 0,
-                      'color': slotRow.offset == 0 ? 'rgb(179,61,4)' : 'rgb(207,85,37)'
+                      'color': slotRow.offset == 0 ? mainColor : getLighterColor()
                     }">
         {{ getPlayer(i, slotRow.playerIndex) }}
       </span>
     </div>
   </div>
   <div class="teams-area">
-    <!--<div class="mat-headline-3 label">Teams</div>-->
     <div class="teams">
       <ng-container *ngFor="let team of teams; index as j">
-        <div *ngIf="isOnCurrentPage(j)" class="team" [ngClass]="{'current-team': j == currentTeamIndex}">
+        <div
+          *ngIf="isOnCurrentPage(j)"
+          class="team"
+          [ngClass]="{'current-team': j == currentTeamIndex}"
+          [ngStyle]="{'backgroundColor': j == currentTeamIndex ? mainColor : 'unset'}"
+        >
           <div *ngFor="let player of team" class="team-player">{{ player }}</div>
         </div>
       </ng-container>
@@ -46,6 +49,7 @@
         <mat-option *ngFor="let playerName of slot.players; index as j" [value]="j">{{ playerName }}</mat-option>
       </mat-select>
     </mat-form-field>
+    <mat-checkbox [(ngModel)]="slot.removeFromAllSlots">Remove from all slots</mat-checkbox>
     <mat-form-field>
       <mat-label>Players</mat-label>
       <textarea #playersInput matInput rows="16" (keyup)="onPlayersChange(i, playersInput.value)"></textarea>
@@ -82,6 +86,10 @@
     <mat-form-field>
       <mat-label>Background URL 2</mat-label>
       <input matInput type="text" formControlName="background2">
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Main Color</mat-label>
+      <input matInput type="text" formControlName="mainColor">
     </mat-form-field>
     <button
       mat-raised-button

@@ -6,9 +6,11 @@ import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Subject, Subscription, interval, timer, take } from 'rxjs';
+import tinycolor from 'tinycolor2';
 
 const TEAM_REVEAL_SETTINGS_BACKGROUND = "team_reveal_settings_background";
 const TEAM_REVEAL_SETTINGS_BACKGROUND_2 = "team_reveal_settings_background_2";
+const TEAM_REVEAL_SETTINGS_MAIN_COLOR = "team_reveal_settings_main_color";
 
 interface Slot {
   slotRows: SlotRow[];
@@ -18,6 +20,7 @@ interface Slot {
   spinEvents: Subject<number>;
   stopOnPlayer: boolean;
   playerToStopOn: number;
+  removeFromAllSlots: boolean;
 }
 
 interface SlotRow {
@@ -32,7 +35,7 @@ interface SlotRow {
   styleUrls: ['./team_reveal.scss']
 })
 export class TeamReveal {
-  numSlots: number = 5;
+  numSlots: number = 4;
   numTeams: number = 32;
   slots: Slot[] = [];
   numSlotPadRows: number = 2;
@@ -57,10 +60,12 @@ export class TeamReveal {
   teamView = false;
   background = "";
   background2 = "";
+  mainColor = "";
 
   settingsForm: FormGroup;
   backgroundFormControl: FormControl;
   background2FormControl: FormControl;
+  mainColorFormControl: FormControl;
 
   constructor() {
     //this.players = [teams.map(x => x[0]), teams.map(x => x[1]), teams.map(x => x[2]), teams.map(x => x[3])];
@@ -76,6 +81,7 @@ export class TeamReveal {
         spinEvents: new Subject<number>(),
         stopOnPlayer: false,
         playerToStopOn: 0,
+        removeFromAllSlots: false,
       };
       this.slots.push(slot);
       const offsets = Array.from({ length: 2 * this.numSlotPadRows + 1 }, (_, i) => i - this.numSlotPadRows);
@@ -106,9 +112,11 @@ export class TeamReveal {
 
     this.backgroundFormControl =  new FormControl("");
     this.background2FormControl = new FormControl("");
+    this.mainColorFormControl = new FormControl("");
     this.settingsForm = new FormGroup({
       background: this.backgroundFormControl,
       background2: this.background2FormControl,
+      mainColor: this.mainColorFormControl,
     });
   }
 
@@ -121,16 +129,23 @@ export class TeamReveal {
     this.background = this.backgroundFormControl.value;
     this.background2FormControl.setValue(localStorage.getItem(TEAM_REVEAL_SETTINGS_BACKGROUND_2) ?? "");
     this.background2 = this.background2FormControl.value;
+    this.mainColorFormControl.setValue(localStorage.getItem(TEAM_REVEAL_SETTINGS_MAIN_COLOR) ?? "");
+    this.mainColor = this.mainColorFormControl.value;
   }
 
   settingsHasChanges() {
-    return this.background !== this.backgroundFormControl.value || this.background2 !== this.background2FormControl.value;
+    return this.background !== this.backgroundFormControl.value || this.background2 !== this.background2FormControl.value || this.mainColor !== this.mainColorFormControl.value;
   }
 
   updateSettings() {
     localStorage.setItem(TEAM_REVEAL_SETTINGS_BACKGROUND, this.backgroundFormControl.value);
     localStorage.setItem(TEAM_REVEAL_SETTINGS_BACKGROUND_2, this.background2FormControl.value);
+    localStorage.setItem(TEAM_REVEAL_SETTINGS_MAIN_COLOR, this.mainColorFormControl.value);
     this.refreshSettings();
+  }
+
+  getLighterColor(): string {
+    return tinycolor(this.mainColor).lighten().toString();
   }
 
   getMargin(offset: number): string {
@@ -204,7 +219,7 @@ export class TeamReveal {
       this.slotSpinners[slotIndex] = interval(this.slots[slotIndex].spinSpeed)
         .subscribe(() => {
           if (targetPlayerIndex === undefined || slot.currentPlayerIndex === targetOffset) {
-            console.log("slowing down");
+            // console.log("slowing down");
             this.slotSpinners[slotIndex]!.unsubscribe();
             this.slotSpinners[slotIndex] = undefined;
             slowDown();
@@ -238,24 +253,46 @@ export class TeamReveal {
       slotRow.visible = slotRow.offset >= -this.numSlotPadRows + 1 && slotRow.offset <= this.numSlotPadRows - 1;
     }
     timer(slot.spinSpeed).subscribe(() => slot.spinEvents.next(slot.currentPlayerIndex));
-    console.log(slot);
+    // console.log(slot);
   }
 
-  moveToTeam(slotIndex: number) {
-    const playerIndex = this.slots[slotIndex].currentPlayerIndex;
-    const playerName = this.slots[slotIndex].players[playerIndex];
-    if (!playerName) return;
+  moveToTeam(slotIndex: number, playerName?: string) {
+    let playerIndex: number;
+    if (playerName === undefined) {
+      playerIndex = this.slots[slotIndex].currentPlayerIndex;
+      playerName = this.slots[slotIndex].players[playerIndex];
+    } else {
+      playerIndex = this.slots[slotIndex].players.indexOf(playerName);
+    }
+
+    if (!playerName || playerIndex === -1) return;
     this.teams[this.currentTeamIndex].push(playerName);
-    this.slots[slotIndex].players.splice(playerIndex, 1);
-    const playersInput = this.playersInputs.get(slotIndex)!.nativeElement;
-    playersInput.value = this.slots[slotIndex].players.join("\n");
+
+    if (this.slots[slotIndex].removeFromAllSlots) {
+      for (let i = 0; i < this.slots.length; i++) {
+        this.slots[i].players = this.slots[i].players.filter(p => p !== playerName);
+        const playersInput = this.playersInputs.get(i)?.nativeElement;
+        playersInput.value = this.slots[i].players.join("\n");
+      }
+    } else {
+      this.slots[slotIndex].players.splice(playerIndex, 1);
+      const playersInput = this.playersInputs.get(slotIndex)!.nativeElement;
+      playersInput.value = this.slots[slotIndex].players.join("\n");
+    }
+
     const teamInput = this.teamInputs.get(this.currentTeamIndex)!.nativeElement;
     teamInput.value = this.teams[this.currentTeamIndex].join("/");
   }
 
   moveAllToTeam() {
+    const playerNames: string[] = [];
     for (let i = 0; i < this.numSlots; i++) {
-      this.moveToTeam(i);
+      const idx = this.slots[i].currentPlayerIndex;
+      playerNames.push(this.slots[i].players[idx]);
+    }
+
+    for (let i = 0; i < this.numSlots; i++) {
+      this.moveToTeam(i, playerNames[i]);
     }
   }
 
@@ -265,8 +302,8 @@ export class TeamReveal {
   }
 
   onTeamChange(teamNumber: number, inputText: string) {
-    console.log(teamNumber);
-    console.log(inputText);
+    // console.log(teamNumber);
+    // console.log(inputText);
     const teamPlayers = inputText.split("/");
     this.teams[teamNumber] = teamPlayers;
   }
