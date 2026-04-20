@@ -16,7 +16,8 @@
             <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-l">
               <span class="header-text">Player</span>
             </mat-header-cell>
-            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">{{ element.playerName }}</mat-cell>
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">{{ element.playerName }}
+            </mat-cell>
           </ng-container>
           <ng-container matColumnDef="rankSum">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
@@ -29,7 +30,7 @@
         </mat-table>
       </div>
     
-      <div class="stats-column" *ngFor="let slot of tournamentRound.mappool.slots">
+      <div class="stats-column" *ngFor="let slot of sortedSlots">
         <mat-table [dataSource]="getSlotRankings(slot.label)">
           <ng-container matColumnDef="score">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-l">

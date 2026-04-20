@@ -9,8 +9,8 @@ import { MatTableModule } from '@angular/material/table';
 import { finalize, switchMap, take } from 'rxjs/operators';
 import { zip } from 'rxjs';
 
-import { Tournament, TournamentRound, TournamentStatsPlayers, TournamentScoreWithRank, TournamentRoundPlayerOverallStats, MappoolSlot } from 'src/app/models/models';
-import { calculateStats } from 'src/app/tournament/utils';
+import { Tournament, TournamentRound, TournamentStatsPlayers, TournamentScoreWithRank, TournamentRoundPlayerOverallStats, MappoolSlot, Scoresheet, Mappool } from 'src/app/models/models';
+import { calculateStats, getSortedMappool } from 'src/app/tournament/utils';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 
 const STATS_REVEAL_SETTINGS_BACKGROUND = "stats_reveal_settings_background";
@@ -30,6 +30,8 @@ export class StatsReveal {
   background = "";
   tournament?: Tournament;
   tournamentRound?: TournamentRound;
+  mappool?: Mappool;
+  scoresheet?: Scoresheet;
   loading = true;
   requestInProgress = false;
   stats?: TournamentStatsPlayers;
@@ -61,20 +63,43 @@ export class StatsReveal {
           this.tournamentsService.getTournamentRound(this.acronym, this.roundId),
         ]);
       }),
+      switchMap(([tournament, tournamentRound]) => {
+        this.tournament = tournament;
+        this.tournamentRound = tournamentRound;
+        // Fetch mappool if it's a string (ID)
+        let mappoolFetch$ = null;
+        if (typeof tournamentRound.mappool === "string") {
+          mappoolFetch$ = this.tournamentsService.getTournamentMappool(this.acronym, tournamentRound.mappool);
+        }
+        // Fetch scoresheet if it's a string (ID)
+        let scoresheetFetch$ = null;
+        if (typeof tournamentRound.scoresheet === "string") {
+          scoresheetFetch$ = this.tournamentsService.getTournamentScoresheet(this.acronym, tournamentRound.scoresheet);
+        }
+        // If neither need fetching, just return
+        if (!mappoolFetch$ && !scoresheetFetch$) {
+          return zip([Promise.resolve(tournamentRound.mappool), Promise.resolve(tournamentRound.scoresheet)]);
+        }
+        // If one or both need fetching
+        const mappoolObs = mappoolFetch$ ? mappoolFetch$ : Promise.resolve(tournamentRound.mappool);
+        const scoresheetObs = scoresheetFetch$ ? scoresheetFetch$ : Promise.resolve(tournamentRound.scoresheet);
+        return zip([mappoolObs, scoresheetObs]);
+      }),
       take(1),
       finalize(() => {this.loading = false;}),
-    ).subscribe(([tournament, tournamentRound]) => {
-      this.tournament = tournament;
-      this.tournamentRound = tournamentRound;
-      //console.log(tournamentRound);
-      this.stats = calculateStats(tournamentRound.mappool, tournamentRound.scoresheet, tournament.players);
-      //console.log(this.stats);
-
-      for (let slot of tournamentRound.mappool.slots) {
-        const scores = this.stats.slotRanking.get(slot.label)!.playerRanking;
-        this.highScorePerMap.set(slot.label, scores[0].score);
-        this.lowScorePerMap.set(slot.label, scores[scores.length-1].score);
+    ).subscribe(([mappool, scoresheet]) => {
+      if (mappool) this.mappool = mappool;
+      if (scoresheet) this.scoresheet = scoresheet;
+      if (this.mappool && this.scoresheet) {
+        this.stats = calculateStats(this.mappool, this.scoresheet, this.tournament!.players);
+        console.log(this.stats);
+        for (let slot of this.mappool.slots) {
+          const scores = this.stats.slotRanking.get(slot.label)!.playerRanking;
+          this.highScorePerMap.set(slot.label, scores[0].score);
+          this.lowScorePerMap.set(slot.label, scores[scores.length-1].score);
+        }
       }
+
     });
     this.refreshSettings();
   }
@@ -93,6 +118,10 @@ export class StatsReveal {
     this.refreshSettings();
   }
 
+  get sortedSlots() {
+    return getSortedMappool(this.tournament!, this.mappool!);
+  }
+
   getOverallRanking(): OverallStats[] {
     const overallRanking = this.stats!.overallRanking.map((x) => {
       const player = this.tournament!.players.find((y) => y.playerId === x.playerId);
@@ -100,14 +129,13 @@ export class StatsReveal {
         ...x,
         playerName: player?.username ?? "",
       };
-    });
+    }).filter((x) => x.scoreSum > 0);
     return overallRanking.slice((this.currentPage - 1) * this.rowsPerPage, (this.currentPage * this.rowsPerPage));
   }
 
   getSlotRankings(label: string): (TournamentScoreWithRank|undefined)[] {
     const slot = this.stats!.slotRanking.get(label)!;
-    const overallStatsColumn = this.stats!.overallRanking.slice((this.currentPage - 1) * this.rowsPerPage, (this.currentPage * this.rowsPerPage));
-    const ans = overallStatsColumn.map((overallStats) => slot.playerRanking.find((x) => x.playerId === overallStats.playerId));
+    const ans = this.getOverallRanking().map((overallStats) => slot.playerRanking.find((x) => x.playerId === overallStats.playerId));
     //console.log(ans);
     return ans;
   }

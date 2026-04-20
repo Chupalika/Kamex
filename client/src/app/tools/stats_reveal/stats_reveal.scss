@@ -68,6 +68,7 @@
 }
 
 .score-text {
+  color: black;
   border-radius: 15px;
   padding: 5px 10px;
   text-wrap: nowrap;
@@ -91,6 +92,13 @@
 
 .highlight-bronze {
   background-color: #CD7F32;
+  color: black;
+}
+
+.grey-bubble {
+  border-radius: 15px;
+  padding: 5px 10px;
+  background-color: #CCCCCC;
   color: black;
 }
 
