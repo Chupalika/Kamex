@@ -5,6 +5,7 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule, MatSelectChange } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { throwError } from "rxjs";
@@ -39,6 +40,7 @@ export class TournamentMatchesPage implements OnInit {
 
   sortMethodFormControl: FormControl;
   displayTimeFormControl: FormControl;
+  playerFlagsFormControl: FormControl;
 
   constructor(
     private tournamentsService: TournamentsService,
@@ -49,6 +51,7 @@ export class TournamentMatchesPage implements OnInit {
     private titleService: Title) {
       this.sortMethodFormControl = new FormControl("id");
       this.displayTimeFormControl = new FormControl("utc");
+      this.playerFlagsFormControl = new FormControl(false);
   }
 
   ngOnInit() {
@@ -312,6 +315,12 @@ export class TournamentMatchesPage implements OnInit {
     return this.tournament?.progress === TournamentProgress.CONCLUDED;
   }
 
+  canSeeMpLinks(): boolean {
+    return hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.MANAGE_MATCHES) ||
+           hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.SUBMIT_MATCHES) ||
+           hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.VIEW_WIP_SCORESHEETS);
+  }
+
   get canRegisterReferee() {
     return !this.isTourneyConcluded && hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.REGISTER_REFEREE);
   }
@@ -326,6 +335,7 @@ export class TournamentMatchesPage implements OnInit {
 
   refereeStatus(match: TournamentMatch) {
     if (!this.canRegisterReferee) return "";
+    if (match.time.getTime() < Date.now()) return "";
     else {
       const isRegistered = match.referees.some(referee => referee.playerId === this.appUser?.osuId);
       return isRegistered ? "can_unregister" : "can_register";
@@ -334,6 +344,7 @@ export class TournamentMatchesPage implements OnInit {
 
   streamerStatus(match: TournamentMatch) {
     if (!this.canRegisterStreamer) return "";
+    if (match.time.getTime() < Date.now()) return "";
     else {
       const isRegistered = match.streamers.some(streamer => streamer.playerId === this.appUser?.osuId);
       return isRegistered ? "can_unregister" : "can_register";
@@ -342,6 +353,7 @@ export class TournamentMatchesPage implements OnInit {
 
   commentatorStatus(match: TournamentMatch) {
     if (!this.canRegisterCommentator) return "";
+    if (match.time.getTime() < Date.now()) return "";
     else {
       const isRegistered = match.commentators.some(commentator => commentator.playerId === this.appUser?.osuId);
       return isRegistered ? "can_unregister" : "can_register";
@@ -447,6 +459,7 @@ export class TournamentMatchesPage implements OnInit {
         ItemSelectorModule,
         MatFormFieldModule,
         MatSelectModule,
+        MatSlideToggleModule,
         TournamentMatchCardModule,
     ],
   declarations: [ TournamentMatchesPage ],

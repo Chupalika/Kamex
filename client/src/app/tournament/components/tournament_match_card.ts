@@ -36,6 +36,7 @@ export class TournamentMatchCard {
   @Input() mobileMode: boolean = false;
   // todo: improve this to hide from api response as well
   @Input() hideLinks: boolean = false;
+  @Input() playerFlagsToggle: boolean = false;
   @Input() signupStatus: ""|"can_register"|"can_unregister" = "";
   @Input() refereeStatus: ""|"can_register"|"can_unregister" = "";
   @Input() streamerStatus: ""|"can_register"|"can_unregister" = "";
@@ -72,14 +73,22 @@ export class TournamentMatchCard {
 
   getParticipantImage(participant: TournamentMatchParticipant) {
     if (this.isPlayer(participant.playerOrTeam)) {
-      return `https://a.ppy.sh/${participant.playerOrTeam.playerId}`;
+      if (this.playerFlagsToggle) {
+        return 'https://flagcdn.com/w40/' + participant.playerOrTeam.country.toLowerCase() + '.png';
+      } else {
+        return `https://a.ppy.sh/${participant.playerOrTeam.playerId}`;
+      }
     } else {
       return participant.playerOrTeam.imageLink;
     }
   }
 
   getStaffMemberImage(staffMember: TournamentStaffMember) {
-    return `https://a.ppy.sh/${staffMember.playerId}`;
+    if (this.playerFlagsToggle) {
+      return 'https://flagcdn.com/w40/' + staffMember.country?.toLowerCase() + '.png';
+    } else {
+      return `https://a.ppy.sh/${staffMember.playerId}`;
+    }
   }
 
   getFormattedMatchTime(time: Date) {

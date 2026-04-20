@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -87,6 +88,7 @@ export class TournamentStatsPage implements OnInit {
   sortMethodFormControl: FormControl;
   ignoreZeroFormControl: FormControl;
   playerOrTeamStatsFormControl: FormControl;
+  playerFlagsFormControl: FormControl;
 
   slotColumnNames = ["rank", "playerName", "score"];
   slotColumnNamesCombined = ["score"];
@@ -125,6 +127,7 @@ export class TournamentStatsPage implements OnInit {
     this.sortMethodFormControl = new FormControl("ranksum");
     this.ignoreZeroFormControl = new FormControl(true);
     this.playerOrTeamStatsFormControl = new FormControl("player");
+    this.playerFlagsFormControl = new FormControl(false);
     this.settingsForm = new FormGroup({
       displayMode: this.displayModeFormControl,
       combinedView: this.combinedViewFormControl,
@@ -132,6 +135,7 @@ export class TournamentStatsPage implements OnInit {
       sortMethod: this.sortMethodFormControl,
       ignoreZero: this.ignoreZeroFormControl,
       playerOrTeamStats: this.playerOrTeamStatsFormControl,
+      playerFlags: this.playerFlagsFormControl,
     });
   }
 
@@ -432,6 +436,24 @@ export class TournamentStatsPage implements OnInit {
     return this.alphaSortedTeams.filter((team) => team.players.some(player => player.playerId === playerId));
   }
 
+  getPlayerImage(id: number) {
+    const player = this.getPlayer(id);
+    if (player) {
+      if (this.playerFlagsFormControl.value) {
+        return 'https://flagcdn.com/w40/' + player.country.toLowerCase() + '.png';
+      } else {
+        return `https://a.ppy.sh/${player.playerId}`;
+      }
+    } else {
+      return '';
+    }
+  }
+
+  getTeamImage(id: string) {
+    const team = this.getTeam(id);
+    return team?.imageLink ?? '';
+  }
+
   formatScore(score: Score) {
     return score.score.toLocaleString();
   }
@@ -446,6 +468,18 @@ export class TournamentStatsPage implements OnInit {
 
   getCategory(slot: MappoolSlot) {
     return this.tournament?.slotCategories.find((category) => category.name === slot.category);
+  }
+
+  getSlotScoreAverage(label: string) {
+    let slotRanking: (TournamentScoreWithRank|undefined)[] | undefined;
+    const scores: number[] = [];
+    
+    if (this.playerOrTeamStatsFormControl.value === 'player') slotRanking = this.slotPlayerRankings.get(label);
+    else slotRanking = this.slotTeamRankings.get(label);
+
+    if (!slotRanking) return 0;
+    scores.push(...slotRanking.flatMap((entry) => entry?.score ?? 0));
+    return scores.length === 0 ? 0 : scores.reduce((acc, score) => acc + score, 0) / scores.length;
   }
 
   get canAssignSeeds() {
@@ -837,6 +871,7 @@ export class ScoreDetailsDialog implements OnInit {
     MatIconModule,
     MatInputModule,
     MatSelectModule,
+    MatSlideToggleModule,
     MatTableModule,
     MatToolbarModule,
     MatTooltipModule,

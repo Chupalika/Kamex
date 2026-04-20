@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { TournamentTeam, GameMode } from '../../models/models';
+import { TournamentTeam, GameMode, TournamentPlayer } from '../../models/models';
 import { TournamentPlayerCard } from './tournament_player_card';
 import { HovercardModule } from 'src/app/components/hovercard';
 
@@ -18,6 +18,7 @@ export class TournamentTeamCard {
   @Input() gameMode?: GameMode;
   @Input() editable: boolean = false;
   @Input() mobileMode: boolean = false;
+  @Input() playerFlagsToggle: boolean = false;
 
   @ViewChild('teamName') teameNameRef?: ElementRef;
 
@@ -35,6 +36,14 @@ export class TournamentTeamCard {
 
   removePlayer(index: number) {
     console.log(index);
+  }
+
+  getPlayerImage(player: TournamentPlayer) {
+    if (this.playerFlagsToggle) {
+      return 'https://flagcdn.com/w40/' + player.country.toLowerCase() + '.png';
+    } else {
+      return `https://a.ppy.sh/${player.playerId}`;
+    }
   }
 }
 

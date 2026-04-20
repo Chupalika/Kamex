@@ -102,8 +102,11 @@ export class TournamentParticipantsPage implements OnInit {
   private seedCompare = (a: TournamentPlayer|TournamentTeam, b: TournamentPlayer|TournamentTeam) => {
     const aSeed = a.seed ? parseInt(a.seed) : Number.MAX_SAFE_INTEGER;
     const bSeed = b.seed ? parseInt(b.seed) : Number.MAX_SAFE_INTEGER;
-    if (aSeed !== bSeed) return aSeed - bSeed;
-    else return (a.seed?.toString() ?? "").localeCompare(b.seed?.toString() ?? "");
+    if (!isNaN(aSeed) && !isNaN(bSeed) && aSeed !== bSeed) return aSeed - bSeed;
+    if (a.seed === "" && b.seed === "") return 0;
+    if (a.seed === "") return 1;
+    if (b.seed === "") return -1;
+    else return (a.seed ?? "").localeCompare(b.seed ?? "");
   }
 
   sortPlayers() {

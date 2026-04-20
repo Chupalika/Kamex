@@ -48,6 +48,7 @@
         <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="combinedView">Combined View</mat-checkbox>
         <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="detailedStats">Detailed Stats</mat-checkbox>
         <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="ignoreZero" (change)="recalcStats()">Ignore Zero Scores</mat-checkbox>
+        <mat-slide-toggle [formControl]="playerFlagsFormControl">Player Flags</mat-slide-toggle>
         <button *ngIf="displayModeFormControl.value === 'leaderboard' && canAssignSeeds" mat-raised-button type="button" color="primary" (click)="assignSeeds()" [disabled]="isTourneyConcluded">Assign Seeds</button>
         <button
           *ngIf="displayModeFormControl.value === 'leaderboard' && canAssignSeeds"
@@ -88,22 +89,32 @@
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.rank }}</mat-cell>
           </ng-container>
           <ng-container matColumnDef="playerName">
-            <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-m">
+            <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-l">
               <span class="header-text">{{ playerOrTeamStatsFormControl.value === 'player' ? "Player" : "Team" }}</span>
             </mat-header-cell>
-            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">
+            <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">
               <span
                 *ngIf="playerOrTeamStatsFormControl.value === 'player'"
+                class="participant-name"
                 [hovercardComponent]="TournamentPlayerCard"
                 [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
               >
+                <img
+                  [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
+                  [src]="getPlayerImage(element.playerId)"
+                >
                 {{ element.playerName }}
               </span>
               <span
                 *ngIf="playerOrTeamStatsFormControl.value === 'team'"
+                class="participant-name"
                 [hovercardComponent]="TournamentTeamCard"
-                [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode }"
+                [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode, playerFlagsToggle: playerFlagsFormControl.value }"
               >
+                <img
+                  class="flag-avatar"
+                  [src]="getTeamImage(element.teamId)"
+                >
                 {{ element.teamName }}
               </span>
             </mat-cell>
@@ -157,10 +168,10 @@
                                    (combinedViewFormControl.value ? slotPlayerRankingsSorted.get(slot.label)! : slotPlayerRankings.get(slot.label)!)"
           >
             <ng-container matColumnDef="rank">
-              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
+              <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
                 <span class="header-text">Rank</span>
               </mat-header-cell>
-              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element.rank }}</mat-cell>
+              <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.rank }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="playerName">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-l">
@@ -169,16 +180,26 @@
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">
                 <span
                   *ngIf="playerOrTeamStatsFormControl.value === 'player'"
+                  class="participant-name"
                   [hovercardComponent]="TournamentPlayerCard"
                   [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
                 >
+                  <img
+                    [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
+                    [src]="getPlayerImage(element.playerId)"
+                  >
                   {{ element.playerName }}
                 </span>
                 <span
                   *ngIf="playerOrTeamStatsFormControl.value === 'team'"
+                  class="participant-name"
                   [hovercardComponent]="TournamentTeamCard"
-                  [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode }"
+                  [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode, playerFlagsToggle: playerFlagsFormControl.value }"
                 >
+                  <img
+                    class="flag-avatar"
+                    [src]="getTeamImage(element.teamId)"
+                  >
                   {{ element.teamName }}
                 </span>
               </mat-cell>
@@ -236,6 +257,7 @@
               <mat-header-cell *matHeaderCellDef class="stats-header slot-info center-text" [attr.colspan]="getSlotColumnNames().length">
                 <span class="header-text" [hovercardComponent]="TournamentSlotCard" [hovercardData]="{ slot: slot, category: getCategory(slot) }">{{ slot.label }}</span>
                 <span class="header-subtext">{{ slot.beatmap.artist }} - {{ slot.beatmap.title }} [{{ slot.beatmap.difficultyName }}]</span>
+                <span class="header-subtext">Average score: {{ getSlotScoreAverage(slot.label).toFixed() }}</span>
               </mat-header-cell>
             </ng-container>
 
@@ -256,9 +278,14 @@
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element._id) + 'px'">
               <span
+                class="participant-name"
                 [hovercardComponent]="TournamentTeamCard"
                 [hovercardData]="{ team: getTeam(element._id), gameMode: gameMode }"
               >
+                <img
+                  class="flag-avatar"
+                  [src]="getTeamImage(element._id)"
+                >
                 {{ element.name }}
               </span>
             </mat-cell>
@@ -277,9 +304,14 @@
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element.playerId) + 'px'">
               <span
+                class="participant-name"
                 [hovercardComponent]="TournamentPlayerCard"
                 [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
               >
+                <img
+                  [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
+                  [src]="getPlayerImage(element.playerId)"
+                >
                 {{ element.username }}
               </span>
             </mat-cell>

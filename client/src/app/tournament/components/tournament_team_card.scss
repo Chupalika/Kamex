@@ -47,10 +47,18 @@
           font-weight: bold;
         }
 
-        .flag-icon {
+        .square-avatar {
+          width: 15px;
+          height: 15px;
+          margin-right: 4px;
+          padding: 0 2.5px;
+          border-radius: 2px;
+        }
+
+        .flag-avatar {
           width: 20px;
           height: 15px;
-          margin-right: 5px;
+          margin-right: 4px;
           border-radius: 2px;
         }
 

@@ -158,8 +158,9 @@
   .square-avatar {
     width: 24px;
     height: 24px;
-    margin-right: 4px;
-    padding: 0 6px;
+    margin-left: 6px;
+    margin-right: 10px;
+    border-radius: 2px;
   }
 
   .flag-avatar {
@@ -167,6 +168,7 @@
     height: 24px;
     object-fit: contain;
     margin-right: 4px;
+    border-radius: 2px;
 
     &.flipped {
       margin-right: unset;

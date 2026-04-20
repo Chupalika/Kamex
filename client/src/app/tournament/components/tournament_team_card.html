@@ -11,10 +11,8 @@
       <div class="info-players">
         <div *ngFor="let player of team.players; index as i" class="player">
           <img
-            *ngIf="player.country"
-            class="flag-icon"
-            [src]="'https://flagcdn.com/w20/' + player.country.toLowerCase() + '.png'"
-            [alt]="player.country ?? ''"
+            [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}"
+            [src]="getPlayerImage(player)"
           >
           <span
             [class.captain]="i === 0"

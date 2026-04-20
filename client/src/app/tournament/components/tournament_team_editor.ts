@@ -97,7 +97,7 @@ export class TournamentTeamEditor implements OnInit, OnChanges {
 
   getSortedPlayers() {
     const dup = this.players.map(x => x);
-    dup.sort((a,b) => a.username < b.username ? -1 : 1);
+    dup.sort((a,b) => a.username.toLowerCase() < b.username.toLowerCase() ? -1 : 1);
     return dup;
   }
 

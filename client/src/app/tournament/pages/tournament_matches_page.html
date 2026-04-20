@@ -35,6 +35,7 @@
             <mat-option value="local">{{ localUTC }}</mat-option>
           </mat-select>
         </mat-form-field>
+        <mat-slide-toggle [formControl]="playerFlagsFormControl">Player Flags</mat-slide-toggle>
       </div>
     </div>
 
@@ -63,7 +64,8 @@
             [isLobby]="isLobby"
             [participantType]="participantType"
             [gameMode]="tournament.gameMode"
-            [hideLinks]="selectedRound.scoresheetWip"
+            [hideLinks]="selectedRound.scoresheetWip && !canSeeMpLinks()"
+            [playerFlagsToggle]="playerFlagsFormControl.value"
             [signupStatus]="signupStatus(match)"
             [refereeStatus]="refereeStatus(match)"
             [streamerStatus]="streamerStatus(match)"

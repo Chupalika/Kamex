@@ -5,7 +5,7 @@
         <img
           *ngIf="player.country"
           class="flag-icon"
-          [src]="'https://flagcdn.com/w20/' + player.country.toLowerCase() + '.png'"
+          [src]="'https://flagcdn.com/w40/' + player.country.toLowerCase() + '.png'"
           [alt]="player.country ?? ''"
         >
         <a class="username-text" [href]="'https://osu.ppy.sh/users/' + player.playerId" target="_blank">{{ player.username }}</a>

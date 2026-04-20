@@ -287,7 +287,7 @@
   <div class="participant">
     <img
       *ngIf="!hideExtraInfo && !hideIcon && !flipped"
-      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam), 'flag-avatar': !isPlayer(participant.playerOrTeam), 'flipped': flipped}"
+      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam) && !playerFlagsToggle, 'flag-avatar': !isPlayer(participant.playerOrTeam) || playerFlagsToggle, 'flipped': flipped}"
       [src]="getParticipantImage(participant)"
     >
     <span *ngIf="!hideExtraInfo && flipped && participant.playerOrTeam.seed" class="seed">
@@ -306,7 +306,7 @@
       *ngIf="!isPlayer(participant.playerOrTeam)"
       class="participant-name"
       [hovercardComponent]="TournamentTeamCard"
-      [hovercardData]="{ team: participant.playerOrTeam, gameMode: gameMode }"
+      [hovercardData]="{ team: participant.playerOrTeam, gameMode: gameMode, playerFlagsToggle: playerFlagsToggle }"
     >
       {{ participant.playerOrTeam.name }}
     </span>
@@ -316,7 +316,7 @@
     </span>
     <img
       *ngIf="!hideExtraInfo && !hideIcon && flipped"
-      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam), 'flag-avatar': !isPlayer(participant.playerOrTeam), 'flipped': flipped}"
+      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam) && !playerFlagsToggle, 'flag-avatar': !isPlayer(participant.playerOrTeam) || playerFlagsToggle, 'flipped': flipped}"
       [src]="getParticipantImage(participant)"
     >
   </div>
@@ -326,7 +326,7 @@
   <div class="staff-member">
     <img
       *ngIf="!hideIcon"
-      class="square-avatar"
+      [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}"
       [src]="getStaffMemberImage(staffMember)"
     >
     <span
