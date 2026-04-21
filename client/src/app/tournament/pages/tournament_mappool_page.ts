@@ -12,7 +12,7 @@ import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { TournamentSlotCardModule } from 'src/app/tournament/components/tournament_slot_card';
 import { TournamentRoundNavBarModule } from 'src/app/tournament/components/tournament_round_nav_bar';
-import { getLatestRoundIndex, getSortedMappool, hasPermission } from '../utils';
+import { getLatestRoundIndex, getSortedMappool, hasPermission, slotStarRating, slotDisplayLength, slotBpm, slotCs, slotHp, slotOd, slotAr } from '../utils';
 import { AuthService } from 'src/app/services/auth.service';
 import { Title } from '@angular/platform-browser';
 
@@ -140,6 +140,19 @@ export class TournamentMappoolPage implements OnInit {
 
   getCategory(slot: MappoolSlot) {
     return this.tournament?.slotCategories.find((category) => category.name === slot.category);
+  }
+
+  copyTable() {
+    const slots = this.getSortedSlots();
+    const header = ['Label', 'Artist', 'Title', 'Difficulty', 'Mapper', 'ID', 'CS', 'AR', 'OD', 'HP' ,'SR' ,'Length' ,'BPM'];
+    const rows = slots.map(slot => {
+      const bm = slot.beatmap;
+      return [slot.label, bm.artist, bm.title, bm.difficultyName, bm.mapper, bm.beatmapId,
+              slotCs(slot), slotAr(slot), slotOd(slot), slotHp(slot), slotStarRating(slot), slotDisplayLength(slot), slotBpm(slot)].join('\t');
+    });
+    const theText = [header.join('\t'), ...rows].join('\n');
+    navigator.clipboard.writeText(theText);
+    this.snackBar.open('Table copied to clipboard!', '', { duration: 3000 });
   }
 }
 

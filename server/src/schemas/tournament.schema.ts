@@ -32,7 +32,7 @@ export class Tournament {
   enableTeams: boolean;
 
   @Prop({ required: true, default: false })
-  allowTeamEditAfterRegistration: boolean;
+  allowTeamEdits: boolean;
 
   @Prop({ required: true, default: 1926383 })
   ownerId: number;

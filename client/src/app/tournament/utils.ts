@@ -348,3 +348,53 @@ export function convertFromLazerMods(mods?: ScoreMod[]): string[] {
 export function convertToLazerMods(mods: string[]): ScoreMod[] {
   return mods.map(acronym => ({ acronym, settings: [] }));
 }
+
+export function slotStarRating(slot: MappoolSlot) {
+    return slot?.adjustedStarRating?.toPrecision(3) || slot?.beatmap.starRating.toPrecision(3);
+  }
+
+export function slotDisplayLength(slot: MappoolSlot) {
+  const length = slot!.beatmap.length;
+  if (convertFromLazerMods(slot?.requiredMods).includes("DT") || convertFromLazerMods(slot?.requiredMods).includes("NC")) {
+    const adjustedLength = Math.floor(length / 1.5);
+    return `${Math.floor(adjustedLength / 60)}:${(adjustedLength % 60).toString().padStart(2, "0")}`;
+  }
+  return `${Math.floor(length / 60)}:${(length % 60).toString().padStart(2, "0")}`;
+}
+
+export function slotBpm(slot: MappoolSlot) {
+  if (convertFromLazerMods(slot?.requiredMods).includes("DT") || convertFromLazerMods(slot?.requiredMods).includes("NC")) return slot!.beatmap.bpm * 1.5;
+  else return slot!.beatmap.bpm;
+}
+
+export function slotCs(slot: MappoolSlot) {
+  if (convertFromLazerMods(slot?.requiredMods).includes("HR")) return getHrAdjustedStat(slot!.beatmap.cs);
+  if (convertFromLazerMods(slot?.requiredMods).includes("EZ")) return getEzAdjustedStat(slot!.beatmap.cs);
+  return slot!.beatmap.cs;
+}
+
+export function slotHp(slot: MappoolSlot) {
+  if (convertFromLazerMods(slot?.requiredMods).includes("HR")) return getHrAdjustedStat(slot!.beatmap.hp);
+  if (convertFromLazerMods(slot?.requiredMods).includes("EZ")) return getEzAdjustedStat(slot!.beatmap.hp);
+  return slot!.beatmap.hp;
+}
+
+export function slotOd(slot: MappoolSlot) {
+  if (convertFromLazerMods(slot?.requiredMods).includes("HR")) return getHrAdjustedStat(slot!.beatmap.od);
+  if (convertFromLazerMods(slot?.requiredMods).includes("EZ")) return getEzAdjustedStat(slot!.beatmap.od);
+  return slot!.beatmap.od;
+}
+
+export function slotAr(slot: MappoolSlot) {
+  if (convertFromLazerMods(slot?.requiredMods).includes("HR")) return getHrAdjustedStat(slot!.beatmap.ar);
+  if (convertFromLazerMods(slot?.requiredMods).includes("EZ")) return getEzAdjustedStat(slot!.beatmap.ar);
+  return slot!.beatmap.ar;
+}
+
+export function getHrAdjustedStat(stat: number) {
+  return Math.min(stat * 1.4, 10).toPrecision(2);
+}
+
+export function getEzAdjustedStat(stat: number) {
+  return (stat / 2).toPrecision(2);
+}

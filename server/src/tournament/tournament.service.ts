@@ -151,7 +151,7 @@ export class TournamentService {
       tourney.links = tournamentDto.links;
       tourney.slotCategories = tournamentDto.slotCategories;
       tourney.unlisted = tournamentDto.unlisted;
-      tourney.allowTeamEditAfterRegistration = tournamentDto.allowTeamEditAfterRegistration;
+      tourney.allowTeamEdits = tournamentDto.allowTeamEdits;
     }
 
     await tourney.save();
@@ -648,38 +648,51 @@ export class TournamentService {
   }
   */
 
-  async editTeamName(acronym: string, teamId: Types.ObjectId, playerId: number, editTeamNameDto: EditTeamNameDto): Promise<TournamentTeam> {
+  async editTeamName(acronym: string, teamId: Types.ObjectId, editTeamNameDto: EditTeamNameDto, caller: AppUser): Promise<TournamentTeam> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("teams");
     const theTeam = await this.tournamentTeamModel.findOne({_id: teamId}).orFail().populate("players");
 
     // Only allow team captain during registration to upload
-    if (tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEditAfterRegistration) throw new ProgressLockedError();
-    if (theTeam.players[0].playerId !== playerId) throw new NotTeamCaptainError();
+    if (tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEdits) throw new ProgressLockedError();
+    if (theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
 
     // Assert that the team is associated with the tourney
     const theTeam2 = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`);
     if (theTeam2 === undefined) throw new TeamNotFoundError();
 
+    const previousName = theTeam.name;
     theTeam.name = editTeamNameDto.name;
     await theTeam.save();
+
+    // discord log
+    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+      const title = "Team name updated";
+      let description = `\`${caller.osuUsername}\` changed team name from \`${previousName}\` to \`${theTeam.name}\``;
+      try {
+        await this.discordService.log(tourney.discordSettings.serverId, tourney.discordSettings.logChannelId, title, description);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
     return theTeam;
   }
 
-  async uploadTeamImage(acronym: string, teamId: Types.ObjectId, playerId: number, image: Express.Multer.File): Promise<TournamentTeam> {
+  async uploadTeamImage(acronym: string, teamId: Types.ObjectId, image: Express.Multer.File, caller: AppUser): Promise<TournamentTeam> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("teams");
     const theTeam = await this.tournamentTeamModel.findOne({_id: teamId}).orFail().populate("players");
 
     var staffMemberUpload = false;
-    if (tourney.ownerId === playerId) staffMemberUpload = true;
+    if (tourney.ownerId === caller.osuId) staffMemberUpload = true;
     else {
-      const staffMember = tourney.staffMembers.find((staffMember) => staffMember.playerId === playerId);
+      const staffMember = tourney.staffMembers.find((staffMember) => staffMember.playerId === caller.osuId);
       staffMemberUpload = staffMember?.roles.some(role => role.permissions.includes(`PATCH:/api/tournament/:acronym/team/:teamId`));
     }
     if (staffMemberUpload && [TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
     // If not a staff member upload, only allow team captain during registration to upload
-    if (!staffMemberUpload && tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEditAfterRegistration) throw new ProgressLockedError();
-    if (!staffMemberUpload && theTeam.players[0].playerId !== playerId) throw new NotTeamCaptainError();
+    if (!staffMemberUpload && tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEdits) throw new ProgressLockedError();
+    if (!staffMemberUpload && theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
 
     // Assert that the team is associated with the tourney
     const theTeam2 = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`);
@@ -687,8 +700,19 @@ export class TournamentService {
 
     const imageUrl = await this.cloudinaryService.uploadImage(image, "team-images", teamId.toString());
     theTeam.imageLink = imageUrl;
-
     await theTeam.save();
+
+    // discord log
+    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+      const title = "Team image updated";
+      let description = `\`${caller.osuUsername}\` updated team image for \`${theTeam.name}\``;
+      try {
+        await this.discordService.log(tourney.discordSettings.serverId, tourney.discordSettings.logChannelId, title, description, theTeam.imageLink);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
     return theTeam;
   }
 

@@ -241,7 +241,7 @@ export class DiscordService implements OnModuleInit {
     await theMember.roles.remove(theRole);
   }
 
-  async log(serverId: string, logChannelId: string, title: string, description: string) {
+  async log(serverId: string, logChannelId: string, title: string, description: string, thumbnailUrl?: string) {
     const theServer = this.client.guilds.cache.get(serverId);
     if (!theServer) throw new DiscordServerNotFoundError(serverId);
 
@@ -250,6 +250,7 @@ export class DiscordService implements OnModuleInit {
 
     if (theChannel.isTextBased()) {
       const embed = new EmbedBuilder().setTitle(title).setDescription(description);
+      if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
       await theChannel.send({ embeds: [embed] });
     } else throw new DiscordChannelNotFoundError(logChannelId);
   }

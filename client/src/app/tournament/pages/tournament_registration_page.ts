@@ -167,7 +167,7 @@ export class TournamentRegistrationPage implements OnInit {
   }
 
   get canEditTeam() {
-    return this.isTeamCaptain() && (this.tournament?.progress === TournamentProgress.REGISTRATION || this.tournament?.allowTeamEditAfterRegistration);
+    return this.isTeamCaptain() && (this.tournament?.progress === TournamentProgress.REGISTRATION || this.tournament?.allowTeamEdits);
   }
 
   onFileSelected(event: any) {

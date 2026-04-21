@@ -224,7 +224,7 @@ export class TournamentController {
       @Body() editTeamNameDto: EditTeamNameDto,
       @Request() req): Promise<TournamentTeam> {
     // console.log("editTeamName");
-    return await this.tournamentService.editTeamName(acronym, teamId, req.user.osuId, editTeamNameDto);
+    return await this.tournamentService.editTeamName(acronym, teamId, editTeamNameDto, req.user);
   }
 
   // perms checked within service method instead of using staff role guard
@@ -245,7 +245,7 @@ export class TournamentController {
       file: Express.Multer.File,
       @Request() req): Promise<TournamentTeam> {
     // console.log("uploadTeamImage");
-    return await this.tournamentService.uploadTeamImage(acronym, teamId, req.user.osuId, file);
+    return await this.tournamentService.uploadTeamImage(acronym, teamId, file, req.user);
   }
 
   @Post(':acronym/batchAssignPlayerSeeds')

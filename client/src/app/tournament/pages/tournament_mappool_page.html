@@ -21,6 +21,14 @@
       >
         Mappack
       </a>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="copyTable()"
+        matTooltip="Copy map data in a spreadsheet-pastable format"
+      >
+        Copy Table
+      </button>
     </div>
 
     <div class="mappool-container" [ngClass]="{'mobile-mode': mobileMode}">

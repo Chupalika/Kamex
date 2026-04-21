@@ -128,6 +128,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.vodLinksFormControl.setValue("");
     }
     if (this.disabled) this.editMatchForm.disable();
+    this.availabilityScores = undefined;
   }
 
   updateMatch() {
@@ -291,6 +292,43 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
     const theControl = theArray.at(event.previousIndex);
     theArray.removeAt(event.previousIndex);
     theArray.insert(event.currentIndex, theControl);
+  }
+
+  // Scheduler
+  //              0   1   2   3   4   5   6   7   8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23
+  TIME_SCORES = [-1, -2, -3, -3, -3, -3, -3, -2, -1, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1];
+  availabilityScores?: number[];
+  generateAvailabilityScores() {
+    const timezones = [];
+    if (this.isTeamMatch()) {
+      for (let participantForm of this.getParticipantsFormArray().controls) {
+        const teamId = participantForm.get("playerOrTeam")?.value;
+        const team = this.teams.find(t => t._id === teamId);
+        if (team) {
+          const teamPlayerTimezones = team.players.map(player => player.appUser?.timezone || 0);
+          timezones.push(...teamPlayerTimezones);
+        }
+      }
+    }
+    else {
+      for (let participantForm of this.getParticipantsFormArray().controls) {
+        const playerId = participantForm.get("playerOrTeam")?.value;
+        const player = this.players.find(p => p._id === playerId);
+        if (player) {
+          timezones.push(player.appUser?.timezone || 0);
+        }
+      }
+    }
+
+    const scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (let timezone of timezones) {
+      for (let i = 0; i < 24; i++) {
+        const convertedTime = (i + timezone + 24) % 24;
+        const score = this.TIME_SCORES[convertedTime];
+        scores[i] += score;
+      }
+    }
+    this.availabilityScores = scores;
   }
 }
 

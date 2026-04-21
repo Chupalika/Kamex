@@ -25,7 +25,7 @@ export class TournamentDto {
   readonly progress?: TournamentProgress;
   readonly gameMode?: GameMode;
   readonly enableTeams?: boolean;
-  readonly allowTeamEditAfterRegistration?: boolean;
+  readonly allowTeamEdits?: boolean;
   readonly ownerId?: number;
   readonly challongeId?: string;
   readonly challongeUrl?: string;

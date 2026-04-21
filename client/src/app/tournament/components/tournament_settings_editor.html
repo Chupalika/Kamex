@@ -95,7 +95,7 @@
   </ng-container>
 
   <mat-checkbox formControlName="enableTeams">Enable teams</mat-checkbox>
-  <mat-checkbox *ngIf="enableTeamsFormControl.value" formControlName="allowTeamEditAfterRegistration">Allow team edits after registration</mat-checkbox>
+  <mat-checkbox *ngIf="enableTeamsFormControl.value" formControlName="allowTeamEdits">Enable team edits <mat-icon class="info-icon" matTooltip="Allow team captains to edit their team name and image.">info</mat-icon></mat-checkbox>
 
   <span class="mat-body-1 registration-settings-header">
     Registration settings

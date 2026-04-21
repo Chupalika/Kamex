@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import tinycolor from 'tinycolor2';
 
 import { GameMode, MappoolSlot, TournamentSlotCategory } from '../../models/models';
-import { convertFromLazerMods } from '../utils';
+import { slotStarRating, slotDisplayLength, slotBpm, slotCs, slotHp, slotOd, slotAr } from '../utils';
 
 @Component({
   selector: 'tournament-slot-card',
@@ -35,53 +35,31 @@ export class TournamentSlotCard {
   }
 
   get starRating() {
-    return this.slot?.adjustedStarRating?.toPrecision(3) || this.slot?.beatmap.starRating.toPrecision(3);
+    return slotStarRating(this.slot!);
   }
 
   get displayLength() {
-    const length = this.slot!.beatmap.length;
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("DT") || convertFromLazerMods(this.slot?.requiredMods).includes("NC")) {
-      const adjustedLength = Math.floor(length / 1.5);
-      return `${Math.floor(adjustedLength / 60)}:${(adjustedLength % 60).toString().padStart(2, "0")}`;
-    }
-    return `${Math.floor(length / 60)}:${(length % 60).toString().padStart(2, "0")}`;
+    return slotDisplayLength(this.slot!);
   }
 
   get bpm() {
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("DT") || convertFromLazerMods(this.slot?.requiredMods).includes("NC")) return this.slot!.beatmap.bpm * 1.5;
-    else return this.slot!.beatmap.bpm;
+    return slotBpm(this.slot!);
   }
 
   get cs() {
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("HR")) return this.getHrAdjustedStat(this.slot!.beatmap.cs);
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("EZ")) return this.getEzAdjustedStat(this.slot!.beatmap.cs);
-    return this.slot!.beatmap.cs;
+    return slotCs(this.slot!);
   }
 
   get hp() {
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("HR")) return this.getHrAdjustedStat(this.slot!.beatmap.hp);
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("EZ")) return this.getEzAdjustedStat(this.slot!.beatmap.hp);
-    return this.slot!.beatmap.hp;
+    return slotHp(this.slot!);
   }
 
   get od() {
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("HR")) return this.getHrAdjustedStat(this.slot!.beatmap.od);
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("EZ")) return this.getEzAdjustedStat(this.slot!.beatmap.od);
-    return this.slot!.beatmap.od;
+    return slotOd(this.slot!);
   }
 
   get ar() {
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("HR")) return this.getHrAdjustedStat(this.slot!.beatmap.ar);
-    if (convertFromLazerMods(this.slot?.requiredMods).includes("EZ")) return this.getEzAdjustedStat(this.slot!.beatmap.ar);
-    return this.slot!.beatmap.ar;
-  }
-
-  getHrAdjustedStat(stat: number) {
-    return Math.min(stat * 1.4, 10).toPrecision(2);
-  }
-
-  getEzAdjustedStat(stat: number) {
-    return (stat / 2).toPrecision(2);
+    return slotAr(this.slot!);
   }
 
   get backgroundColor() {

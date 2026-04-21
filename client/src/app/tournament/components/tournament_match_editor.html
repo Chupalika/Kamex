@@ -1,137 +1,163 @@
 <form [formGroup]="editMatchForm" (ngSubmit)="updateMatch()" class="tourney-form" autocomplete="off">
-    <mat-form-field>
-      <mat-label>ID</mat-label>
-      <input matInput type="text" formControlName="id">
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Time</mat-label>
-      <input matInput type="datetime-local" formControlName="time">
-    </mat-form-field>
-    <ng-container *ngIf="enableTeams">
-      <mat-checkbox formControlName="isTeamMatch">Team Match</mat-checkbox>
-    </ng-container>
-    <mat-form-field>
-      <mat-label>Type</mat-label>
-      <mat-select formControlName="type">
-        <mat-option value="versus">Versus</mat-option>
-        <mat-option value="lobby">Lobby</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-checkbox formControlName="enableSignups">
-      Enable Signups
-      <mat-icon class="info-icon" matTooltip="Allow participants to register themselves to the match. Typically used in lobby formats (e.g. qualifiers rounds)">info</mat-icon>
-    </mat-checkbox>
-    <ng-container *ngIf="isLobbyType()">
-      <mat-form-field>
-        <mat-label>Max Lobby Participants</mat-label>
-        <input matInput type="number" formControlName="maxLobbyParticipants">
-      </mat-form-field>
-    </ng-container>
-    <ng-container formArrayName="participants">
-      <div class="mat-body-1 participants-header">
-        Participants
-        <button mat-icon-button type="button" color="primary" (click)="addParticipant()"><mat-icon>add</mat-icon></button>
-      </div>
-      <div *ngIf="getParticipantsFormGroups().length == 0" class="mat-body-1">None</div>
-      <div *ngIf="getParticipantsFormGroups().length > 0" cdkDropList (cdkDropListDropped)="rearrangeParticipants($event)">
-        <ng-container *ngFor="let participantForm of getParticipantsFormGroups(); let i = index">
-          <div class="participant-form-row" [formGroup]="participantForm" cdkDrag>
-            <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
-            <mat-form-field>
-              <mat-label>Participant</mat-label>
-              <mat-select formControlName="playerOrTeam">
-                <ng-container *ngIf="!isTeamMatch()">
-                  <mat-option *ngFor="let player of getSortedPlayers()" [value]="player._id">{{ player.username }}</mat-option>
-                </ng-container>
-                <ng-container *ngIf="isTeamMatch()">
-                  <mat-option *ngFor="let team of getSortedTeams()" [value]="team._id">{{ team.name }}</mat-option>
-                </ng-container>
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Score</mat-label>
-              <input matInput type="number" formControlName="score">
-            </mat-form-field>
-            <button mat-icon-button type="button" (click)="deleteParticipant(i)"><mat-icon>delete</mat-icon></button>
-          </div>
-        </ng-container>
-      </div>
-    </ng-container>
-    <ng-container formArrayName="conditionals">
-      <div class="mat-body-1 participants-header">
-        Conditionals
-        <mat-icon class="info-icon" matTooltip="A match with conditionals will be hidden if at least 1 conditional match is scored and its condition is not met">info</mat-icon>
-        <button mat-icon-button type="button" color="primary" (click)="addConditional()"><mat-icon>add</mat-icon></button>
-      </div>
-      <div *ngIf="getConditionalsFormGroups().length == 0" class="mat-body-1">None</div>
-      <div *ngIf="getConditionalsFormGroups().length > 0">
-        <ng-container *ngFor="let conditionalForm of getConditionalsFormGroups(); let i = index">
-          <div class="participant-form-row" [formGroup]="conditionalForm">
-            <mat-form-field>
-              <mat-label>Match ID</mat-label>
-              <mat-select formControlName="matchId">
-                <mat-option *ngFor="let otherMatch of getSortedMatches()" [value]="otherMatch.id">{{ otherMatch.id }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Participant</mat-label>
-              <mat-select formControlName="playerOrTeam">
-                <ng-container *ngIf="!isTeamMatch()">
-                  <mat-option *ngFor="let player of getPlayersFromMatch(conditionalForm.get('matchId')?.value)" [value]="player._id">{{ player.username }}</mat-option>
-                </ng-container>
-                <ng-container *ngIf="isTeamMatch()">
-                  <mat-option *ngFor="let team of getTeamsFromMatch(conditionalForm.get('matchId')?.value)" [value]="team._id">{{ team.name }}</mat-option>
-                </ng-container>
-              </mat-select>
-            </mat-form-field>
-            <mat-checkbox formControlName="win">Win</mat-checkbox>
-            <button mat-icon-button type="button" (click)="deleteConditional(i)"><mat-icon>delete</mat-icon></button>
-          </div>
-        </ng-container>
-      </div>
-    </ng-container>
-    <mat-form-field>
-      <mat-label>Referees</mat-label>
-      <mat-select formControlName="referees" multiple>
-        <mat-option *ngFor="let staffMember of getSortedStaffMembers()" [value]="staffMember._id">{{ staffMember.username }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Streamers</mat-label>
-      <mat-select formControlName="streamers" multiple>
-        <mat-option *ngFor="let staffMember of getSortedStaffMembers()" [value]="staffMember._id">{{ staffMember.username }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Commentators</mat-label>
-      <mat-select formControlName="commentators" multiple>
-        <mat-option *ngFor="let staffMember of getSortedStaffMembers()" [value]="staffMember._id">{{ staffMember.username }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Match IDs <mat-icon class="info-icon" matTooltip="Caution: Editing this will skip procesing the matches and adding scores to the scoresheet. Use 'Submit Match' to process matches.">info</mat-icon></mat-label>
-      <input matInput type="text" formControlName="matchIds">
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>VOD Links</mat-label>
-      <input matInput type="text" formControlName="vodLinks">
-    </mat-form-field>
-    <button
-        mat-raised-button
-        class="add-button"
-        type="submit"
-        color="primary"
-        [disabled]="disabled || !editMatchForm.valid || requestInProgress || !hasChanges()">
-      {{ match ? "Update" : "Add" }}
-    </button>
+  <mat-form-field>
+    <mat-label>ID</mat-label>
+    <input matInput type="text" formControlName="id">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Time</mat-label>
+    <input matInput type="datetime-local" formControlName="time">
+  </mat-form-field>
+  <div class="row">
     <button
       mat-raised-button
-      class="add-button"
+      class="other-button"
       type="button"
       color="primary"
-      (click)="removeMatch()"
-      [disabled]="disabled || !match || requestInProgress"
+      (click)="generateAvailabilityScores()"
     >
-      Remove
+      Check availability scores
     </button>
-  </form>
+    <mat-icon class="info-icon" matTooltip="Calculates and displays scores for each hour based on players' timezone settings">info</mat-icon>
+  </div>
+
+  <table class="mat-elevation-z1 availability-table" *ngIf="availabilityScores">
+    <thead>
+      <tr>
+        <th *ngFor="let score of availabilityScores; let i = index">{{ i }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td *ngFor="let score of availabilityScores">{{ score }}</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <ng-container *ngIf="enableTeams">
+    <mat-checkbox formControlName="isTeamMatch">Team Match</mat-checkbox>
+  </ng-container>
+  <mat-form-field>
+    <mat-label>Type</mat-label>
+    <mat-select formControlName="type">
+      <mat-option value="versus">Versus</mat-option>
+      <mat-option value="lobby">Lobby</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-checkbox formControlName="enableSignups">
+    Enable Signups
+    <mat-icon class="info-icon" matTooltip="Allow participants to register themselves to the match. Typically used in lobby formats (e.g. qualifiers rounds)">info</mat-icon>
+  </mat-checkbox>
+  <ng-container *ngIf="isLobbyType()">
+    <mat-form-field>
+      <mat-label>Max Lobby Participants</mat-label>
+      <input matInput type="number" formControlName="maxLobbyParticipants">
+    </mat-form-field>
+  </ng-container>
+  <ng-container formArrayName="participants">
+    <div class="mat-body-1 participants-header">
+      Participants
+      <button mat-icon-button type="button" color="primary" (click)="addParticipant()"><mat-icon>add</mat-icon></button>
+    </div>
+    <div *ngIf="getParticipantsFormGroups().length == 0" class="mat-body-1">None</div>
+    <div *ngIf="getParticipantsFormGroups().length > 0" cdkDropList (cdkDropListDropped)="rearrangeParticipants($event)">
+      <ng-container *ngFor="let participantForm of getParticipantsFormGroups(); let i = index">
+        <div class="participant-form-row" [formGroup]="participantForm" cdkDrag>
+          <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+          <mat-form-field>
+            <mat-label>Participant</mat-label>
+            <mat-select formControlName="playerOrTeam">
+              <ng-container *ngIf="!isTeamMatch()">
+                <mat-option *ngFor="let player of getSortedPlayers()" [value]="player._id">{{ player.username }}</mat-option>
+              </ng-container>
+              <ng-container *ngIf="isTeamMatch()">
+                <mat-option *ngFor="let team of getSortedTeams()" [value]="team._id">{{ team.name }}</mat-option>
+              </ng-container>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Score</mat-label>
+            <input matInput type="number" formControlName="score">
+          </mat-form-field>
+          <button mat-icon-button type="button" (click)="deleteParticipant(i)"><mat-icon>delete</mat-icon></button>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+  <ng-container formArrayName="conditionals">
+    <div class="mat-body-1 participants-header">
+      Conditionals
+      <mat-icon class="info-icon" matTooltip="A match with conditionals will be hidden if at least 1 conditional match is scored and its condition is not met">info</mat-icon>
+      <button mat-icon-button type="button" color="primary" (click)="addConditional()"><mat-icon>add</mat-icon></button>
+    </div>
+    <div *ngIf="getConditionalsFormGroups().length == 0" class="mat-body-1">None</div>
+    <div *ngIf="getConditionalsFormGroups().length > 0">
+      <ng-container *ngFor="let conditionalForm of getConditionalsFormGroups(); let i = index">
+        <div class="participant-form-row" [formGroup]="conditionalForm">
+          <mat-form-field>
+            <mat-label>Match ID</mat-label>
+            <mat-select formControlName="matchId">
+              <mat-option *ngFor="let otherMatch of getSortedMatches()" [value]="otherMatch.id">{{ otherMatch.id }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Participant</mat-label>
+            <mat-select formControlName="playerOrTeam">
+              <ng-container *ngIf="!isTeamMatch()">
+                <mat-option *ngFor="let player of getPlayersFromMatch(conditionalForm.get('matchId')?.value)" [value]="player._id">{{ player.username }}</mat-option>
+              </ng-container>
+              <ng-container *ngIf="isTeamMatch()">
+                <mat-option *ngFor="let team of getTeamsFromMatch(conditionalForm.get('matchId')?.value)" [value]="team._id">{{ team.name }}</mat-option>
+              </ng-container>
+            </mat-select>
+          </mat-form-field>
+          <mat-checkbox formControlName="win">Win</mat-checkbox>
+          <button mat-icon-button type="button" (click)="deleteConditional(i)"><mat-icon>delete</mat-icon></button>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+  <mat-form-field>
+    <mat-label>Referees</mat-label>
+    <mat-select formControlName="referees" multiple>
+      <mat-option *ngFor="let staffMember of getSortedStaffMembers()" [value]="staffMember._id">{{ staffMember.username }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Streamers</mat-label>
+    <mat-select formControlName="streamers" multiple>
+      <mat-option *ngFor="let staffMember of getSortedStaffMembers()" [value]="staffMember._id">{{ staffMember.username }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Commentators</mat-label>
+    <mat-select formControlName="commentators" multiple>
+      <mat-option *ngFor="let staffMember of getSortedStaffMembers()" [value]="staffMember._id">{{ staffMember.username }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Match IDs <mat-icon class="info-icon" matTooltip="Caution: Editing this will skip procesing the matches and adding scores to the scoresheet. Use 'Submit Match' to process matches.">info</mat-icon></mat-label>
+    <input matInput type="text" formControlName="matchIds">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>VOD Links</mat-label>
+    <input matInput type="text" formControlName="vodLinks">
+  </mat-form-field>
+  <button
+      mat-raised-button
+      class="add-button"
+      type="submit"
+      color="primary"
+      [disabled]="disabled || !editMatchForm.valid || requestInProgress || !hasChanges()">
+    {{ match ? "Update" : "Add" }}
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="primary"
+    (click)="removeMatch()"
+    [disabled]="disabled || !match || requestInProgress"
+  >
+    Remove
+  </button>
+</form>

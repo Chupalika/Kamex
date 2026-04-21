@@ -193,7 +193,7 @@ export class TournamentParticipantsPage implements OnInit {
 
   openPlayerEditor() {
     const dialogRef = this.dialogService.open(
-      PlayerTeamEditorDialog, { data: { type: "Player", acronym: this.acronym, players: this.tournament!.players, gameMode: this.tournament!.gameMode } }
+      PlayerTeamEditorDialog, { data: { type: "Player", acronym: this.acronym, players: this.tournament!.players, teams: this.tournament!.teams, gameMode: this.tournament!.gameMode } }
     );
     dialogRef.afterClosed().subscribe((updatedPlayers: TournamentPlayer[]) => {
       if (updatedPlayers) {
