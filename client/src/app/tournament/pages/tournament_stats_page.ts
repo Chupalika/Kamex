@@ -275,8 +275,14 @@ export class TournamentStatsPage implements OnInit {
       this.slotTeamRankings.clear();
       for (let label of this.teamStats.slotRanking.keys()) {
         const slot = this.teamStats.slotRanking.get(label)!;
-        const overallStatsColumn = this.teamStats.overallRanking;
-        const rankingSorted = overallStatsColumn.map((overallStats) => slot.teamRanking.find((x) => x.teamId === overallStats.teamId));
+        const overallStatsColumn = this.overallTeamRanking;
+        const rankingSorted = overallStatsColumn.map((overallStats) => {
+          const overallTeamStats = overallStats as OverallTeamStats;
+          const theScore = slot.teamRanking.find((x) => x.teamId === overallTeamStats.teamId)
+          if (theScore === undefined) return theScore;
+          theScore.teamName = overallTeamStats.teamName;
+          return theScore;
+        });
         this.slotTeamRankingsSorted.set(label, rankingSorted);
         const ranking = slot.teamRanking.map((x) => {
           const team = this.tournament!.teams.find((y) => y._id === x.teamId);
@@ -301,8 +307,14 @@ export class TournamentStatsPage implements OnInit {
     this.slotPlayerRankings.clear();
     for (let label of this.playerStats.slotRanking.keys()) {
       const slot = this.playerStats.slotRanking.get(label)!;
-      const overallStatsColumn = this.playerStats.overallRanking;
-      const rankingSorted = overallStatsColumn.map((overallStats) => slot.playerRanking.find((x) => x.playerId === overallStats.playerId));
+      const overallStatsColumn = this.overallPlayerRanking;
+      const rankingSorted = overallStatsColumn.map((overallStats) => {
+        const overallPlayerStats = overallStats as OverallPlayerStats;
+        const theScore = slot.playerRanking.find((x) => x.playerId === overallPlayerStats.playerId);
+        if (theScore === undefined) return theScore;
+        theScore.playerName = overallPlayerStats.playerName;
+        return theScore;
+      });
       this.slotPlayerRankingsSorted.set(label, rankingSorted);
       const ranking = slot.playerRanking.map((x) => {
         const player = this.tournament!.players.find((y) => y.playerId === x.playerId);

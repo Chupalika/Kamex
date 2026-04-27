@@ -251,6 +251,7 @@ export interface TournamentTeamScoreWithRank extends Score {
   teamId: string;
   rank: number;
   zscore: number;
+  teamName?: string;
 }
 
 export interface TournamentScoreWithRank extends Score {

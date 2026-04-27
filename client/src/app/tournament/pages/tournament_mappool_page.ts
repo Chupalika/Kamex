@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Component, NgModule, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { map, of, throwError } from "rxjs";
@@ -161,6 +162,7 @@ export class TournamentMappoolPage implements OnInit {
         CommonModule,
         ItemSelectorModule,
         MatButtonModule,
+        MatTooltipModule,
         TournamentSlotCardModule,
         TournamentRoundNavBarModule,
     ],

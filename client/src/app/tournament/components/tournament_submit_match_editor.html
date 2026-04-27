@@ -6,7 +6,7 @@
         <mat-option *ngFor="let match of matches" [value]="match._id">{{ match.id }}</mat-option>
       </mat-select>
     </mat-form-field>
-    <mat-checkbox formControlName="generateMatchProgression">Generate Match Progression</mat-checkbox>
+    <!--<mat-checkbox formControlName="generateMatchProgression">Generate Match Progression</mat-checkbox>-->
     <ng-container formArrayName="participants">
       <div class="mat-body-1 participants-header">Participants</div>
       <div *ngIf="getParticipantsFormGroups().length == 0" class="mat-body-1">None</div>

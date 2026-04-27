@@ -110,6 +110,12 @@ export class NotTeamCaptainError extends HttpException {
   }
 }
 
+export class TeamNameLengthError extends HttpException {
+  constructor() {
+    super("Team name must be between 1 and 100 characters.", HttpStatus.BAD_REQUEST);
+  }
+}
+
 export class TeamAlreadyAcceptedError extends HttpException {
   constructor() {
     super("Player is already confirmed for another team.", HttpStatus.BAD_REQUEST);

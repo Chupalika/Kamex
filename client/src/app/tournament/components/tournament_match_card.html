@@ -124,12 +124,12 @@
     </div>
     <div class="match-detail link">
       <div *ngIf="isHeader"></div>
-      <div *ngIf="!isHeader && refereeStatus === 'can_unregister' || (match?.matchProgression || []).length > 0">
+      <div *ngIf="!isHeader && canSubmitMatch || (match?.matchProgression || []).length > 0">
         <button mat-icon-button color="primary" [matMenuTriggerFor]="menu" class="small-icon-button">
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item *ngIf="refereeStatus === 'can_unregister'" (click)="openSubmitMatchEditor()">Submit match</button>
+          <button mat-menu-item *ngIf="canSubmitMatch" (click)="openSubmitMatchEditor()">Submit match</button>
           <button mat-menu-item *ngIf="(match!.matchProgression || []).length > 0" (click)="openMatchProgression()">View match progression</button>
         </mat-menu>
       </div>
@@ -173,14 +173,14 @@
       <div class="match-detail time mobile-mode">{{ getFormattedMatchTime(match!.time) }}</div>
       <div class="match-detail link mobile-mode">
         <div *ngIf="isHeader">MP</div>
-        <ng-container *ngIf="!isHeader && ((match!.matchIds.length > 0 && !hideLinks) || match!.vodLinks.length > 0 || refereeStatus === 'can_unregister' || (match?.matchProgression || []).length > 0)">
+        <ng-container *ngIf="!isHeader && ((match!.matchIds.length > 0 && !hideLinks) || match!.vodLinks.length > 0 || canSubmitMatch || (match?.matchProgression || []).length > 0)">
           <button mat-icon-button color="primary" [matMenuTriggerFor]="menu" class="small-icon-button">
             <mat-icon>more_vert</mat-icon>
           </button>
           <mat-menu #menu="matMenu">
             <a *ngFor="let matchId of match!.matchIds" mat-menu-item target="_blank" [href]="'https://osu.ppy.sh/mp/' + matchId">Match link</a>
             <a *ngFor="let vodLink of match!.vodLinks" mat-menu-item target="_blank" [href]="vodLink">VOD link</a>
-            <button mat-menu-item *ngIf="refereeStatus === 'can_unregister'" (click)="openSubmitMatchEditor()">Submit match</button>
+            <button mat-menu-item *ngIf="canSubmitMatch" (click)="openSubmitMatchEditor()">Submit match</button>
             <button mat-menu-item *ngIf="(match!.matchProgression || []).length > 0" (click)="openMatchProgression()">View match progression</button>
           </mat-menu>
         </ng-container>

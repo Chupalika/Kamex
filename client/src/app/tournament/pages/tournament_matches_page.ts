@@ -333,6 +333,10 @@ export class TournamentMatchesPage implements OnInit {
     return !this.isTourneyConcluded && hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.REGISTER_COMMENTATOR);
   }
 
+  get canSubmitMatch() {
+    return !this.isTourneyConcluded && hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.SUBMIT_MATCHES);
+  }
+
   refereeStatus(match: TournamentMatch) {
     if (!this.canRegisterReferee) return "";
     if (match.time.getTime() < Date.now()) return "";

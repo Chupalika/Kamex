@@ -41,6 +41,7 @@ export class TournamentMatchCard {
   @Input() refereeStatus: ""|"can_register"|"can_unregister" = "";
   @Input() streamerStatus: ""|"can_register"|"can_unregister" = "";
   @Input() commentatorStatus: ""|"can_register"|"can_unregister" = "";
+  @Input() canSubmitMatch: boolean = false;
   @Input() requestInProgress: boolean = false;
   @Output() toggleSignup: EventEmitter<any> = new EventEmitter();
   @Output() toggleReferee: EventEmitter<any> = new EventEmitter();

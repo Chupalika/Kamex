@@ -2,7 +2,7 @@ import { Model, Types, HydratedDocument, isValidObjectId, Document, ObjectId } f
 import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MappoolSlotDto, TournamentDto, TournamentMatchDto, TournamentRoundDto, TournamentPlayerDto, TournamentStaffMemberDto, TournamentStaffRoleDto, ScoreDto, TournamentTeamDto, SubmitMatchDto, OsuUserDto, EditTeamNameDto } from '../models/dtos';
-import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupsNotEnabledError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError } from '../models/errors';
+import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupsNotEnabledError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError } from '../models/errors';
 import { GameMode, TournamentProgress } from '../models/enums';
 import { PlayerOrTeam, ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
 import { AppUser } from 'src/schemas/app-user.schema';
@@ -590,8 +590,8 @@ export class TournamentService {
       throw new PlayerNotRegisteredError();
     }
 
-    // Don't allow duplicate team
-    if (tourney.teams.find((team: HydratedDocument<TournamentTeam>) => team.name === tournamentTeamDto.name && !team._id.equals(teamId))) {
+    // Don't allow duplicate team name
+    if (tourney.teams.find((team: HydratedDocument<TournamentTeam>) => team.name === tournamentTeamDto.name && `${team._id}` !== `${teamId}`)) {
       throw new TeamExistsError();
     }
 
@@ -659,6 +659,15 @@ export class TournamentService {
     // Assert that the team is associated with the tourney
     const theTeam2 = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`);
     if (theTeam2 === undefined) throw new TeamNotFoundError();
+
+    // Don't allow duplicate team name
+    if (tourney.teams.find((team: HydratedDocument<TournamentTeam>) => team.name === editTeamNameDto.name && `${team._id}` !== `${teamId}`)) {
+      throw new TeamExistsError();
+    }
+
+    if (editTeamNameDto.name.length > 100 || editTeamNameDto.name.length < 1) {
+      throw new TeamNameLengthError();
+    }
 
     const previousName = theTeam.name;
     theTeam.name = editTeamNameDto.name;

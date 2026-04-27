@@ -75,6 +75,7 @@
             (toggleReferee)="toggleReferee(match)"
             (toggleStreamer)="toggleStreamer(match)"
             (toggleCommentator)="toggleCommentator(match)"
+            [canSubmitMatch]="canSubmitMatch"
           ></tournament-match-card>
         </ng-container>
       </ng-container>
