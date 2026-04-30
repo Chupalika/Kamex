@@ -1325,6 +1325,15 @@ export class TournamentService {
       await this.processMatch(acronym, roundId, matchId);
     }
 
+    // just to include it in the response (note, do NOT do this before saving the doc, or else it will save the whole object instead of an ObjectId under playerOrTeam!)
+    if (createdMatch.isTeamMatch) {
+      await createdMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
+    } else {
+      await createdMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
+    }
+    await createdMatch.populate("referees");
+    await createdMatch.populate("streamers");
+    await createdMatch.populate("commentators");
     return createdMatch;
   }
 
@@ -1411,6 +1420,9 @@ export class TournamentService {
     tourneyMatch.matchProgression = tournamentMatchDto.matchProgression;
 
     await tourneyMatch.save();
+    await tourneyMatch.populate("referees");
+    await tourneyMatch.populate("streamers");
+    await tourneyMatch.populate("commentators");
     return tourneyMatch;
   }
 

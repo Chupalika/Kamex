@@ -36,6 +36,18 @@
           </mat-select>
         </mat-form-field>
         <mat-slide-toggle [formControl]="playerFlagsFormControl">Player Flags</mat-slide-toggle>
+        <button
+          mat-icon-button
+          *ngIf="!isTourneyConcluded && hasPermission(TournamentStaffPermission.MANAGE_MATCHES)"
+          color="primary"
+          [matMenuTriggerFor]="menu"
+          class="small-icon-button more-actions-button"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="openMatchEditor()">Match editor</button>
+        </mat-menu>
       </div>
     </div>
 

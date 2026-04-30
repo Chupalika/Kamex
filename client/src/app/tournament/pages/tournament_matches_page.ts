@@ -1,16 +1,21 @@
 import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { Component, NgModule, OnInit } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Component, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule, MatSelectChange } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
-import { throwError } from "rxjs";
+import { Observable, throwError } from "rxjs";
 
 import { TournamentMatchCardModule } from '../components/tournament_match_card';
+import { TournamentMatchEditorModule } from '../components/tournament_match_editor';
 import { AppUser, Tournament, TournamentMatch, TournamentProgress, TournamentRound, TournamentStaffPermission } from 'src/app/models/models';
 import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentsService } from 'src/app/services/tournaments.service';
@@ -41,6 +46,10 @@ export class TournamentMatchesPage implements OnInit {
   sortMethodFormControl: FormControl;
   displayTimeFormControl: FormControl;
   playerFlagsFormControl: FormControl;
+
+  TournamentStaffPermission = TournamentStaffPermission;
+
+  readonly dialogService = inject(MatDialog);
 
   constructor(
     private tournamentsService: TournamentsService,
@@ -321,6 +330,10 @@ export class TournamentMatchesPage implements OnInit {
            hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.VIEW_WIP_SCORESHEETS);
   }
 
+  hasPermission(permission: TournamentStaffPermission): boolean {
+    return hasPermission(this.tournament!, this.appUser?.osuId, permission);
+  }
+
   get canRegisterReferee() {
     return !this.isTourneyConcluded && hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.REGISTER_REFEREE);
   }
@@ -453,6 +466,131 @@ export class TournamentMatchesPage implements OnInit {
         });
     }
   }
+
+  openMatchEditor() {
+    const dialogRef = this.dialogService.open(
+      MatchEditorDialog, { data: { acronym: this.acronym, roundId: this.selectedRoundId, tournament: this.tournament, matches: this.sortedMatches } }
+    );
+    dialogRef.afterClosed().subscribe((updatedMatches: TournamentMatch[]) => {
+      if (updatedMatches) {
+        this.sortedMatches = updatedMatches;
+      }
+    });
+  }
+}
+
+@Component({
+  selector: 'match-editor-dialog',
+  template: `<h2 mat-dialog-title>Match editor</h2>
+             <mat-dialog-content class="mat-typography">
+               <form [formGroup]="matchEditorForm" class="tourney-form">
+                 <mat-form-field>
+                   <mat-label>Matches</mat-label>
+                   <mat-select formControlName="selectedMatch" (selectionChange)="switchSelectedMatch($event.value)">
+                     <mat-option value="-1">&lt;New&gt;</mat-option>
+                     <mat-option *ngFor="let match of workingMatches" [value]="match._id">{{ match.id }}</mat-option>
+                   </mat-select>
+                 </mat-form-field>
+               </form>
+               <tournament-match-editor
+                 [match]="selectedMatch"
+                 [enableTeams]="data.tournament.enableTeams"
+                 [players]="data.tournament.players"
+                 [teams]="data.tournament.teams"
+                 [staffMembers]="data.tournament.staffMembers"
+                 [matches]="workingMatches"
+                 [requestInProgress]="requestInProgress"
+                 (submit)="submitUpdateMatchForm($event)"
+                 (remove)="removeMatch($event)"
+               >
+               </tournament-match-editor>
+             </mat-dialog-content>
+             <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
+               <button mat-raised-button color="secondary" [mat-dialog-close]="workingMatches">Close</button>
+             </mat-dialog-actions>`,
+})
+export class MatchEditorDialog {
+  requestInProgress: boolean = false;
+
+  selectedMatch?: TournamentMatch;
+  selectedMatchIndex = -1;
+  matchEditorForm: FormGroup;
+  selectedMatchFormControl: FormControl;
+  workingMatches: TournamentMatch[] = [];
+
+  constructor(
+      @Inject(MAT_DIALOG_DATA) public data: { acronym: string, roundId: string, tournament: Tournament, matches: TournamentMatch[] },
+      private tournamentsService: TournamentsService,
+      private snackBar: MatSnackBar,
+      private dialogRef: MatDialogRef<MatchEditorDialog>
+  ) {
+    this.selectedMatchFormControl = new FormControl("-1");
+    this.matchEditorForm = new FormGroup({
+      selectedMatch: this.selectedMatchFormControl,
+    });
+
+    this.dialogRef.backdropClick().subscribe(() => {
+      this.dialogRef.close(this.workingMatches);
+    });
+  }
+
+  ngOnInit() {
+    this.workingMatches = [...this.data.matches];
+  }
+
+  switchSelectedMatch(matchId: string) {
+    const index = this.workingMatches.findIndex((match) => match._id === matchId);
+    this.selectedMatchIndex = index;
+    if (index < 0) this.selectedMatch = undefined;
+    else this.selectedMatch = this.workingMatches[index];
+  }
+
+  submitUpdateMatchForm(partialMatch: Partial<TournamentMatch>) {
+    if (!partialMatch.id) return;
+    this.requestInProgress = true;
+
+    let request: Observable<TournamentMatch>;
+    let successMessage = "";
+    if (!this.selectedMatch) {
+      request = this.tournamentsService.addTournamentMatch(this.data.acronym, this.data.roundId, partialMatch);
+      successMessage = "Successfully added tournament match.";
+    } else {
+      request = this.tournamentsService.editTournamentMatch(this.data.acronym, this.data.roundId, this.selectedMatch._id, partialMatch);
+      successMessage = "Successfully edited tournament match.";
+    }
+
+    request.pipe(catchError((error) => {
+      this.requestInProgress = false;
+      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      return throwError(error);
+    })).subscribe((updatedTournamentMatch) => {
+      this.requestInProgress = false;
+      if (!this.selectedMatch) {
+        this.workingMatches.push(updatedTournamentMatch);
+      } else {
+        this.workingMatches[this.selectedMatchIndex] = updatedTournamentMatch;
+        this.selectedMatch = updatedTournamentMatch;
+      }
+      this.snackBar.open(successMessage, "", { duration: 10000 });
+    });
+  }
+
+  removeMatch(match: TournamentMatch) {
+    this.requestInProgress = true;
+    this.tournamentsService.removeTournamentMatch(this.data.acronym, this.data.roundId, match._id)
+      .pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })).subscribe(() => {
+        this.requestInProgress = false;
+        const index = this.workingMatches.findIndex((match2) => match2.id === match.id);
+        if (index !== undefined) this.workingMatches.splice(index, 1);
+        this.selectedMatchFormControl.setValue("-1");
+        this.switchSelectedMatch("-1");
+        this.snackBar.open("Successfully removed tournament match.", "", { duration: 10000 });
+      });
+  }
 }
 
 @NgModule({
@@ -461,12 +599,17 @@ export class TournamentMatchesPage implements OnInit {
         FormsModule,
         ReactiveFormsModule,
         ItemSelectorModule,
+        MatButtonModule,
+        MatDialogModule,
         MatFormFieldModule,
+        MatIconModule,
+        MatMenuModule,
         MatSelectModule,
         MatSlideToggleModule,
         TournamentMatchCardModule,
+        TournamentMatchEditorModule,
     ],
-  declarations: [ TournamentMatchesPage ],
+  declarations: [ TournamentMatchesPage, MatchEditorDialog ],
   exports: [ TournamentMatchesPage ],
   bootstrap: [ TournamentMatchesPage ]
 })

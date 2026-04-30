@@ -124,7 +124,7 @@
     </div>
     <div class="match-detail link">
       <div *ngIf="isHeader"></div>
-      <div *ngIf="!isHeader && canSubmitMatch || (match?.matchProgression || []).length > 0">
+      <ng-container *ngIf="!isHeader && canSubmitMatch || (match?.matchProgression || []).length > 0">
         <button mat-icon-button color="primary" [matMenuTriggerFor]="menu" class="small-icon-button">
           <mat-icon>more_vert</mat-icon>
         </button>
@@ -132,7 +132,7 @@
           <button mat-menu-item *ngIf="canSubmitMatch" (click)="openSubmitMatchEditor()">Submit match</button>
           <button mat-menu-item *ngIf="(match!.matchProgression || []).length > 0" (click)="openMatchProgression()">View match progression</button>
         </mat-menu>
-      </div>
+      </ng-container>
     </div>
     <!--
     <div class="match-detail link">

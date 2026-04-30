@@ -13,6 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Title } from '@angular/platform-browser';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
+import { hasPermission } from '../utils';
 
 import { AppUser, GameMode, Tournament, TournamentPlayer, TournamentProgress, TournamentStaffMember, TournamentStaffPermission, TournamentTeam } from 'src/app/models/models';
 import { NavBarModule } from "src/app/nav_bar/nav_bar";
@@ -25,7 +26,6 @@ import { TournamentStaffMemberCardModule } from 'src/app/tournament/components/t
 import { RefreshPlayerDataDialog } from './tournament_settings_page';
 import { AuthService } from 'src/app/services/auth.service';
 import { AssignSeedsDialog } from './tournament_stats_page';
-import { TournamentTeamEditor } from '../components/tournament_team_editor';
 
 @Component({
   selector: 'tournament_participants_page',
@@ -183,8 +183,7 @@ export class TournamentParticipantsPage implements OnInit {
   }
 
   hasPermission(permission: TournamentStaffPermission) {
-    return (this.appUser && this.appUser.osuId === this.tournament?.ownerId) ||
-            (this.currentStaffMember && this.currentStaffMember.roles.some((role) => role.permissions.includes(permission)));
+    return hasPermission(this.tournament!, this.appUser?.osuId, permission);
   }
 
   get isTourneyConcluded(): boolean {
