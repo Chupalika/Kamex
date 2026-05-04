@@ -9,13 +9,13 @@
     </div>
     <div class="bottom-side">
       <div class="info-players">
-        <div *ngFor="let player of team.players; index as i" class="player">
+        <div *ngFor="let player of sortedPlayers; index as i" class="player">
           <img
             [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}"
             [src]="getPlayerImage(player)"
           >
           <span
-            [class.captain]="i === 0"
+            [class.captain]="player.playerId === captain!.playerId"
             [hovercardComponent]="TournamentPlayerCard"
             [hovercardData]="{ player: player, gameMode: gameMode }"
           >
@@ -28,7 +28,17 @@
           <span *ngIf="gameMode === GameMode.MANIA">(#{{ player.maniaRank }})</span>
           <span *ngIf="gameMode === GameMode.ALL">(#{{ player.osuRank }}/#{{ player.taikoRank }}/#{{ player.fruitsRank }}/#{{ player.maniaRank }})</span>
           &nbsp;
-          <div class="info-seed"><span class="material-symbols-outlined icon" [class.no-seed]="!player.seed">potted_plant</span> {{ player.seed ?? "" }}</div>
+          <div *ngIf="player.seed" class="info-seed">
+            <span class="material-symbols-outlined icon" [class.no-seed]="!player.seed">potted_plant</span> {{ player.seed ?? "" }}
+          </div>
+          <div
+            *ngIf="editable && player.playerId !== captain!.playerId"
+            class="remove-button"
+            (click)="transferCaptainHelper(i)"
+            matTooltip="transfer captain"
+          >
+            <mat-icon class="material-symbols-outlined">manage_accounts</mat-icon>
+          </div>
           <div
             *ngIf="editable"
             class="remove-button"

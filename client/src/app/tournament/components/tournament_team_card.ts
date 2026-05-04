@@ -7,6 +7,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TournamentTeam, GameMode, TournamentPlayer } from '../../models/models';
 import { TournamentPlayerCard } from './tournament_player_card';
 import { HovercardModule } from 'src/app/components/hovercard';
+import { getRankCompare, playerNameCompare, seedCompare } from '../utils';
 
 @Component({
   selector: 'tournament-team-card',
@@ -19,7 +20,9 @@ export class TournamentTeamCard {
   @Input() editable: boolean = false;
   @Input() mobileMode: boolean = false;
   @Input() playerFlagsToggle: boolean = false;
+  @Input() playerSortMethod: string = "";
   @Output() removePlayer: EventEmitter<any> = new EventEmitter();
+  @Output() transferCaptain: EventEmitter<any> = new EventEmitter();
 
   @ViewChild('teamName') teameNameRef?: ElementRef;
 
@@ -35,10 +38,19 @@ export class TournamentTeamCard {
     return theElement ? theElement.scrollHeight > theElement.clientHeight : false;
   }
 
-  removePlayerHelper(index: number) {
-    if (this.requestInProgress) return;
-    const thePlayer = this.team!.players[index];
-    this.removePlayer.emit(thePlayer);
+  get captain() {
+    return this.team?.players[0];
+  }
+
+  get sortedPlayers() {
+    if (!this.team) return [];
+    const playersClone = [...this.team.players];
+    switch (this.playerSortMethod) {
+      case "seed": return playersClone.sort(seedCompare);
+      case "name": return playersClone.sort(playerNameCompare);
+      case "rank": return playersClone.sort(getRankCompare(this.gameMode!));
+      default: return this.team.players;
+    }
   }
 
   getPlayerImage(player: TournamentPlayer) {
@@ -47,6 +59,18 @@ export class TournamentTeamCard {
     } else {
       return `https://a.ppy.sh/${player.playerId}`;
     }
+  }
+
+  removePlayerHelper(index: number) {
+    if (this.requestInProgress) return;
+    const thePlayer = this.team!.players[index];
+    this.removePlayer.emit(thePlayer);
+  }
+
+  transferCaptainHelper(index: number) {
+    if (this.requestInProgress) return;
+    const thePlayer = this.team!.players[index];
+    this.transferCaptain.emit(thePlayer);
   }
 }
 

@@ -137,14 +137,14 @@ export interface TournamentPlayer {
   playerId: number;
   username: string;
   country: string;
-  osuRank: number;
-  osuPP: number;
-  taikoRank: number;
-  taikoPP: number;
-  fruitsRank: number;
-  fruitsPP: number;
-  maniaRank: number;
-  maniaPP: number;
+  osuRank?: number;
+  osuPP?: number;
+  taikoRank?: number;
+  taikoPP?: number;
+  fruitsRank?: number;
+  fruitsPP?: number;
+  maniaRank?: number;
+  maniaPP?: number;
   seed?: string;
   appUser?: AppUser;
 }

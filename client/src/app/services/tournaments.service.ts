@@ -214,6 +214,13 @@ export class TournamentsService {
       }));
   }
 
+  transferCaptain(acronym: string, teamId: string, playerId: number): Observable<TournamentTeam> {
+    return this.http.post(`${this.apiUrl}/${acronym}/transferCaptain/${teamId}/${playerId}`, {}, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam;
+      }));
+  }
+
   updateTeamName(acronym: string, teamId: string, newName: string): Observable<TournamentTeam> {
     return this.http.patch(`${this.apiUrl}/${acronym}/teamName/${teamId}`, { name: newName }, { withCredentials: true })
       .pipe(map((data) => {

@@ -243,6 +243,16 @@ export class TournamentController {
     return await this.tournamentService.removeTeamMember(acronym, teamId, playerId, req.user);
   }
 
+  @Post(':acronym/transferCaptain/:teamId/:playerId')
+  @UseGuards(OsuAuthenticatedGuard)
+  async transferCaptain(
+      @Param('acronym') acronym: string,
+      @Param('teamId', new ParseObjectIdPipe()) teamId: Types.ObjectId,
+      @Param('playerId', new ParseIntPipe()) playerId: number,
+      @Request() req): Promise<TournamentTeam> {
+    return await this.tournamentService.transferCaptain(acronym, teamId, playerId, req.user);
+  }
+
   // perms checked within service method instead of using staff role guard
   @Patch(':acronym/teamName/:teamId')
   @UseGuards(OsuAuthenticatedGuard)

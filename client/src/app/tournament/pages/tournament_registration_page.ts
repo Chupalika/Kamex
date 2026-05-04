@@ -219,6 +219,28 @@ export class TournamentRegistrationPage implements OnInit {
     }
   }
 
+  transferCaptain(team: TournamentTeam, player: TournamentPlayer) {
+    const isRemovingSelf = player.playerId === this.appUser?.osuId;
+    
+    if (window.confirm(`Transfer captain to ${player.username}?`)) {
+      this.requestInProgress = true;
+      const request = this.tournamentsService.transferCaptain(this.acronym, team._id, player.playerId);
+      request.pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })).subscribe((updatedTeam) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Successfully transferred captain to ${player.username}.`, "", { duration: 10000 });
+        const teamIndex = this.tournament?.teams.findIndex((t) => t._id === team._id);
+        if (teamIndex !== undefined) {
+          if (updatedTeam) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
+          else this.tournament?.teams.splice(teamIndex, 1);
+        }
+      });
+    }
+  }
+
   onFileSelected(event: any) {
     this.requestInProgress = true;
     const teamId = this.currentTeam!._id;

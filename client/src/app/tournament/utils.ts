@@ -1,4 +1,4 @@
-import { Mappool, MappoolSlot, Scoresheet, TournamentPlayer, TournamentTeam, Score, TournamentScoreWithRank, TournamentTeamScoreWithRank, MappoolSlotWithRanking, TournamentStatsPlayers, TournamentStatsTeams, TournamentRoundPlayerOverallStats, TournamentRoundTeamOverallStats, Tournament, TournamentStaffPermission, TournamentRound, ScoreMod } from '../models/models';
+import { Mappool, MappoolSlot, Scoresheet, TournamentPlayer, TournamentTeam, Score, TournamentScoreWithRank, TournamentTeamScoreWithRank, MappoolSlotWithRanking, TournamentStatsPlayers, TournamentStatsTeams, TournamentRoundPlayerOverallStats, TournamentRoundTeamOverallStats, Tournament, TournamentStaffPermission, TournamentRound, ScoreMod, TournamentStaffMember, GameMode } from '../models/models';
 
 //const MAP_FIELDS: string[] = [];
 //const NESTED_MAP_FIELDS: string[] = ["playerScores", "teamScores"];
@@ -397,4 +397,54 @@ export function getHrAdjustedStat(stat: number) {
 
 export function getEzAdjustedStat(stat: number) {
   return (stat / 2).toPrecision(2);
+}
+
+export function playerNameCompare(a: TournamentPlayer|TournamentStaffMember, b: TournamentPlayer|TournamentStaffMember) {
+  return a.username.toLowerCase() < b.username.toLowerCase() ? -1 : 1;
+}
+
+export function teamNameCompare(a: TournamentTeam, b: TournamentTeam) {
+  return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+}
+
+export function countryCompare(a: TournamentPlayer, b: TournamentPlayer) {
+  const ac = a.country?.toLowerCase() ?? "";
+  const bc = b.country?.toLowerCase() ?? "";
+  if (ac === bc) return 0;
+  else return ac < bc ? -1 : 1;
+};
+
+export function osuRankCompare(a: TournamentPlayer, b: TournamentPlayer) { return (a.osuRank ?? Number.MAX_SAFE_INTEGER) - (b.osuRank ?? Number.MAX_SAFE_INTEGER); }
+export function taikoRankCompare(a: TournamentPlayer, b: TournamentPlayer) { return (a.taikoRank ?? Number.MAX_SAFE_INTEGER) - (b.taikoRank ?? Number.MAX_SAFE_INTEGER); }
+export function fruitsRankCompare(a: TournamentPlayer, b: TournamentPlayer) { return (a.fruitsRank ?? Number.MAX_SAFE_INTEGER) - (b.fruitsRank ?? Number.MAX_SAFE_INTEGER); }
+export function maniaRankCompare(a: TournamentPlayer, b: TournamentPlayer) { return (a.maniaRank ?? Number.MAX_SAFE_INTEGER) - (b.maniaRank ?? Number.MAX_SAFE_INTEGER); }
+export function allRankCompare(a: TournamentPlayer, b: TournamentPlayer) {
+  return Math.min((a.osuRank ?? Number.MAX_SAFE_INTEGER),
+                  (a.taikoRank ?? Number.MAX_SAFE_INTEGER),
+                  (a.fruitsRank ?? Number.MAX_SAFE_INTEGER),
+                  (a.maniaRank ?? Number.MAX_SAFE_INTEGER)) -
+         Math.min((b.osuRank ?? Number.MAX_SAFE_INTEGER),
+                  (b.taikoRank ?? Number.MAX_SAFE_INTEGER),
+                  (b.fruitsRank ?? Number.MAX_SAFE_INTEGER),
+                  (b.maniaRank ?? Number.MAX_SAFE_INTEGER));
+}
+
+export function getRankCompare(mode: GameMode) {
+  switch (mode) {
+    case GameMode.OSU: return osuRankCompare;
+    case GameMode.TAIKO: return taikoRankCompare;
+    case GameMode.FRUITS: return fruitsRankCompare;
+    case GameMode.MANIA: return maniaRankCompare;
+    case GameMode.ALL: return allRankCompare;
+  }
+}
+
+export function seedCompare(a: TournamentPlayer|TournamentTeam, b: TournamentPlayer|TournamentTeam) {
+  const aSeed = a.seed ? parseInt(a.seed) : Number.MAX_SAFE_INTEGER;
+  const bSeed = b.seed ? parseInt(b.seed) : Number.MAX_SAFE_INTEGER;
+  if (!isNaN(aSeed) && !isNaN(bSeed) && aSeed !== bSeed) return aSeed - bSeed;
+  if (a.seed === "" && b.seed === "") return 0;
+  if (a.seed === "") return 1;
+  if (b.seed === "") return -1;
+  else return (a.seed ?? "").localeCompare(b.seed ?? "");
 }

@@ -13,7 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Title } from '@angular/platform-browser';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
-import { hasPermission } from '../utils';
+import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare } from '../utils';
 
 import { AppUser, GameMode, Tournament, TournamentPlayer, TournamentProgress, TournamentStaffMember, TournamentStaffPermission, TournamentTeam } from 'src/app/models/models';
 import { NavBarModule } from "src/app/nav_bar/nav_bar";
@@ -44,6 +44,7 @@ export class TournamentParticipantsPage implements OnInit {
   sortMethodFormControl: FormControl;
   filterFormControl: FormControl;
   displayFormControl: FormControl;
+  playerSortFormControl: FormControl
   mobileMode = false;
 
   TournamentStaffPermission = TournamentStaffPermission;
@@ -61,6 +62,7 @@ export class TournamentParticipantsPage implements OnInit {
       this.sortMethodFormControl = new FormControl("rank");
       this.filterFormControl = new FormControl("");
       this.displayFormControl = new FormControl("players");
+      this.playerSortFormControl = new FormControl("rank");
   }
 
   ngOnInit() {
@@ -91,59 +93,51 @@ export class TournamentParticipantsPage implements OnInit {
     this.authService.appUser$.subscribe((user) => this.appUser = user);
   }
 
-  private playerNameCompare = (a: TournamentPlayer|TournamentStaffMember, b: TournamentPlayer|TournamentStaffMember) => a.username.toLowerCase() < b.username.toLowerCase() ? -1 : 1;
-  private teamNameCompare = (a: TournamentTeam, b: TournamentTeam) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
-  private countryCompare = (a: TournamentPlayer, b: TournamentPlayer) => {
-    const ac = a.country?.toLowerCase() ?? "";
-    const bc = b.country?.toLowerCase() ?? "";
-    if (ac === bc) return 0;
-    else return ac < bc ? -1 : 1;
-  };
-  private seedCompare = (a: TournamentPlayer|TournamentTeam, b: TournamentPlayer|TournamentTeam) => {
-    const aSeed = a.seed ? parseInt(a.seed) : Number.MAX_SAFE_INTEGER;
-    const bSeed = b.seed ? parseInt(b.seed) : Number.MAX_SAFE_INTEGER;
-    if (!isNaN(aSeed) && !isNaN(bSeed) && aSeed !== bSeed) return aSeed - bSeed;
-    if (a.seed === "" && b.seed === "") return 0;
-    if (a.seed === "") return 1;
-    if (b.seed === "") return -1;
-    else return (a.seed ?? "").localeCompare(b.seed ?? "");
-  }
-
   sortPlayers() {
     if (this.sortMethodFormControl.value === "name") {
-      this.players = [...this.tournament!.players].sort(this.playerNameCompare);
+      this.players = [...this.tournament!.players].sort(playerNameCompare);
     }
     else if (this.sortMethodFormControl.value === "country") {
-      this.players = [...this.tournament!.players].sort((a,b) => this.countryCompare(a,b) || this.playerNameCompare(a,b));
+      this.players = [...this.tournament!.players].sort((a,b) => countryCompare(a,b) || playerNameCompare(a,b));
     }
     else if (this.sortMethodFormControl.value === "seed") {
-      this.players = [...this.tournament!.players].sort((a,b) => this.seedCompare(a,b) || this.playerNameCompare(a,b));
+      this.players = [...this.tournament!.players].sort((a,b) => seedCompare(a,b) || playerNameCompare(a,b));
     }
     // sort by rank by default
     else {
-      this.players = [...this.tournament!.players].sort((a,b) => (a.taikoRank ?? 2147483647) - (b.taikoRank ?? 2147483647));
+      this.players = [...this.tournament!.players].sort(getRankCompare(this.tournament!.gameMode));
     }
   }
 
   sortTeams() {
     if (this.sortMethodFormControl.value === "name") {
-      this.teams = [...this.tournament!.teams].sort((a,b) => this.teamNameCompare(a,b));
+      this.teams = [...this.tournament!.teams].sort(teamNameCompare);
     }
     else if (this.sortMethodFormControl.value === "country") {
-      this.teams = [...this.tournament!.teams].sort((a,b) => this.countryCompare(a.players[0], b.players[0]) || this.teamNameCompare(a,b));
+      this.teams = [...this.tournament!.teams].sort((a,b) => countryCompare(a.players[0], b.players[0]) || teamNameCompare(a,b));
     }
     else if (this.sortMethodFormControl.value === "seed") {
-      this.teams = [...this.tournament!.teams].sort((a,b) => this.seedCompare(a, b) || this.teamNameCompare(a,b));
+      this.teams = [...this.tournament!.teams].sort((a,b) => seedCompare(a, b) || teamNameCompare(a,b));
     }
     // sort by average rank by default
     else {
+      const getPlayerRank = (player: TournamentPlayer) => {
+        switch (this.tournament!.gameMode) {
+          case GameMode.OSU: return player.osuRank;
+          case GameMode.TAIKO: return player.taikoRank;
+          case GameMode.FRUITS: return player.fruitsRank;
+          case GameMode.MANIA: return player.maniaRank;
+          case GameMode.ALL: return Math.min(player.osuRank ?? Number.MAX_SAFE_INTEGER, player.taikoRank ?? Number.MAX_SAFE_INTEGER, player.fruitsRank ?? Number.MAX_SAFE_INTEGER, player.maniaRank ?? Number.MAX_SAFE_INTEGER);
+          default: return Number.MAX_SAFE_INTEGER;
+        }
+      };
       this.teams = [...this.tournament!.teams].sort(
-        (a,b) => (a.players.reduce((acc, player) => acc + player.taikoRank, 0) / a.players.length) - (b.players.reduce((acc, player) => acc + player.taikoRank, 0) / b.players.length));
+        (a,b) => (a.players.reduce((acc, player) => acc + (getPlayerRank(player) ?? 0), 0) / a.players.length) - (b.players.reduce((acc, player) => acc + (getPlayerRank(player) ?? 0), 0) / b.players.length));
     }
   }
 
   sortStaffMembers() {
-    this.staffMembers = [...this.tournament!.staffMembers].sort((a,b) => this.playerNameCompare(a,b));
+    this.staffMembers = [...this.tournament!.staffMembers].sort(playerNameCompare);
   }
 
   filterStaffMembers() {

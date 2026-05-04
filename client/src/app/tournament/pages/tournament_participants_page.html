@@ -29,6 +29,14 @@
         <mat-option value="staff">Staff</mat-option>
       </mat-select>
     </mat-form-field>
+    <mat-form-field class="option-dropdown" *ngIf="displayFormControl.value === 'teams'" appearance="outline">
+      <mat-label>Team Player Sort</mat-label>
+      <mat-select [formControl]="playerSortFormControl">
+        <mat-option value="rank">Rank</mat-option>
+        <mat-option value="name">Name</mat-option>
+        <mat-option value="seed">Seed</mat-option>
+      </mat-select>
+    </mat-form-field>
     <div class="mat-body-1 participant-info-text">
       {{ participantsCountText }}
       <button
@@ -61,7 +69,7 @@
     <div *ngIf="displayFormControl.value === 'teams'" class="participants-container">
       <div *ngIf="teams.length === 0" class="mat-headline-6">No registered teams yet!</div>
       <div *ngFor="let team of teams">
-        <tournament-team-card class="tournament-card" [team]="team" [gameMode]="tournament.gameMode" [mobileMode]="mobileMode"></tournament-team-card>
+        <tournament-team-card class="tournament-card" [team]="team" [gameMode]="tournament.gameMode" [playerSortMethod]="playerSortFormControl.value" [mobileMode]="mobileMode"></tournament-team-card>
       </div>
     </div>
 

@@ -771,6 +771,37 @@ export class TournamentService {
     return theTeam;
   }
 
+  async transferCaptain(acronym: string, teamId: Types.ObjectId, playerId: number, caller: AppUser): Promise<TournamentTeam> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate({ path: "teams", populate: "players" });
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
+
+    const theTeam = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`) as HydratedDocument<TournamentTeam>;
+    if (theTeam === undefined) throw new TeamNotFoundError();
+    if (theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
+
+    const newCaptainIndex = theTeam.players.findIndex((player: TournamentPlayer) => player.playerId === playerId);
+    if (newCaptainIndex === -1) throw new PlayerNotFoundOnTeamError();
+
+    const newCaptain = theTeam.players.splice(newCaptainIndex, 1)[0];
+    theTeam.players = [newCaptain].concat(theTeam.players);
+    await theTeam.save();
+
+    // discord log
+    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+      const title = "Team captain transferred";
+      let description = `\`${caller.osuUsername}\` transferred captain to \`${newCaptain.username}\` on team \`${theTeam.name}\``;
+      try {
+        await this.discordService.log(tourney.discordSettings.serverId, tourney.discordSettings.logChannelId, title, description);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    return theTeam;
+  }
+
   async editTeamName(acronym: string, teamId: Types.ObjectId, editTeamNameDto: EditTeamNameDto, caller: AppUser): Promise<TournamentTeam> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("teams");
     const theTeam = await this.tournamentTeamModel.findOne({_id: teamId}).orFail().populate("players");

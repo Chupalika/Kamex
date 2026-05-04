@@ -46,11 +46,17 @@
 
   <ng-container *ngIf="tournament.enableTeams">
     <div class="mat-headline-6">Your team</div>
-    <ng-container *ngIf="!isLoggedIn">Not logged in</ng-container>
-    <ng-container *ngIf="!isRegistered">Not registered</ng-container>
+    <div *ngIf="!isLoggedIn" class="mat-body-1">Not logged in</div>
+    <div *ngIf="isLoggedIn && !isRegistered" class="mat-body-1">Not registered</div>
     <ng-container *ngIf="isRegistered">
       <div *ngIf="currentTeam as team">
-        <tournament-team-card [team]="team" [gameMode]="tournament.gameMode" [editable]="canEditTeam" (removePlayer)="removePlayer(team, $event)"></tournament-team-card>
+        <tournament-team-card
+          [team]="team"
+          [gameMode]="tournament.gameMode"
+          [editable]="canEditTeam"
+          (removePlayer)="removePlayer(team, $event)"
+          (transferCaptain)="transferCaptain(team, $event)"
+        ></tournament-team-card>
         <div *ngIf="canEditTeam" class="team-edit-item mat-body-1">
           <button
             mat-mini-fab
