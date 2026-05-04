@@ -147,6 +147,20 @@ export class TournamentsService {
     return this.http.delete(`${this.apiUrl}/${acronym}/player/${playerId}`, { withCredentials: true });
   }
 
+  createTournamentTeam(acronym: string, partialTeam: Partial<TournamentTeam>): Observable<TournamentTeam> {
+    return this.http.post(`${this.apiUrl}/${acronym}/createTeam`, partialTeam, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam;
+      }));
+  }
+
+  leaveTournamentTeam(acronym: string, teamId: string): Observable<TournamentTeam|undefined> {
+    return this.http.post(`${this.apiUrl}/${acronym}/leaveTeam/${teamId}`, {}, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam|undefined;
+      }));
+  }
+
   addTournamentTeam(acronym: string, partialTeam: Partial<TournamentTeam>): Observable<TournamentTeam> {
     return this.http.post(`${this.apiUrl}/${acronym}/team`, partialTeam, { withCredentials: true })
       .pipe(map((data) => {
@@ -163,6 +177,41 @@ export class TournamentsService {
 
   removeTournamentTeam(acronym: string, teamId: string) {
     return this.http.delete(`${this.apiUrl}/${acronym}/team/${teamId}`, { withCredentials: true });
+  }
+
+  requestToJoinTeam(acronym: string, teamId: string): Observable<TournamentTeam> {
+    return this.http.post(`${this.apiUrl}/${acronym}/requestTeam/${teamId}`, {}, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam;
+      }));
+  }
+
+  retractTeamJoinRequest(acronym: string, teamId: string): Observable<TournamentTeam> {
+    return this.http.post(`${this.apiUrl}/${acronym}/unrequestTeam/${teamId}`, {}, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam;
+      }));
+  }
+
+  acceptTeamJoinRequest(acronym: string, teamId: string, playerId: number): Observable<TournamentTeam> {
+    return this.http.post(`${this.apiUrl}/${acronym}/acceptTeamRequest/${teamId}/${playerId}`, {}, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam;
+      }));
+  }
+
+  denyTeamJoinRequest(acronym: string, teamId: string, playerId: number): Observable<TournamentTeam> {
+    return this.http.post(`${this.apiUrl}/${acronym}/denyTeamRequest/${teamId}/${playerId}`, {}, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam;
+      }));
+  }
+
+  removeTeamMember(acronym: string, teamId: string, playerId: number): Observable<TournamentTeam> {
+    return this.http.post(`${this.apiUrl}/${acronym}/removeTeamMember/${teamId}/${playerId}`, {}, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as TournamentTeam;
+      }));
   }
 
   updateTeamName(acronym: string, teamId: string, newName: string): Observable<TournamentTeam> {
@@ -248,30 +297,6 @@ export class TournamentsService {
   removeTournamentSlot(acronym: string, roundId: string, slotId: string) {
     return this.http.delete(`${this.apiUrl}/${acronym}/round/${roundId}/slot/${slotId}`, { withCredentials: true });
   }
-
-  /*
-  addTournamentLobby(acronym: string, roundId: string, id: string, time: Date, players: TournamentPlayer[], teams: TournamentTeam[], matchIds: number[]): Observable<TournamentLobby> {
-    console.log('addLobby');
-    const minimizedPlayers = players.map((player) => ({_id: player._id}));
-    const minimizedTeams = teams.map((team) => ({_id: team._id}));
-    return this.http.post(`${this.apiUrl}/${acronym}/round/${roundId}/lobby`, { id, time, players: minimizedPlayers, teams: minimizedTeams, matchIds }, { withCredentials: true })
-      .pipe(map((data) => {
-        console.log(data);
-        return convertDatesInObject(data) as TournamentLobby;
-      }));
-  }
-
-  editTournamentLobby(acronym: string, roundId: string, lobbyId: string, id: string, time: Date, players: TournamentPlayer[], teams: TournamentTeam[], matchIds: number[]): Observable<TournamentLobby> {
-    console.log('editLobby');
-    const minimizedPlayers = players.map((player) => ({_id: player._id}));
-    const minimizedTeams = teams.map((team) => ({_id: team._id}));
-    return this.http.patch(`${this.apiUrl}/${acronym}/round/${roundId}/lobby/${lobbyId}`, { id, time, players: minimizedPlayers, teams: minimizedTeams, matchIds }, { withCredentials: true })
-      .pipe(map((data) => {
-        console.log(data);
-        return convertDatesInObject(data) as TournamentLobby;
-      }));
-  }
-  */
 
   addTournamentMatch(acronym: string, roundId: string, partialMatch: Partial<TournamentMatch>): Observable<TournamentMatch> {
     return this.http.post(`${this.apiUrl}/${acronym}/round/${roundId}/match`, partialMatch, { withCredentials: true })

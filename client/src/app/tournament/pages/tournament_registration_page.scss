@@ -12,12 +12,31 @@
   }
 }
 
-.team-image-uploader {
+.team-edit-item {
   display: flex;
   align-items: center;
 
   button {
-    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
+.join-request {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  .request-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    
+    .request-action {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: unset;
+    }
   }
 }
 

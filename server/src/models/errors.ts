@@ -122,9 +122,33 @@ export class TeamAlreadyAcceptedError extends HttpException {
   }
 }
 
+export class TeamEditsDisabledError extends HttpException {
+  constructor() {
+    super("Team edits are currently disabled.", HttpStatus.BAD_REQUEST);
+  }
+}
+
 export class PlayerNotFoundOnTeamError extends HttpException {
   constructor() {
     super("Player is not on this team.", HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class PlayerAlreadyOnATeamError extends HttpException {
+  constructor() {
+    super("Player is already on a team.", HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class PlayerJoinRequestPendingError extends HttpException {
+  constructor() {
+    super("Player already has a pending request to join a team.", HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class PlayerJoinRequestNotFoundError extends HttpException {
+  constructor() {
+    super("Player does not have a pending join request for this team.", HttpStatus.BAD_REQUEST);
   }
 }
 
@@ -149,6 +173,12 @@ export class TeamNotFoundError extends HttpException {
 export class PlayerOrTeamNotFoundError extends HttpException {
   constructor() {
     super("Player or team ID not found in this tournament.", HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class TeamAtMaximumCapacityError extends HttpException {
+  constructor() {
+    super("This team is at maximum capacity.", HttpStatus.BAD_REQUEST);
   }
 }
 

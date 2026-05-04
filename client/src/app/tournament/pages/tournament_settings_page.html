@@ -24,40 +24,6 @@
     </tournament-settings-editor>
   </ng-container>
 
-  <!--
-  <ng-container *ngIf="hasPermission(TournamentStaffRolePermission.ADD_PLAYER)">
-    <div class="mat-headline-5 section-label">Add Player</div>
-    <form [formGroup]="addPlayerForm" (ngSubmit)="addPlayer()" class="tourney-form">
-      <mat-form-field>
-        <mat-label>Player ID</mat-label>
-        <input matInput type="number" formControlName="playerId">
-      </mat-form-field>
-      <button
-        mat-raised-button
-        type="submit"
-        color="primary"
-        [disabled]="!addPlayerForm.valid || requestInProgress">Add</button>
-    </form>
-  </ng-container>
-
-  <ng-container *ngIf="hasPermission(TournamentStaffRolePermission.REMOVE_PLAYER)">
-    <div class="mat-headline-5 section-label">Remove Player</div>
-    <form [formGroup]="removePlayerForm" (ngSubmit)="removePlayer()" class="tourney-form">
-      <mat-form-field>
-        <mat-label>Player</mat-label>
-        <mat-select formControlName="playerId">
-          <mat-option *ngFor="let player of getSortedPlayers()" [value]="player.playerId">{{ player.username }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <button
-        mat-raised-button
-        type="submit"
-        color="primary"
-        [disabled]="!removePlayerForm.valid || requestInProgress">Remove</button>
-    </form>
-  </ng-container>
-  -->
-
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_PLAYERS)">
     <div class="mat-headline-5 section-label">Player Editor</div>
     <form [formGroup]="playerEditorForm" class="tourney-form">
@@ -85,7 +51,7 @@
       mat-raised-button
       class="refresh-players-button"
       type="button"
-      color="primary"
+      color="warn"
       [disabled]="isTourneyConcluded || requestInProgress"
       (click)="refreshAllPlayerData()"
     >

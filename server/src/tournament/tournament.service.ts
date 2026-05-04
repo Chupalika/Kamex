@@ -2,7 +2,7 @@ import { Model, Types, HydratedDocument, isValidObjectId, Document, ObjectId } f
 import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MappoolSlotDto, TournamentDto, TournamentMatchDto, TournamentRoundDto, TournamentPlayerDto, TournamentStaffMemberDto, TournamentStaffRoleDto, ScoreDto, TournamentTeamDto, SubmitMatchDto, OsuUserDto, EditTeamNameDto } from '../models/dtos';
-import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupsNotEnabledError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError } from '../models/errors';
+import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupsNotEnabledError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError } from '../models/errors';
 import { GameMode, TournamentProgress } from '../models/enums';
 import { PlayerOrTeam, ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
 import { AppUser } from 'src/schemas/app-user.schema';
@@ -69,7 +69,7 @@ export class TournamentService {
       .orFail()
       .populate("rounds")
       .populate("players")
-      .populate({ path: "teams", populate: "players" })
+      .populate({ path: "teams", populate: "players joinRequests" })
       .populate({ path: "staffMembers", populate: "roles" })
       .populate("staffRoles");
     // Separate db call to populate appUsers
@@ -358,14 +358,17 @@ export class TournamentService {
 
     const thePlayer = tourney.players[index];
     tourney.players.splice(index, 1);
+    await tourney.save();
+
+    // remove from teams
     for (let team of tourney.teams) {
       const index2 = team.players.findIndex((x: TournamentPlayer) => x.playerId === playerId);
       if (index2 >= 0) {
         team.players.splice(index2, 1);
         await (team as HydratedDocument<TournamentTeam>).save();
+        if (team.players.length === 0) await this.removeTeam(tourney.acronym, (team as HydratedDocument<TournamentTeam>)._id);
       }
     }
-    await tourney.save();
 
     // Unassign discord role if applicable
     let unassignRoleStatus: Error|boolean = false;
@@ -497,45 +500,69 @@ export class TournamentService {
     }
   }
 
-  async createTeam(acronym: string, tournamentTeamDto: TournamentTeamDto, captainId: number): Promise<TournamentTeam> {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players").populate("teams");
+  async createTeam(acronym: string, tournamentTeamDto: TournamentTeamDto, caller: AppUser): Promise<TournamentTeam> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players").populate({ path: "teams", populate: "players joinRequests" });
 
-    if (tourney.progress !== TournamentProgress.REGISTRATION) throw new ProgressLockedError();
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
 
-    /*
-    if (Date.now() < new Date(tourney.registrationSettings.startDate).getTime() ||
-        Date.now() > new Date(tourney.registrationSettings.endDate).getTime()) {
-      throw new RegistrationClosedError();
+    const thePlayer = tourney.players.find((x: TournamentPlayer) => x.playerId === caller.osuId);
+    if (!thePlayer) throw new PlayerNotRegisteredError();
+
+    if (tourney.teams.some(team => team.players.find(player => player.playerId === caller.osuId))) throw new PlayerAlreadyOnATeamError();
+    if (tourney.teams.some(team => team.joinRequests.find(player => player.playerId === caller.osuId))) throw new PlayerJoinRequestPendingError();
+
+    // only take these values
+    const tournamentTeamDtoClone: Partial<TournamentTeamDto> = {
+      name: tournamentTeamDto.name,
+      imageLink: tournamentTeamDto.imageLink,
+      players: [thePlayer as any], // trolleh
     }
-    */
+    const newTeam = await this.createTeamHelper(tourney, tournamentTeamDtoClone as TournamentTeamDto);
 
-    // Assert that the captain is the first player
-    if (tournamentTeamDto.players[0].playerId !== captainId) {
-      throw new TeamCaptainError();
-    }
-    
-    // Assert that the captain is not already a captain of another team
-    for (let team of tourney.teams) {
-      if (team.players[0].playerId === captainId) {
-        throw new TeamCaptainExistsError();
+    // discord log
+    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+      const title = "Team created";
+      let description = `\`${caller.osuUsername}\` created team \`${newTeam.name}\``;
+      try {
+        await this.discordService.log(tourney.discordSettings.serverId, tourney.discordSettings.logChannelId, title, description);
+      } catch (error) {
+        console.log(error);
       }
     }
 
-    // Auto set captain to confirmed and everyone else to unconfirmed
-    /*
-    const confirmedStatus = new Map<number, boolean>();
-    for (let i = 0; i < tournamentTeamDto.players.length; i++) {
-      const tourneyPlayer = tournamentTeamDto.players[i];
-      if (i === 0) confirmedStatus.set(tourneyPlayer.playerId, true);
-      else confirmedStatus.set(tourneyPlayer.playerId, false);
-    }
-    const tournamentTeamDtoClone: TournamentTeamDto = {
-      ...tournamentTeamDto,
-      confirmedStatus,
-    }
-    */
+    return newTeam;
+  }
 
-    return this.createTeamHelper(tourney, tournamentTeamDto);
+  async leaveTeam(acronym: string, teamId: Types.ObjectId, caller: AppUser): Promise<TournamentTeam|undefined> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players").populate({ path: "teams", populate: "players" });
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
+
+    const theTeam = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`) as HydratedDocument<TournamentTeam>;
+    if (theTeam === undefined) throw new TeamNotFoundError();
+
+    const playerIndex = theTeam.players.findIndex((player: TournamentPlayer) => player.playerId === caller.osuId);
+    if (playerIndex === -1) throw new PlayerNotFoundOnTeamError();
+    
+    theTeam.players.splice(playerIndex, 1);
+    await theTeam.save();
+
+    if (theTeam.players.length === 0) await this.removeTeam(acronym, teamId);
+
+    // discord log
+    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+      const title = "Player left team";
+      const description = `\`${caller.osuUsername}\` left the team \`${theTeam.name}\``;
+      try {
+        await this.discordService.log(tourney.discordSettings.serverId, tourney.discordSettings.logChannelId, title, description);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    return theTeam.players.length === 0 ? undefined : theTeam;
   }
 
   async addTeam(acronym: string, tournamentTeamDto: TournamentTeamDto): Promise<TournamentTeam> {
@@ -552,8 +579,8 @@ export class TournamentService {
     }
 
     // Assert that the players are registered
-    const registeredPlayerIds = tourney.players.map((player: HydratedDocument<TournamentPlayer>) => player._id.toString());
-    if (tournamentTeamDto.players.some(player => !registeredPlayerIds.includes(player._id))) {
+    const registeredPlayerIds = tourney.players.map((player: HydratedDocument<TournamentPlayer>) => player.playerId);
+    if (tournamentTeamDto.players.some(player => !registeredPlayerIds.includes(player.playerId))) {
       throw new PlayerNotRegisteredError();
     }
 
@@ -624,50 +651,140 @@ export class TournamentService {
     }
   }
 
-  /*
-  async acceptTeamInvite(acronym: string, teamId: Types.ObjectId, playerId: number): Promise<TournamentTeam> {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players").populate("teams");
+  async requestToJoinTeam(acronym: string, teamId: Types.ObjectId, caller: AppUser): Promise<TournamentTeam> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players").populate({ path: "teams", populate: "players joinRequests" });
 
-    // Assert that the player is not already confirmed for another team
-    for (let team of tourney.teams) {
-      if (!!team.confirmedStatus.get(playerId)) {
-        throw new TeamAlreadyAcceptedError();
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
+
+    const theTeam = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`) as HydratedDocument<TournamentTeam>;
+    if (theTeam === undefined) throw new TeamNotFoundError();
+
+    const thePlayer = tourney.players.find((player: TournamentPlayer) => player.playerId === caller.osuId);
+    if (thePlayer === undefined) throw new PlayerNotRegisteredError();
+
+    if (tourney.teams.some(team => team.players.find(player => player.playerId === caller.osuId))) throw new PlayerAlreadyOnATeamError();
+    if (tourney.teams.some(team => team.joinRequests.find(player => player.playerId === caller.osuId))) throw new PlayerJoinRequestPendingError();
+
+    theTeam.joinRequests.push(thePlayer);
+    await theTeam.save();
+    return theTeam;
+  }
+
+  async retractTeamJoinRequest(acronym: string, teamId: Types.ObjectId, caller: AppUser): Promise<TournamentTeam> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate({ path: "teams", populate: "players joinRequests" });
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
+
+    const theTeam = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`) as HydratedDocument<TournamentTeam>;
+    if (theTeam === undefined) throw new TeamNotFoundError();
+
+    const thePlayerIndex = theTeam.joinRequests.findIndex((player: TournamentPlayer) => player.playerId === caller.osuId);
+    if (thePlayerIndex === -1) throw new PlayerJoinRequestNotFoundError();
+
+    theTeam.joinRequests.splice(thePlayerIndex, 1);
+    await theTeam.save();
+    return theTeam;
+  }
+
+  async acceptTeamJoinRequest(acronym: string, teamId: Types.ObjectId, playerId: number, caller: AppUser): Promise<TournamentTeam> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate({ path: "teams", populate: "players joinRequests" });
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
+
+    const theTeam = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`) as HydratedDocument<TournamentTeam>;
+    if (theTeam === undefined) throw new TeamNotFoundError();
+    if (theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
+
+    if (theTeam.players.length >= tourney.registrationSettings.maxTeamSize) throw new TeamAtMaximumCapacityError();
+
+    const thePlayerIndex = theTeam.joinRequests.findIndex((player: TournamentPlayer) => player.playerId === playerId);
+    if (thePlayerIndex === -1) throw new PlayerJoinRequestNotFoundError();
+
+    const thePlayer = theTeam.joinRequests[thePlayerIndex];
+    theTeam.joinRequests.splice(thePlayerIndex, 1);
+    theTeam.players.push(thePlayer);
+    await theTeam.save();
+
+    // discord log
+    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+      const title = "Team join request accepted";
+      let description = `\`${caller.osuUsername}\` accepted join request from \`${thePlayer.username}\` for team \`${theTeam.name}\``;
+      try {
+        await this.discordService.log(tourney.discordSettings.serverId, tourney.discordSettings.logChannelId, title, description);
+      } catch (error) {
+        console.log(error);
       }
     }
 
-    const theTeam = await this.tournamentTeamModel.findOne({_id: teamId}).orFail();
-
-    // Assert that the player is in this team
-    if (!theTeam.players.find(player => player.playerId === playerId)) {
-      throw new TeamMismatchError();
-    }
-
-    theTeam.confirmedStatus.set(playerId, true);
-    theTeam.save();
     return theTeam;
   }
-  */
+
+  async denyTeamJoinRequest(acronym: string, teamId: Types.ObjectId, playerId: number, caller: AppUser): Promise<TournamentTeam> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate({ path: "teams", populate: "players joinRequests" });
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
+
+    const theTeam = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`) as HydratedDocument<TournamentTeam>;
+    if (theTeam === undefined) throw new TeamNotFoundError();
+    if (theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
+
+    const thePlayerIndex = theTeam.joinRequests.findIndex((player: TournamentPlayer) => player.playerId === playerId);
+    if (thePlayerIndex === -1) throw new PlayerJoinRequestNotFoundError();
+
+    theTeam.joinRequests.splice(thePlayerIndex, 1);
+    await theTeam.save();
+    return theTeam;
+  }
+
+  async removeTeamMember(acronym: string, teamId: Types.ObjectId, playerId: number, caller: AppUser): Promise<TournamentTeam> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate({ path: "teams", populate: "players" });
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
+
+    const theTeam = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`) as HydratedDocument<TournamentTeam>;
+    if (theTeam === undefined) throw new TeamNotFoundError();
+    if (theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
+
+    const thePlayerIndex = theTeam.players.findIndex((player: TournamentPlayer) => player.playerId === playerId);
+    if (thePlayerIndex === -1) throw new PlayerNotFoundOnTeamError();
+
+    const thePlayer = theTeam.players[thePlayerIndex];
+    theTeam.players.splice(thePlayerIndex, 1);
+    await theTeam.save();
+
+    // discord log
+    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+      const title = "Team member removed";
+      let description = `\`${caller.osuUsername}\` removed \`${thePlayer.username}\` from team \`${theTeam.name}\``;
+      try {
+        await this.discordService.log(tourney.discordSettings.serverId, tourney.discordSettings.logChannelId, title, description);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    return theTeam;
+  }
 
   async editTeamName(acronym: string, teamId: Types.ObjectId, editTeamNameDto: EditTeamNameDto, caller: AppUser): Promise<TournamentTeam> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("teams");
     const theTeam = await this.tournamentTeamModel.findOne({_id: teamId}).orFail().populate("players");
 
-    // Only allow team captain during registration to upload
-    if (tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEdits) throw new ProgressLockedError();
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+    if (!tourney.allowTeamEdits) throw new TeamEditsDisabledError();
     if (theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
 
-    // Assert that the team is associated with the tourney
     const theTeam2 = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`);
     if (theTeam2 === undefined) throw new TeamNotFoundError();
 
-    // Don't allow duplicate team name
-    if (tourney.teams.find((team: HydratedDocument<TournamentTeam>) => team.name === editTeamNameDto.name && `${team._id}` !== `${teamId}`)) {
-      throw new TeamExistsError();
-    }
-
-    if (editTeamNameDto.name.length > 100 || editTeamNameDto.name.length < 1) {
-      throw new TeamNameLengthError();
-    }
+    // duplicate team name and length limit check
+    if (tourney.teams.find((team: HydratedDocument<TournamentTeam>) => team.name === editTeamNameDto.name && `${team._id}` !== `${teamId}`)) throw new TeamExistsError();
+    if (editTeamNameDto.name.length > 100 || editTeamNameDto.name.length < 1) throw new TeamNameLengthError();
 
     const previousName = theTeam.name;
     theTeam.name = editTeamNameDto.name;
@@ -700,10 +817,10 @@ export class TournamentService {
     if (staffMemberUpload && [TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
     // If not a staff member upload, only allow team captain during registration to upload
-    if (!staffMemberUpload && tourney.progress !== TournamentProgress.REGISTRATION && !tourney.allowTeamEdits) throw new ProgressLockedError();
+    if (!staffMemberUpload && tourney.progress !== TournamentProgress.REGISTRATION) throw new ProgressLockedError();
+    if (!staffMemberUpload && !tourney.allowTeamEdits) throw new TeamEditsDisabledError();
     if (!staffMemberUpload && theTeam.players[0].playerId !== caller.osuId) throw new NotTeamCaptainError();
 
-    // Assert that the team is associated with the tourney
     const theTeam2 = tourney.teams.find((team: HydratedDocument<TournamentTeam>) => `${team._id}` === `${teamId}`);
     if (theTeam2 === undefined) throw new TeamNotFoundError();
 
@@ -711,8 +828,8 @@ export class TournamentService {
     theTeam.imageLink = imageUrl;
     await theTeam.save();
 
-    // discord log
-    if (tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
+    // discord log (if edited by non-staff member)
+    if (!staffMemberUpload && tourney.discordSettings.serverId && tourney.discordSettings.logChannelId) {
       const title = "Team image updated";
       let description = `\`${caller.osuUsername}\` updated team image for \`${theTeam.name}\``;
       try {
@@ -1177,93 +1294,6 @@ export class TournamentService {
     return createdBeatmap;
   }
 
-  /*
-  async addTournamentLobby(acronym: string, roundId: Types.ObjectId, tournamentLobbyDto: TournamentLobbyDto): Promise<TournamentLobby> {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds");
-
-    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
-
-    // Assert that the round is associated with the tourney
-    // The type doesn't have the _id property for some reason so I'm casting to any
-    const round = tourney.rounds.find((round: any) => `${round._id}` === `${roundId}`);
-    if (round === undefined) throw new TourneyMismatchError();
-
-    // Assert that the players and teams are registered
-    // The type doesn't have the _id property for some reason so I'm casting to any
-    const registeredPlayerIds = tourney.players.map((player: any) => player._id.toString());
-    if (tournamentLobbyDto.players.some((player: any) => !registeredPlayerIds.includes(player._id))) {
-      throw new PlayerNotRegisteredError();
-    }
-    const registeredTeamIds = tourney.teams.map((team: any) => team._id.toString());
-    if (tournamentLobbyDto.teams.some((team: any) => !registeredTeamIds.includes(team._id))) {
-      throw new TeamNotRegisteredError();
-    }
-
-    const tourneyRound = await this.tournamentRoundModel.findOne({ _id: roundId }).orFail();
-
-    // Don't allow duplicate lobby ID
-    if (tourneyRound.lobbies.find((x: any) => x.id === tournamentLobbyDto.id)) {
-      throw new LobbyExistsError();
-    }
-
-    const createdLobby = new this.tournamentLobbyModel(tournamentLobbyDto);
-    await createdLobby.save();
-    tourneyRound.lobbies.push(createdLobby);
-    await tourneyRound.save();
-
-    for (let matchId of tournamentLobbyDto.matchIds) {
-      await this.submitMatch(acronym, roundId, matchId);
-    }
-
-    return createdLobby;
-  }
-
-  async editTournamentLobby(acronym: string, roundId: Types.ObjectId, lobbyId: Types.ObjectId, tournamentLobbyDto: TournamentLobbyDto): Promise<TournamentLobby> {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds");
-
-    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
-
-    // Assert that the round is associated with the tourney
-    // The type doesn't have the _id property for some reason so I'm casting to any
-    const round = tourney.rounds.find((round: any) => `${round._id}` === `${roundId}`);
-    if (round === undefined) throw new TourneyMismatchError();
-
-    const tourneyRound = await this.tournamentRoundModel.findOne({ _id: roundId }).orFail().populate("picks");
-    const tourneyLobby = await this.tournamentLobbyModel.findOne({ _id: lobbyId }).orFail().populate("players").populate("teams");
-
-    // Assert that the players and teams are registered
-    // The type doesn't have the _id property for some reason so I'm casting to any
-    const registeredPlayerIds = tourney.players.map((player: any) => player._id.toString());
-    if (tournamentLobbyDto.players.some((player: any) => !registeredPlayerIds.includes(player._id))) {
-      throw new PlayerNotRegisteredError();
-    }
-    const registeredTeamIds = tourney.teams.map((team: any) => team._id.toString());
-    if (tournamentLobbyDto.teams.some((team: any) => !registeredTeamIds.includes(team._id))) {
-      throw new TeamNotRegisteredError();
-    }
-
-    // Don't allow duplicate lobby ID
-    if (tourneyRound.lobbies.find((x: any) => x.id === tournamentLobbyDto.id && !x._id.equals(lobbyId))) {
-      throw new LobbyExistsError();
-    }
-
-    for (let matchId of tournamentLobbyDto.matchIds) {
-      if (!tourneyLobby.matchIds.includes(matchId)) {
-        await this.submitMatch(acronym, roundId, matchId);
-      }
-    }
-
-    tourneyLobby.id = tournamentLobbyDto.id;
-    tourneyLobby.time = tournamentLobbyDto.time;
-    tourneyLobby.players = tournamentLobbyDto.players as TournamentPlayer[];
-    tourneyLobby.teams = tournamentLobbyDto.teams as TournamentTeam[];
-    tourneyLobby.matchIds = tournamentLobbyDto.matchIds;
-
-    await tourneyLobby.save();
-    return tourneyLobby;
-  }
-  */
-
   async addTournamentMatch(acronym: string, roundId: Types.ObjectId, tournamentMatchDto: TournamentMatchDto): Promise<TournamentMatch> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds").populate("staffMembers");
 
@@ -1420,6 +1450,11 @@ export class TournamentService {
     tourneyMatch.matchProgression = tournamentMatchDto.matchProgression;
 
     await tourneyMatch.save();
+    if (tourneyMatch.isTeamMatch) {
+      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
+    } else {
+      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
+    }
     await tourneyMatch.populate("referees");
     await tourneyMatch.populate("streamers");
     await tourneyMatch.populate("commentators");

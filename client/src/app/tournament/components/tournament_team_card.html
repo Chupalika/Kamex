@@ -29,17 +29,14 @@
           <span *ngIf="gameMode === GameMode.ALL">(#{{ player.osuRank }}/#{{ player.taikoRank }}/#{{ player.fruitsRank }}/#{{ player.maniaRank }})</span>
           &nbsp;
           <div class="info-seed"><span class="material-symbols-outlined icon" [class.no-seed]="!player.seed">potted_plant</span> {{ player.seed ?? "" }}</div>
-          <button
+          <div
             *ngIf="editable"
-            mat-mini-fab
-            class="team-card-remove-button"
-            color="accent"
-            (click)="removePlayer(i)"
-            [disabled]="requestInProgress"
+            class="remove-button"
+            (click)="removePlayerHelper(i)"
             matTooltip="remove"
           >
             <mat-icon>close</mat-icon>
-          </button>
+          </div>
         </div>
       </div>
     </div>

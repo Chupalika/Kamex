@@ -26,7 +26,7 @@
         mat-raised-button
         class="advance-stage-button"
         type="button"
-        color="primary"
+        color="warn"
         (click)="advanceToNextStage()"
         [disabled]="initialTournament.progress === TournamentProgress.CONCLUDED || requestInProgress">
       Advance to next stage
@@ -95,7 +95,7 @@
   </ng-container>
 
   <mat-checkbox formControlName="enableTeams">Enable teams</mat-checkbox>
-  <mat-checkbox *ngIf="enableTeamsFormControl.value" formControlName="allowTeamEdits">Enable team edits <mat-icon class="info-icon" matTooltip="Allow team captains to edit their team name and image.">info</mat-icon></mat-checkbox>
+  <mat-checkbox *ngIf="enableTeamsFormControl.value" formControlName="allowTeamEdits">Enable team edits <mat-icon class="info-icon" matTooltip="Allows players to create, join, leave, and edit teams.">info</mat-icon></mat-checkbox>
 
   <span class="mat-body-1 registration-settings-header">
     Registration settings

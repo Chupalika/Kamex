@@ -1,23 +1,26 @@
 import { CommonModule } from '@angular/common';
 import { Component, NgModule, OnInit, Inject, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { combineLatest, interval, Observable, throwError } from 'rxjs';
 import { finalize, switchMap, take, map, catchError } from 'rxjs/operators';
 
-import { AppUser, Tournament } from 'src/app/models/models';
+import { AppUser, GameMode, Tournament, TournamentPlayer } from 'src/app/models/models';
 import { TournamentProgress, TournamentStaffPermission, TournamentTeam } from 'src/app/models/models';
 import { NavBarModule } from "src/app/nav_bar/nav_bar";
 import { AuthService } from 'src/app/services/auth.service';
+import { TournamentPlayerCardModule } from 'src/app/tournament/components/tournament_player_card';
 import { TournamentTeamCardModule } from 'src/app/tournament/components/tournament_team_card';
 import { TournamentTeamEditorModule } from 'src/app/tournament/components/tournament_team_editor';
 import { Title } from '@angular/platform-browser';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'tournament_registration_page',
@@ -74,43 +77,43 @@ export class TournamentRegistrationPage implements OnInit {
             ${Math.floor(theNumber / 1000 % 60)} seconds`;
   }
 
-  getRegistrationStatus() {
-    if (!this.isLoggedIn()) return "Login to check";
-    if (this.isRegistered()) return "Registered";
+  get registrationStatus() {
+    if (!this.isLoggedIn) return "Login to check";
+    if (this.isRegistered) return "Registered";
     return "Not registered";
   }
 
-  isRegistrationClosed() {
+  get isRegistrationClosed() {
     return Date.now() < this.tournament!.registrationSettings.startDate.getTime() ||
            Date.now() > this.tournament!.registrationSettings.endDate.getTime();
   }
 
-  isLoggedIn() {
+  get isLoggedIn() {
     return this.appUser !== undefined;
   }
 
-  isAllowedToRegister() {
+  get isAllowedToRegister() {
     const staffMember = this.tournament!.staffMembers.find((staffMember) => staffMember.playerId === this.appUser?.osuId);
     return staffMember?.roles.every(role => role.permissions.includes(TournamentStaffPermission.REGISTER)) ?? true;
   }
 
-  isRegistered() {
+  get isRegistered() {
     if (this.appUser === undefined) return false;
-    return !!this.tournament?.players.find((player) => player.playerId === this.appUser?.osuId);
+    return !!this.selfTournamentPlayer;
   }
 
-  getRegisterButtonDisabledStatus() {
-    if (this.isRegistrationClosed()) return true;
-    if (!this.isLoggedIn()) return true;
-    if (!this.isAllowedToRegister()) return true;
+  get registerButtonDisabledStatus() {
+    if (this.isRegistrationClosed) return true;
+    if (!this.isLoggedIn) return true;
+    if (!this.isAllowedToRegister) return true;
     return false;
   }
 
-  getRegisterButtonText() {
-    if (this.isRegistrationClosed()) return "Registration closed";
-    if (!this.isLoggedIn()) return "Login to register";
-    if (this.isRegistered()) return "Unregister";
-    if (!this.isAllowedToRegister()) return "Not allowed to register with current staff roles";
+  get registerButtonText() {
+    if (this.isRegistrationClosed) return "Registration closed";
+    if (!this.isLoggedIn) return "Login to register";
+    if (this.isRegistered) return "Unregister";
+    if (!this.isAllowedToRegister) return "Not allowed to register with current staff roles";
     return "Register";
   }
 
@@ -118,12 +121,12 @@ export class TournamentRegistrationPage implements OnInit {
     const dialogRef = this.dialogService.open(RegisterDialog,
       {
         data: {
-          unregister: this.isRegistered(),
+          unregister: this.isRegistered,
           tournamentName: this.tournament?.name,
         }
       });
     dialogRef.afterClosed().subscribe(result => {
-      if (result) this.isRegistered() ? this.unregister() : this.register();
+      if (result) this.isRegistered ? this.unregister() : this.register();
     });
   }
 
@@ -156,23 +159,69 @@ export class TournamentRegistrationPage implements OnInit {
         });
   }
 
-  getCurrentTeam() {
+  // TODO: support multiple teams?
+  get currentTeam() {
     if (this.appUser?.osuId) {
       return this.tournament?.teams.find((team) => team.players.map((player) => player.playerId).includes(this.appUser!.osuId));
     } else return undefined;
   }
 
-  isTeamCaptain() {
-    return this.getCurrentTeam()?.players[0].playerId === this.appUser?.osuId;
+  get currentPendingJoinRequestTeam() {
+    if (this.appUser?.osuId) {
+      return this.tournament?.teams.find((team) => team.joinRequests.map((player) => player.playerId).includes(this.appUser!.osuId));
+    } else return undefined;
   }
 
-  get canEditTeam() {
-    return this.isTeamCaptain() && (this.tournament?.progress === TournamentProgress.REGISTRATION || this.tournament?.allowTeamEdits);
+  get currentPendingJoinRequests() {
+    return this.currentTeam?.joinRequests ?? [];
+  }
+
+  get selfTournamentPlayer() {
+    return this.tournament?.players.find((player) => player.playerId === this.appUser?.osuId);
+  }
+
+  get isTeamCaptain(): boolean {
+    return this.currentTeam?.players[0].playerId === this.appUser?.osuId;
+  }
+
+  get canEditTeam(): boolean {
+    return this.isTeamCaptain && (this.tournament?.progress === TournamentProgress.REGISTRATION || (this.tournament?.allowTeamEdits || false));
+  }
+
+  removePlayer(team: TournamentTeam, player: TournamentPlayer) {
+    const isRemovingSelf = player.playerId === this.appUser?.osuId;
+    let message = `Remove ${player.username} from the team?`;
+    if (isRemovingSelf) {
+      message = "Leave your team?";
+      const isCaptain = team.players[0]?.playerId === this.appUser?.osuId;
+      if (team.players.length === 1) message += " Team will be disbanded as you are the only player.";
+      else if (isCaptain) message += " Captain will be transferred to another player.";
+    }
+    
+    if (window.confirm(message)) {
+      this.requestInProgress = true;
+      const request = isRemovingSelf ? this.tournamentsService.leaveTournamentTeam(this.acronym, team._id) :
+                                       this.tournamentsService.removeTeamMember(this.acronym, team._id, player.playerId);
+      const successMessage = isRemovingSelf ? `Successfully removed ${player.username} from team.` : "Successfully left team.";
+      request.pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })).subscribe((updatedTeam) => {
+        this.requestInProgress = false;
+        this.snackBar.open(successMessage, "", { duration: 10000 });
+        const teamIndex = this.tournament?.teams.findIndex((t) => t._id === team._id);
+        if (teamIndex !== undefined) {
+          if (updatedTeam) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
+          else this.tournament?.teams.splice(teamIndex, 1);
+        }
+      });
+    }
   }
 
   onFileSelected(event: any) {
     this.requestInProgress = true;
-    const teamId = this.getCurrentTeam()!._id;
+    const teamId = this.currentTeam!._id;
     this.tournamentsService.uploadTeamImage(
       this.acronym, teamId, event.target.files[0]
     ).pipe(catchError((error) => {
@@ -188,12 +237,12 @@ export class TournamentRegistrationPage implements OnInit {
   }
 
   editTeamNameDialog() {
-    const dialogRef = this.dialogService.open(EditTeamNameDialog, { data: { initialName: this.getCurrentTeam()?.name } });
+    const dialogRef = this.dialogService.open(EditTeamNameDialog, { data: { initialName: this.currentTeam?.name } });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.requestInProgress = true;
         this.tournamentsService.updateTeamName(
-          this.acronym, this.getCurrentTeam()!._id, result
+          this.acronym, this.currentTeam!._id, result
         ).pipe(catchError((error) => {
           this.requestInProgress = false;
           this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
@@ -205,6 +254,84 @@ export class TournamentRegistrationPage implements OnInit {
           if (teamIndex !== undefined) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
         });
       }
+    });
+  }
+
+  createTeam() {
+    const dialogRef = this.dialogService.open(CreateTeamDialog);
+    dialogRef.afterClosed().subscribe((result: string|undefined) => {
+      if (result) {
+        this.requestInProgress = true;
+        this.tournamentsService.createTournamentTeam(this.acronym, { name: result }).pipe(
+          catchError((error) => {
+            this.requestInProgress = false;
+            this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+            return throwError(error);
+          })
+        ).subscribe((createdTeam) => {
+          this.requestInProgress = false;
+          this.snackBar.open("Successfully created team", "", { duration: 10000 });
+          this.tournament!.teams.push(createdTeam);
+        });
+      }
+    });
+  }
+
+  acceptTeamJoinRequest(team: TournamentTeam, player: TournamentPlayer) {
+    this.requestInProgress = true;
+    this.tournamentsService.acceptTeamJoinRequest(this.acronym, team._id, player.playerId).pipe(
+      catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })
+    ).subscribe((updatedTeam) => {
+      this.requestInProgress = false;
+      this.snackBar.open(`Accepted ${player.username} to the team!`, "", { duration: 10000 });
+      const teamIndex = this.tournament?.teams.findIndex((team) => team._id === updatedTeam._id);
+      if (teamIndex !== undefined) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
+    });
+  }
+
+  denyTeamJoinRequest(team: TournamentTeam, player: TournamentPlayer) {
+    this.requestInProgress = true;
+    this.tournamentsService.denyTeamJoinRequest(this.acronym, team._id, player.playerId).pipe(
+      catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })
+    ).subscribe((updatedTeam) => {
+      this.requestInProgress = false;
+      this.snackBar.open(`Denied ${player.username} from the team.`, "", { duration: 10000 });
+      const teamIndex = this.tournament?.teams.findIndex((team) => team._id === updatedTeam._id);
+      if (teamIndex !== undefined) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
+    });
+  }
+
+  requestToJoinATeam() {
+    const dialogRef = this.dialogService.open(TeamJoinRequestDialog, { data: { acronym: this.acronym, teams: this.tournament!.teams, gameMode: this.tournament!.gameMode } });
+    dialogRef.afterClosed().subscribe((result: TournamentTeam|undefined) => {
+      if (result) {
+        const teamIndex = this.tournament!.teams.findIndex((team) => team._id === result._id);
+        if (teamIndex !== undefined) this.tournament!.teams.splice(teamIndex, 1, result);
+      }
+    });
+  }
+
+  retractTeamJoinRequest(team: TournamentTeam) {
+    this.requestInProgress = true;
+    this.tournamentsService.retractTeamJoinRequest(this.acronym, team._id).pipe(
+      catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })
+    ).subscribe((updatedTournamentTeam) => {
+      this.requestInProgress = false;
+      this.snackBar.open("Successfully retracted request to join team", "", { duration: 10000 });
+      const teamIndex = this.tournament!.teams.findIndex((team) => team._id === updatedTournamentTeam._id);
+      if (teamIndex !== undefined) this.tournament!.teams.splice(teamIndex, 1, updatedTournamentTeam);
     });
   }
 }
@@ -226,6 +353,7 @@ export class RegisterDialog {
   template: `<div class="dialog-wrapper">
                <h2 mat-dialog-title>Edit Team Name</h2>
                <mat-form-field>
+                 <mat-label>Team name</mat-label>
                  <input #teamNameInput matInput type="text" [value]="data.initialName ?? ''">
                </mat-form-field>
                <mat-dialog-actions align="end">
@@ -237,19 +365,103 @@ export class EditTeamNameDialog {
   constructor(@Inject(MAT_DIALOG_DATA) public data: any) {}
 }
 
+@Component({
+  selector: 'create-team-dialog',
+  template: `<div class="dialog-wrapper">
+               <h2 mat-dialog-title>Create Team</h2>
+               <mat-form-field>
+                 <mat-label>Team name</mat-label>
+                 <input #teamNameInput matInput type="text">
+               </mat-form-field>
+               <mat-dialog-actions align="end">
+                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">Submit</button>
+               </mat-dialog-actions>
+             </div>`,
+})
+export class CreateTeamDialog {
+  constructor() {}
+}
+
+@Component({
+  selector: 'team-join-request-dialog',
+  template: `<div class="dialog-wrapper">
+               <h2 mat-dialog-title>Request to join a team</h2>
+               <mat-dialog-content class="mat-typography">
+                 <form [formGroup]="teamPickerForm">
+                   <mat-form-field>
+                     <mat-label>Team</mat-label>
+                     <mat-select formControlName="selectedTeam" (selectionChange)="switchSelectedTeam($event.value)">
+                       <mat-option *ngFor="let team of sortedTeams" [value]="team._id">{{ team.name }}</mat-option>
+                     </mat-select>
+                   </mat-form-field>
+                 </form>
+                 <tournament-team-card *ngIf="selectedTeam" [team]="selectedTeam" [gameMode]="data.gameMode"></tournament-team-card>
+               </mat-dialog-content>
+               <mat-dialog-actions align="end">
+                 <button mat-raised-button color="primary" (click)="submitRequest()" [disabled]="requestInProgress || !selectedTeam">Request</button>
+               </mat-dialog-actions>
+             </div>`,
+})
+export class TeamJoinRequestDialog {
+  requestInProgress: boolean = false;
+
+  selectedTeam?: TournamentTeam;
+  teamPickerForm: FormGroup;
+  selectedTeamFormControl: FormControl;
+
+  constructor(
+    @Inject(MAT_DIALOG_DATA) public data: { acronym: string, teams: TournamentTeam[], gameMode: GameMode },
+    private tournamentsService: TournamentsService,
+    private snackBar: MatSnackBar,
+    private dialogRef: MatDialogRef<TeamJoinRequestDialog>
+  ) {
+    this.selectedTeamFormControl = new FormControl("");
+    this.teamPickerForm = new FormGroup({
+      selectedTeam: this.selectedTeamFormControl,
+    });
+  }
+
+  get sortedTeams(): TournamentTeam[] {
+    return [...this.data.teams].sort((a,b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
+  }
+
+  switchSelectedTeam(teamId: string) {
+    const index = this.data.teams.findIndex((team) => team._id === teamId);
+    this.selectedTeam = this.data.teams[index];
+  }
+
+  submitRequest() {
+    this.requestInProgress = true;
+    this.tournamentsService.requestToJoinTeam(this.data.acronym, this.selectedTeam!._id).pipe(
+      catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      })
+    ).subscribe((updatedTournamentTeam) => {
+      this.snackBar.open("Successfully submitted request to join team", "", { duration: 10000 });
+      this.dialogRef.close(updatedTournamentTeam);
+    });
+  }
+}
+
 @NgModule({
     imports: [
         CommonModule,
+        FormsModule,
         MatButtonModule,
         MatDialogModule,
         MatFormFieldModule,
         MatIconModule,
         MatInputModule,
+        MatSelectModule,
         NavBarModule,
+        ReactiveFormsModule,
+        TournamentPlayerCardModule,
         TournamentTeamCardModule,
         TournamentTeamEditorModule,
     ],
-  declarations: [ TournamentRegistrationPage, RegisterDialog, EditTeamNameDialog ],
+  declarations: [ TournamentRegistrationPage, RegisterDialog, EditTeamNameDialog, CreateTeamDialog, TeamJoinRequestDialog ],
   exports: [ TournamentRegistrationPage ],
   bootstrap: [ TournamentRegistrationPage ]
 })

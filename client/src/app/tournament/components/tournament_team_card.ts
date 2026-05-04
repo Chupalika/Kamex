@@ -1,4 +1,4 @@
-import { Component, NgModule, Input, ViewChild, ElementRef } from '@angular/core';
+import { Component, NgModule, Input, ViewChild, ElementRef, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +19,7 @@ export class TournamentTeamCard {
   @Input() editable: boolean = false;
   @Input() mobileMode: boolean = false;
   @Input() playerFlagsToggle: boolean = false;
+  @Output() removePlayer: EventEmitter<any> = new EventEmitter();
 
   @ViewChild('teamName') teameNameRef?: ElementRef;
 
@@ -34,8 +35,10 @@ export class TournamentTeamCard {
     return theElement ? theElement.scrollHeight > theElement.clientHeight : false;
   }
 
-  removePlayer(index: number) {
-    console.log(index);
+  removePlayerHelper(index: number) {
+    if (this.requestInProgress) return;
+    const thePlayer = this.team!.players[index];
+    this.removePlayer.emit(thePlayer);
   }
 
   getPlayerImage(player: TournamentPlayer) {
