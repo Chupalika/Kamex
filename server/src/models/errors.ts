@@ -74,6 +74,12 @@ export class RankRequirementNotMetError extends HttpException {
   }
 }
 
+export class CountryRequirementNotMetError extends HttpException {
+  constructor() {
+    super("Player's country is not on the allowed list for this tournament.", HttpStatus.BAD_REQUEST);
+  }
+}
+
 export class DiscordServerNotSetupError extends HttpException {
   constructor() {
     super("Discord enforcement was enabled but the server or bot was not set up properly. Contact staff.", HttpStatus.BAD_REQUEST);

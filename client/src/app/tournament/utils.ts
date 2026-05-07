@@ -1,4 +1,5 @@
 import { Mappool, MappoolSlot, Scoresheet, TournamentPlayer, TournamentTeam, Score, TournamentScoreWithRank, TournamentTeamScoreWithRank, MappoolSlotWithRanking, TournamentStatsPlayers, TournamentStatsTeams, TournamentRoundPlayerOverallStats, TournamentRoundTeamOverallStats, Tournament, TournamentStaffPermission, TournamentRound, ScoreMod, TournamentStaffMember, GameMode } from '../models/models';
+import * as countries from 'i18n-iso-countries';
 
 //const MAP_FIELDS: string[] = [];
 //const NESTED_MAP_FIELDS: string[] = ["playerScores", "teamScores"];
@@ -407,11 +408,28 @@ export function teamNameCompare(a: TournamentTeam, b: TournamentTeam) {
   return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
 }
 
+countries.registerLocale(require("i18n-iso-countries/langs/en.json"));
+const COUNTRY_OVERRIDES: Record<string, string> = {
+  CN: 'China',
+  GB: 'United Kingdom',
+  IR: 'Iran',
+  KP: 'North Korea',
+  KR: 'South Korea',
+  RU: 'Russia',
+  SY: 'Syria',
+  TW: 'Taiwan',
+  TZ: 'Tanzania',
+  VA: 'Vatican City',
+};
+export function getCountryName(code: string): string {
+  return COUNTRY_OVERRIDES[code] ?? countries.getName(code, 'en') ?? code;
+}
+
 export function countryCompare(a: TournamentPlayer, b: TournamentPlayer) {
-  const ac = a.country?.toLowerCase() ?? "";
-  const bc = b.country?.toLowerCase() ?? "";
+  const ac = a.country ?? "";
+  const bc = b.country ?? "";
   if (ac === bc) return 0;
-  else return ac < bc ? -1 : 1;
+  else return getCountryName(ac).localeCompare(getCountryName(bc));
 };
 
 export function osuRankCompare(a: TournamentPlayer, b: TournamentPlayer) { return (a.osuRank ?? Number.MAX_SAFE_INTEGER) - (b.osuRank ?? Number.MAX_SAFE_INTEGER); }

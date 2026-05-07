@@ -122,6 +122,7 @@ export interface RegistrationSettings {
   minRank: number;
   maxRank: number;
   enforceDiscord: boolean;
+  allowedCountries?: string[];
 }
 
 export interface DiscordSettings {

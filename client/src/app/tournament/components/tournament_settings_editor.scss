@@ -6,8 +6,8 @@
   .progress-stage-container {
     margin-bottom: 20px;
 
-    .inactive {
-      color: lightgrey;
+    .active {
+      color: var(--custom-theme-palette-400);
     }
   }
 

@@ -10,10 +10,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import * as countries from 'i18n-iso-countries';
 
 import { environment } from 'src/environments/environment';
 import { GameMode, Tournament, TournamentProgress } from '../../models/models';
-import { convertDatetimeLocalToDate, convertDateToDatetimeLocal } from '../utils';
+import { convertDatetimeLocalToDate, convertDateToDatetimeLocal, getCountryName } from '../utils';
 
 @Component({
   selector: 'tournament-settings-editor',
@@ -44,6 +45,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
   registrationStartDateFormControl: FormControl;
   registrationEndDateFormControl: FormControl;
   enforceDiscordFormControl: FormControl;
+  allowedCountriesFormControl: FormControl;
   discordServerIdFormControl: FormControl;
   discordLogChannelIdFormControl: FormControl;
   discordPlayerRoleIdFormControl: FormControl;
@@ -53,6 +55,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
   accentColorFormControl: FormControl;
   fontNameFormControl: FormControl;
   slotCategoriesFormControl: FormArray;
+  countries: { code: string; name: string }[] = [];
 
   TournamentProgress = TournamentProgress;
 
@@ -77,6 +80,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
     this.registrationStartDateFormControl = new FormControl(undefined, [Validators.required]);
     this.registrationEndDateFormControl = new FormControl(undefined, [Validators.required]);
     this.enforceDiscordFormControl = new FormControl(false);
+    this.allowedCountriesFormControl = new FormControl([]);
     this.discordServerIdFormControl = new FormControl();
     this.discordLogChannelIdFormControl = new FormControl();
     this.discordPlayerRoleIdFormControl = new FormControl();
@@ -108,6 +112,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       discordMatchReminderChannelId: this.discordMatchReminderChannelIdFormControl,
       discordMatchReminderMinutes: this.discordMatchReminderMinutesFormControl,
       enforceDiscord: this.enforceDiscordFormControl,
+      allowedCountries: this.allowedCountriesFormControl,
       primaryColor: this.primaryColorFormControl,
       accentColor: this.accentColorFormControl,
       fontName: this.fontNameFormControl,
@@ -123,6 +128,9 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
 
   ngOnInit() {
     this.refreshForm();
+    countries.registerLocale(require("i18n-iso-countries/langs/en.json"));
+    this.countries = Object.entries(countries.getNames("en", { select: "official" })).map(([code, name]) => ({ code, name: getCountryName(code) }))
+                           .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   refreshForm() {
@@ -142,6 +150,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       this.registrationStartDateFormControl.setValue(convertDateToDatetimeLocal(this.initialTournament.registrationSettings.startDate));
       this.registrationEndDateFormControl.setValue(convertDateToDatetimeLocal(this.initialTournament.registrationSettings.endDate));
       this.enforceDiscordFormControl.setValue(this.initialTournament.registrationSettings.enforceDiscord);
+      this.allowedCountriesFormControl.setValue(this.initialTournament.registrationSettings.allowedCountries ?? []);
       this.discordServerIdFormControl.setValue(this.initialTournament.discordSettings.serverId);
       this.discordLogChannelIdFormControl.setValue(this.initialTournament.discordSettings.logChannelId);
       this.discordPlayerRoleIdFormControl.setValue(this.initialTournament.discordSettings.playerRoleId);
@@ -175,6 +184,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
         this.minRankFormControl.disable();
         this.maxRankFormControl.disable();
         this.enforceDiscordFormControl.disable();
+        this.allowedCountriesFormControl.disable();
       }
       if ([TournamentProgress.CONCLUDED].includes(this.initialTournament.progress)) {
         this.allowTeamEditsFormControl.disable();
@@ -231,6 +241,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
         minRank: formValues.minRank,
         maxRank: formValues.maxRank,
         enforceDiscord: formValues.enforceDiscord,
+        allowedCountries: formValues.allowedCountries,
       },
       discordSettings: {
         serverId: formValues.discordServerId,
@@ -264,6 +275,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       this.initialTournament.registrationSettings.minRank !== this.minRankFormControl.value ||
       this.initialTournament.registrationSettings.maxRank !== this.maxRankFormControl.value ||
       this.initialTournament.registrationSettings.enforceDiscord !== this.enforceDiscordFormControl.value ||
+      JSON.stringify(this.initialTournament.registrationSettings.allowedCountries ?? []) !== JSON.stringify(this.allowedCountriesFormControl.value) ||
       this.initialTournament.discordSettings.serverId !== this.discordServerIdFormControl.value ||
       this.initialTournament.discordSettings.logChannelId !== this.discordLogChannelIdFormControl.value ||
       this.initialTournament.discordSettings.playerRoleId !== this.discordPlayerRoleIdFormControl.value ||

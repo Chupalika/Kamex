@@ -45,6 +45,7 @@ export class RegistrationSettings {
   readonly minRank: number;
   readonly maxRank: number;
   readonly enforceDiscord: boolean;
+  readonly allowedCountries?: string[];
 }
 
 export class TournamentMatchParticipant {

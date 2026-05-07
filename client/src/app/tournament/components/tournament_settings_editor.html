@@ -13,13 +13,13 @@
   <div *ngIf="initialTournament" class="progress-stage-container">
     <div class="mat-headline-6">Progress Stage</div>
     <div class="mat-body-1 progress-stages">
-      <span [ngClass]="{'inactive': initialTournament.progress !== 'planning'}">Planning</span>
+      <span [ngClass]="{'active': initialTournament.progress === 'planning'}">Planning</span>
       <mat-icon class="info-icon" matTooltip="Settings can be edited, but rounds can't be created yet">info</mat-icon> - 
-      <span [ngClass]="{'inactive': initialTournament.progress !== 'registration'}">Registration</span>
+      <span [ngClass]="{'active': initialTournament.progress === 'registration'}">Registration</span>
       <mat-icon class="info-icon" matTooltip="Rounds can be created, and some main settings are locked in place">info</mat-icon> - 
-      <span [ngClass]="{'inactive': initialTournament.progress !== 'ongoing'}">Ongoing</span>
+      <span [ngClass]="{'active': initialTournament.progress === 'ongoing'}">Ongoing</span>
       <mat-icon class="info-icon" matTooltip="Registraion settings are locked, while rounds, players, staff, etc. can still be edited">info</mat-icon> - 
-      <span [ngClass]="{'inactive': initialTournament.progress !== 'concluded'}">Concluded</span>
+      <span [ngClass]="{'active': initialTournament.progress === 'concluded'}">Concluded</span>
       <mat-icon class="info-icon" matTooltip="Everything is locked in place">info</mat-icon>
     </div>
     <button
@@ -128,6 +128,12 @@
     <input matInput type="number" formControlName="maxRank">
   </mat-form-field>
   <mat-checkbox formControlName="enforceDiscord">Enforce Discord <mat-icon class="info-icon" matTooltip="If enabled, prevents player registration if the player is not found in the Discord server specified in the Discord settings.">info</mat-icon></mat-checkbox>
+  <mat-form-field>
+    <mat-label>Allowed countries <mat-icon class="info-icon" matTooltip="Leave blank for no restriction.">info</mat-icon></mat-label>
+    <mat-select formControlName="allowedCountries" multiple>
+      <mat-option *ngFor="let country of countries" [value]="country.code">{{ country.name }} ({{ country.code }})</mat-option>
+    </mat-select>
+  </mat-form-field>
 
   <span class="mat-body-1 registration-settings-header">Discord settings</span>
   <span class="mat-body-3 discord-bot-link"><a target="_blank" [href]="'https://discord.com/oauth2/authorize?client_id=' + discordClientId + '&scope=bot'">Bot invite link</a></span>

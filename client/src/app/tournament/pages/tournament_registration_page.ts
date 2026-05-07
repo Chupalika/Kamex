@@ -105,6 +105,7 @@ export class TournamentRegistrationPage implements OnInit {
   get registerButtonDisabledStatus() {
     if (this.isRegistrationClosed) return true;
     if (!this.isLoggedIn) return true;
+    if (this.isRegistered) return false;
     if (!this.isAllowedToRegister) return true;
     return false;
   }
