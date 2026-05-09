@@ -13,12 +13,13 @@
 
     mat-form-field {
       width: 130px;
-      margin-right: 20px;
       margin-bottom: -20px;
     }
 
     .display-settings {
       display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
       align-items: center;
       margin-bottom: 20px;
     }

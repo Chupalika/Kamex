@@ -36,6 +36,7 @@
           </mat-select>
         </mat-form-field>
         <mat-slide-toggle [formControl]="playerFlagsFormControl">Player Flags</mat-slide-toggle>
+        <mat-slide-toggle *ngIf="appUser" [formControl]="myMatchesFormControl">My matches</mat-slide-toggle>
         <button
           mat-icon-button
           *ngIf="!isTourneyConcluded && hasPermission(TournamentStaffPermission.MANAGE_MATCHES)"

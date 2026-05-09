@@ -1126,22 +1126,7 @@ export class TournamentService {
       ]}});
     }
 
-    // Conditional populate round.matches.participants.playerOrTeam based on round.matches.isTeamMatch
-    const matchPopulatePromises = tourneyRound.matches.map(match => {
-      const hydratedMatch = match as HydratedDocument<TournamentMatch>;
-      if (hydratedMatch.isTeamMatch) {
-        return Promise.all([
-          hydratedMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } }),
-          hydratedMatch.populate({ path: "conditionals", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } })
-        ]);
-      } else {
-        return Promise.all([
-          hydratedMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } }),
-          hydratedMatch.populate({ path: "conditionals", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } })
-        ]);
-      }
-    });
-    await Promise.all(matchPopulatePromises);
+    await Promise.all(tourneyRound.matches.map(match => this.populateMatch(match as HydratedDocument<TournamentMatch>)));
 
     return tourneyRound;
   }
@@ -1329,6 +1314,22 @@ export class TournamentService {
     return createdBeatmap;
   }
 
+  // manually populates match participants and conditionals with player/team info based on whether it's a team match or not
+  // (note, do NOT use this before saving the doc, or else it will save the whole object instead of an ObjectId under playerOrTeam!)
+  async populateMatch(match: HydratedDocument<TournamentMatch>) {
+    if (match.isTeamMatch) {
+      await Promise.all([
+        match.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } }),
+        match.populate({ path: "conditionals", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } })
+      ]);
+    } else {
+      return Promise.all([
+        match.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } }),
+        match.populate({ path: "conditionals", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } })
+      ]);
+    }
+  }
+
   async addTournamentMatch(acronym: string, roundId: Types.ObjectId, tournamentMatchDto: TournamentMatchDto): Promise<TournamentMatch> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds").populate("staffMembers");
 
@@ -1390,15 +1391,10 @@ export class TournamentService {
       await this.processMatch(acronym, roundId, matchId);
     }
 
-    // just to include it in the response (note, do NOT do this before saving the doc, or else it will save the whole object instead of an ObjectId under playerOrTeam!)
-    if (createdMatch.isTeamMatch) {
-      await createdMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
-    } else {
-      await createdMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
-    }
     await createdMatch.populate("referees");
     await createdMatch.populate("streamers");
     await createdMatch.populate("commentators");
+    await this.populateMatch(createdMatch);
     return createdMatch;
   }
 
@@ -1485,14 +1481,10 @@ export class TournamentService {
     tourneyMatch.matchProgression = tournamentMatchDto.matchProgression;
 
     await tourneyMatch.save();
-    if (tourneyMatch.isTeamMatch) {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
-    } else {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
-    }
     await tourneyMatch.populate("referees");
     await tourneyMatch.populate("streamers");
     await tourneyMatch.populate("commentators");
+    await this.populateMatch(tourneyMatch);
     return tourneyMatch;
   }
 
@@ -1560,12 +1552,7 @@ export class TournamentService {
       await tourneyMatch.save();
     }
 
-    // just to include it in the response (note, do NOT do this before saving the doc, or else it will save the whole object instead of an ObjectId under playerOrTeam!)
-    if (tourneyMatch.isTeamMatch) {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
-    } else {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
-    }
+    await this.populateMatch(tourneyMatch);
     return tourneyMatch;
   }
 
@@ -1607,12 +1594,7 @@ export class TournamentService {
       await tourneyMatch.save();
     }
 
-    // just to include it in the response (note, do NOT do this before saving the doc, or else it will save the whole object instead of an ObjectId under playerOrTeam!)
-    if (tourneyMatch.isTeamMatch) {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
-    } else {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
-    }
+    await this.populateMatch(tourneyMatch);
     return tourneyMatch;
   }
 
@@ -1719,12 +1701,7 @@ export class TournamentService {
     tourneyMatch.markModified('participants');
     await tourneyMatch.save();
 
-    // just to include it in the response (note, do NOT do this before saving the doc, or else it will save the whole object instead of an ObjectId under playerOrTeam!)
-    if (tourneyMatch.isTeamMatch) {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
-    } else {
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
-    }
+    await this.populateMatch(tourneyMatch);
     return tourneyMatch;
   }
 

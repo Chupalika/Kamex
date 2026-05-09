@@ -7,6 +7,12 @@
     <mat-label>Time</mat-label>
     <input matInput type="datetime-local" formControlName="time">
   </mat-form-field>
+  <div *ngFor="let matchId of conditionalScheduleConflicts" class="mat-body-1">
+    Warning: This match's time would occur after one of its conditionals, match {{ matchId }}.
+  </div>
+  <div *ngFor="let matchId of conditionalScheduleConflicts2" class="mat-body-1">
+    Warning: Match {{ matchId }} has this match listed as a conditional, and this match's time would occur after it
+  </div>
   <div class="row">
     <button
       mat-raised-button

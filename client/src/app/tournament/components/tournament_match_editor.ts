@@ -294,6 +294,33 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
     theArray.insert(event.currentIndex, theControl);
   }
 
+  // checks if this match's conditional matches are after this match's time
+  get conditionalScheduleConflicts(): string[] {
+    const ans: string[] = [];
+    if (!this.match) return ans;
+    const thisMatchTime = convertDatetimeLocalToDate(this.timeFormControl.value);
+    const conditionals = this.getConditionalsFormArray().controls.map(control => control.getRawValue() as TournamentMatchConditional);
+    for (let conditional of conditionals) {
+      const conditionalMatch = this.matches.find(m => m.id === conditional.matchId);
+      if (conditionalMatch && conditionalMatch.time >= thisMatchTime) ans.push(conditional.matchId);
+    }
+    return ans;
+  }
+
+  // checks if this match's time is after another match with this match as a conditional
+  get conditionalScheduleConflicts2(): string[] {
+    const ans: string[] = [];
+    if (!this.match) return ans;
+    const thisMatchTime = convertDatetimeLocalToDate(this.timeFormControl.value);
+    for (let otherMatch of this.matches) {
+      if (this.match.id === otherMatch.id) continue;
+      if (otherMatch.conditionals.some(c => c.matchId === this.match!.id)) {
+        if (thisMatchTime >= otherMatch.time) ans.push(otherMatch.id);
+      }
+    }
+    return ans;
+  }
+
   // Scheduler
   //              0   1   2   3   4   5   6   7   8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23
   TIME_SCORES = [-1, -2, -3, -3, -3, -3, -3, -2, -1, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1];

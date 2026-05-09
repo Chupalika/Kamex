@@ -39,6 +39,7 @@ export class TournamentMatchesPage implements OnInit {
   populatedTournamentRounds: Map<string, TournamentRound> = new Map(); // keyed by _id
   matches: TournamentMatch[] = [];
   sortedMatches: TournamentMatch[] = [];
+  myMatches: TournamentMatch[] = [];
   mobileMode = false;
   appUser?: AppUser;
   requestInProgress: boolean = false;
@@ -46,6 +47,7 @@ export class TournamentMatchesPage implements OnInit {
   sortMethodFormControl: FormControl;
   displayTimeFormControl: FormControl;
   playerFlagsFormControl: FormControl;
+  myMatchesFormControl: FormControl;
 
   TournamentStaffPermission = TournamentStaffPermission;
 
@@ -61,6 +63,7 @@ export class TournamentMatchesPage implements OnInit {
       this.sortMethodFormControl = new FormControl("id");
       this.displayTimeFormControl = new FormControl("utc");
       this.playerFlagsFormControl = new FormControl(false);
+      this.myMatchesFormControl = new FormControl(false);
   }
 
   ngOnInit() {
@@ -171,8 +174,18 @@ export class TournamentMatchesPage implements OnInit {
     } else if (this.sortMethodFormControl.value === "time") {
       this.sortedMatches = this.matches.sort((a, b) => a.time.getTime() < b.time.getTime() ? -1 : 1);
     }
+    this.myMatches = this.sortedMatches.filter((match) => {
+      const isParticipant = match.participants.some(participant =>
+                           ("username" in participant.playerOrTeam && participant.playerOrTeam.playerId === this.appUser?.osuId) ||
+                           (!("username" in participant.playerOrTeam) && participant.playerOrTeam.players.some(player => player.playerId === this.appUser?.osuId)));
+      const isStaffMember = match.referees.some(referee => referee.playerId === this.appUser?.osuId) ||
+                            match.streamers.some(streamer => streamer.playerId === this.appUser?.osuId) ||
+                            match.commentators.some(commentator => commentator.playerId === this.appUser?.osuId);
+      return isParticipant || isStaffMember;
+    });
   }
 
+  // filters out matches with unmet conditionals
   get filteredMatches() {
     const matchesById: Map<string, TournamentMatch> = new Map();
     for (let match of this.sortedMatches) {
@@ -181,9 +194,10 @@ export class TournamentMatchesPage implements OnInit {
     // Set of match IDs that should be filtered out
     const filteredOut = new Set<string>();
     let changed = true;
+    const theMatches = this.myMatchesFormControl.value ? this.myMatches : this.sortedMatches;
     while (changed) {
       changed = false;
-      for (const match of this.sortedMatches) {
+      for (const match of theMatches) {
         if (filteredOut.has(match.id)) continue;
         let shouldFilter = false;
         for (const conditional of match.conditionals) {
@@ -222,7 +236,7 @@ export class TournamentMatchesPage implements OnInit {
         }
       }
     }
-    return this.sortedMatches.filter((match) => !filteredOut.has(match.id));
+    return theMatches.filter((match) => !filteredOut.has(match.id));
   }
 
   getRoundlabels() {
@@ -473,7 +487,8 @@ export class TournamentMatchesPage implements OnInit {
     );
     dialogRef.afterClosed().subscribe((updatedMatches: TournamentMatch[]) => {
       if (updatedMatches) {
-        this.sortedMatches = updatedMatches;
+        this.matches = updatedMatches;
+        this.sortMatches();
       }
     });
   }
