@@ -163,6 +163,7 @@ export class TournamentMatchDto {
   readonly matchIds?: number[];
   readonly vodLinks?: string[];
   readonly matchProgression?: TournamentMatchEvent[];
+  readonly notes?: string;
 }
 
 export class SubmitMatchDto {
@@ -170,6 +171,7 @@ export class SubmitMatchDto {
   readonly participants?: TournamentMatchParticipant[];
   readonly matchIds?: number[];
   readonly generateMatchProgression?: boolean;
+  readonly notes?: string;
 }
 
 export class EditTeamNameDto {

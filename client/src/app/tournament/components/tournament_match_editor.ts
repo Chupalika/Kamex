@@ -44,6 +44,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
   commentatorsFormControl: FormControl;
   matchIdsFormControl: FormControl;
   vodLinksFormControl: FormControl;
+  notesFormControl: FormControl;
 
   readonly dialogService = inject(MatDialog);
 
@@ -61,6 +62,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
     this.commentatorsFormControl = new FormControl([]);
     this.matchIdsFormControl = new FormControl("");
     this.vodLinksFormControl = new FormControl("");
+    this.notesFormControl = new FormControl("");
     this.editMatchForm = new FormGroup({
       id: this.idFormControl,
       time: this.timeFormControl,
@@ -75,6 +77,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       commentators: this.commentatorsFormControl,
       matchIds: this.matchIdsFormControl,
       vodLinks: this.vodLinksFormControl,
+      notes: this.notesFormControl,
     });
   }
 
@@ -111,6 +114,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.commentatorsFormControl.setValue(this.match.commentators.map(commentator => commentator._id));
       this.matchIdsFormControl.setValue(this.match.matchIds.join(","));
       this.vodLinksFormControl.setValue(this.match.vodLinks.join(","));
+      this.notesFormControl.setValue(this.match.notes);
     }
     else {
       this.idFormControl.setValue("");
@@ -126,6 +130,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.commentatorsFormControl.setValue([]);
       this.matchIdsFormControl.setValue("");
       this.vodLinksFormControl.setValue("");
+      this.notesFormControl.setValue("");
     }
     if (this.disabled) this.editMatchForm.disable();
     this.availabilityScores = undefined;
@@ -148,6 +153,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       matchIds: formValues.matchIds.length > 0 ? formValues.matchIds.split(",") : [],
       vodLinks: formValues.vodLinks.length > 0 ? formValues.vodLinks.split(",") : [],
       matchProgression: this.match?.matchProgression || [], // this property is edited elsewhere
+      notes: formValues.notes,
     };
     this.submit.emit(updatedMatch);
   }
@@ -175,7 +181,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       JSON.stringify(this.match.streamers.map(streamer => streamer._id)) !== JSON.stringify(this.streamersFormControl.value) ||
       JSON.stringify(this.match.commentators.map(commentator => commentator._id)) !== JSON.stringify(this.commentatorsFormControl.value) ||
       this.match.matchIds.join(",") !== this.matchIdsFormControl.value ||
-      this.match.vodLinks.join(",") !== this.vodLinksFormControl.value;
+      this.match.vodLinks.join(",") !== this.vodLinksFormControl.value ||
+      this.match.notes !== this.notesFormControl.value;
   }
 
   isTeamMatch(): boolean {

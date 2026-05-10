@@ -11,6 +11,7 @@ import { HovercardModule } from 'src/app/components/hovercard';
 import { TournamentPlayerCard } from '../components/tournament_player_card';
 import { TournamentTeamCard } from '../components/tournament_team_card';
 import { TournamentStaffMemberCard } from '../components/tournament_staff_member_card';
+import { MarkdownModule } from 'ngx-markdown';
 
 import { SubmitMatchDto, TournamentMatch, TournamentMatchEvent, TournamentMatchParticipant, TournamentPlayer, TournamentStaffMember, TournamentTeam } from '../../models/models';
 import { TournamentsService } from 'src/app/services/tournaments.service';
@@ -47,6 +48,7 @@ export class TournamentMatchCard {
   @Output() toggleReferee: EventEmitter<any> = new EventEmitter();
   @Output() toggleStreamer: EventEmitter<any> = new EventEmitter();
   @Output() toggleCommentator: EventEmitter<any> = new EventEmitter();
+  @Output() matchUpdated: EventEmitter<TournamentMatch> = new EventEmitter();
 
   TournamentPlayerCard = TournamentPlayerCard;
   TournamentTeamCard = TournamentTeamCard;
@@ -141,8 +143,14 @@ export class TournamentMatchCard {
     dialogRef.afterClosed().subscribe((updatedMatch: TournamentMatch) => {
       if (updatedMatch) {
         this.match = updatedMatch;
+        this.matchUpdated.emit(updatedMatch);
       }
     });
+  }
+
+  openNotes() {
+    if (!this.match?.notes) return;
+    this.dialogService.open(MatchNotesDialog, { data: { match: this.match } });
   }
 }
 
@@ -226,10 +234,25 @@ export class SubmitMatchEditorDialog {
   }
 }
 
+@Component({
+  selector: 'match-notes-dialog',
+  template: `<h2 mat-dialog-title>Match notes for match {{ data.match.id }}</h2>
+             <mat-dialog-content class="mat-typography">
+               <markdown [data]="data.match.notes"></markdown>
+             </mat-dialog-content>
+             <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
+               <button mat-raised-button color="secondary" [mat-dialog-close]="false">Close</button>
+             </mat-dialog-actions>`,
+})
+export class MatchNotesDialog {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch }) {}
+}
+
 @NgModule({
   imports: [
     CommonModule,
     HovercardModule,
+    MarkdownModule,
     MatButtonModule,
     MatDialogModule,
     MatDividerModule,
@@ -239,7 +262,7 @@ export class SubmitMatchEditorDialog {
     MatchProgressionModule,
     TournamentSubmitMatchEditorModule,
   ],
-  declarations: [ TournamentMatchCard, MatchProgressionDialog, SubmitMatchEditorDialog ],
+  declarations: [ TournamentMatchCard, MatchProgressionDialog, SubmitMatchEditorDialog, MatchNotesDialog ],
   exports:      [ TournamentMatchCard ],
   bootstrap:    [ TournamentMatchCard ]
 })

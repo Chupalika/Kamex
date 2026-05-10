@@ -492,6 +492,11 @@ export class TournamentMatchesPage implements OnInit {
       }
     });
   }
+
+  onMatchUpdated(updatedMatch: TournamentMatch) {
+    this.matches = this.matches.map((match) => match.id === updatedMatch.id ? updatedMatch : match);
+    this.sortMatches();
+  }
 }
 
 @Component({

@@ -324,6 +324,7 @@ export interface TournamentMatch {
   matchIds: number[];
   vodLinks: string[];
   matchProgression: TournamentMatchEvent[];
+  notes: string;
 }
 
 export interface TournamentMatchParticipant {
@@ -345,6 +346,7 @@ export interface SubmitMatchDto {
   readonly id: string;
   readonly participants: TournamentMatchParticipant[];
   readonly matchIds: number[];
+  readonly notes: string;
 }
 
 export interface TournamentMatchEvent {

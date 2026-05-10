@@ -61,6 +61,9 @@ export class TournamentMatch {
 
   @Prop({ required: true, default: [] })
   matchProgression: TournamentMatchEvent[];
+
+  @Prop({ required: true, default: "" })
+  notes: string;
 }
 
 export const TournamentMatchSchema = SchemaFactory.createForClass(TournamentMatch);

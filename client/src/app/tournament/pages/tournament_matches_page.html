@@ -89,6 +89,7 @@
             (toggleStreamer)="toggleStreamer(match)"
             (toggleCommentator)="toggleCommentator(match)"
             [canSubmitMatch]="canSubmitMatch"
+            (matchUpdated)="onMatchUpdated($event)"
           ></tournament-match-card>
         </ng-container>
       </ng-container>

@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'tournament-submit-match-editor',
@@ -27,17 +28,20 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
   participantsFormControl: FormArray;
   matchIdsFormControl: FormControl;
   generateMatchProgressionFormControl: FormControl;
+  notesFormControl: FormControl;
 
   constructor() {
     this.idFormControl = new FormControl("", [Validators.required]);
     this.participantsFormControl = new FormArray<FormControl>([]);
     this.matchIdsFormControl = new FormControl("");
     this.generateMatchProgressionFormControl = new FormControl(false);
+    this.notesFormControl = new FormControl("");
     this.submitMatchForm = new FormGroup({
       id: this.idFormControl,
       participants: this.participantsFormControl,
       matchIds: this.matchIdsFormControl,
       generateMatchProgression: this.generateMatchProgressionFormControl,
+      notes: this.notesFormControl,
     });
   }
 
@@ -70,6 +74,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
       }
       this.matchIdsFormControl.setValue(theMatch.matchIds.join(","));
       this.generateMatchProgressionFormControl.setValue(false);
+      this.notesFormControl.setValue(theMatch.notes);
     }
   }
 
@@ -86,6 +91,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
       participants: this.getParticipantsFormGroups().map((formGroup) => this.convertParticipantForm(formGroup)),
       matchIds,
       generateMatchProgression: formValues.generateMatchProgression,
+      notes: formValues.notes,
     };
     this.submit.emit(submittedMatch);
   }
@@ -94,7 +100,8 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
     return JSON.stringify(this.currentSelectedMatch?.participants?.map(participant => this.simplifyParticipant(participant))) !==
            //JSON.stringify(this.participantsFormControl.value) ||
            JSON.stringify(this.getParticipantsFormGroups().map((formGroup) => this.convertParticipantForm(formGroup))) ||
-      this.currentSelectedMatch?.matchIds.join(",") !== this.matchIdsFormControl.value;
+      this.currentSelectedMatch?.matchIds.join(",") !== this.matchIdsFormControl.value ||
+      this.currentSelectedMatch?.notes !== this.notesFormControl.value;
   }
 
   simplifyParticipant(participant: TournamentMatchParticipant) {
@@ -153,6 +160,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
     MatIconModule,
     MatInputModule,
     MatSelectModule,
+    MatTooltipModule,
   ],
   declarations: [ TournamentSubmitMatchEditor ],
   exports:      [ TournamentSubmitMatchEditor ],
