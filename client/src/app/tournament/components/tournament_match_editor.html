@@ -19,25 +19,12 @@
       class="other-button"
       type="button"
       color="primary"
-      (click)="generateAvailabilityScores()"
+      (click)="openAvailabilityScoresDialog()"
     >
       Check availability scores
     </button>
     <mat-icon class="info-icon" matTooltip="Calculates and displays scores for each hour based on players' timezone settings">info</mat-icon>
   </div>
-
-  <table class="mat-elevation-z1 availability-table" *ngIf="availabilityScores">
-    <thead>
-      <tr>
-        <th *ngFor="let score of availabilityScores; let i = index">{{ i }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td *ngFor="let score of availabilityScores">{{ score }}</td>
-      </tr>
-    </tbody>
-  </table>
   
   <ng-container *ngIf="enableTeams">
     <mat-checkbox formControlName="isTeamMatch">Team Match</mat-checkbox>

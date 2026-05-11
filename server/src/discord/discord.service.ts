@@ -11,6 +11,7 @@ import { TournamentMatch } from 'src/schemas/tournament-match.schema';
 import { TournamentPlayer } from 'src/schemas/tournament-player.schema';
 import { TournamentTeam } from 'src/schemas/tournament-team.schema';
 import { Tournament } from 'src/schemas/tournament.schema';
+import { filterConditionalMatches, populateMatch } from 'src/utils';
 
 interface DiscordCommand {
   data: SlashCommandOptionsOnlyBuilder;
@@ -97,18 +98,15 @@ export class DiscordService implements OnModuleInit {
       const reminderMinutes = tourney.discordSettings.matchReminderMinutes || 0;
 
       for (const round of tourney.rounds) {
-        for (const match of round.matches) {
+        await Promise.all(round.matches.map(match => populateMatch(match as HydratedDocument<TournamentMatch>, this.tournamentPlayerModel, this.tournamentTeamModel)));
+        const filteredMatches = filterConditionalMatches(round.matches);
+        for (const match of filteredMatches) {
           const reminderTime = match.time.getTime() - (reminderMinutes * 60000);
           const nowTime = (new Date()).getTime();
           // trigger reminder only if current time is within 1 minute of the reminder time
           if (Math.abs(nowTime - reminderTime) < 30000) {
             // Conditional populate playerOrTeam based on isTeamMatch
             const hydratedMatch = match as HydratedDocument<TournamentMatch>;
-            if (hydratedMatch.isTeamMatch) {
-              await hydratedMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
-            } else {
-              await hydratedMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
-            }
 
             // fetch appusers
             const appUserIdsToFetch = new Set<number>();

@@ -1,17 +1,18 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { Component, NgModule, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, NgModule, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, inject, Inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
 import { TournamentMatch, TournamentMatchConditional, TournamentMatchParticipant, TournamentPlayer, TournamentStaffMember, TournamentTeam } from '../../models/models';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { convertDatetimeLocalToDate, convertDateToDatetimeLocal } from '../utils';
+import tinycolor from 'tinycolor2';
 
 @Component({
   selector: 'tournament-match-editor',
@@ -133,7 +134,6 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.notesFormControl.setValue("");
     }
     if (this.disabled) this.editMatchForm.disable();
-    this.availabilityScores = undefined;
   }
 
   updateMatch() {
@@ -331,17 +331,17 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
   // Scheduler
   //              0   1   2   3   4   5   6   7   8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23
   TIME_SCORES = [-1, -2, -3, -3, -3, -3, -3, -2, -1, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1];
-  availabilityScores?: number[];
-  generateAvailabilityScores() {
-    const timezones = [];
+  generateAvailabilityScores(): Map<string, number[]> {
+    const timezones = new Map<string, number>();
+    const availabilityScores = new Map<string, number[]>();
     if (this.isTeamMatch()) {
       for (let participantForm of this.getParticipantsFormArray().controls) {
         const teamId = participantForm.get("playerOrTeam")?.value;
         const team = this.teams.find(t => t._id === teamId);
-        if (team) {
-          const teamPlayerTimezones = team.players.map(player => player.appUser?.timezone || 0);
-          timezones.push(...teamPlayerTimezones);
-        }
+        team?.players.forEach(player => {
+          const timezone = player.appUser?.timezone || 0;
+          timezones.set(`${player.username} (${timezone})`, timezone);
+        });
       }
     }
     else {
@@ -349,20 +349,27 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
         const playerId = participantForm.get("playerOrTeam")?.value;
         const player = this.players.find(p => p._id === playerId);
         if (player) {
-          timezones.push(player.appUser?.timezone || 0);
+          const timezone = player.appUser?.timezone || 0;
+          timezones.set(`${player.username} (${timezone})`, timezone);
         }
       }
     }
 
-    const scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    for (let timezone of timezones) {
+    for (let [username, timezone] of timezones.entries()) {
+      const scores = [];
       for (let i = 0; i < 24; i++) {
         const convertedTime = (i + timezone + 24) % 24;
         const score = this.TIME_SCORES[convertedTime];
-        scores[i] += score;
+        scores.push(score);
       }
+      availabilityScores.set(username, scores);
     }
-    this.availabilityScores = scores;
+    return availabilityScores;
+  }
+
+  openAvailabilityScoresDialog() {
+    const availabilityScores = this.generateAvailabilityScores();
+    this.dialogService.open(AvailabilityScoresDialog, { data: { availabilityScores } });
   }
 }
 
@@ -379,6 +386,68 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
 })
 export class RemoveMatchDialog {}
 
+@Component({
+  selector: 'availability-scores-dialog',
+  styles: ['th, td { border: 1px solid grey; padding: 8px; text-align: center; }'],
+  template: `<h2 mat-dialog-title>Availability scores</h2>
+             <mat-dialog-content class="mat-typography">
+               <table class="mat-elevation-z1 availability-table">
+                 <thead>
+                   <tr>
+                     <th></th>
+                     <th *ngFor="let hour of hourArray">{{ hour }}</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   <tr>
+                     <td>Total</td>
+                     <td *ngFor="let totalScore of totalScores" [style.backgroundColor]="getTotalCellColor(totalScore)">{{ totalScore }}</td>
+                   </tr>
+                   <tr *ngFor="let entry of data.availabilityScores.entries()">
+                     <td>{{ entry[0] }}</td>
+                     <td *ngFor="let score of entry[1]" [style.backgroundColor]="getScoreCellColor(score)">{{ score }}</td>
+                   </tr>
+                 </tbody>
+               </table>
+             </mat-dialog-content>
+             <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
+               <button mat-raised-button color="secondary" [mat-dialog-close]="false">Close</button>
+             </mat-dialog-actions>`,
+})
+export class AvailabilityScoresDialog {
+  hourArray: number[] = [];
+  totalScores: number[] = [];
+  minTotal: number = 0;
+  maxTotal: number = 0;
+  minScore: number = -3;
+  maxScore: number = 3;
+
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { availabilityScores: Map<string, number[]> }) {
+    this.hourArray = Array.from({ length: 24 }, (_, i) => i);
+    for (let hour of this.hourArray) this.totalScores.push(this.getTotalScoreForHour(hour));
+    this.minTotal = Math.min(...this.totalScores);
+    this.maxTotal = Math.max(...this.totalScores);
+  }
+
+  getTotalScoreForHour(hour: number): number {
+    let total = 0;
+    for (let [_, scores] of this.data.availabilityScores.entries()) total += scores[hour];
+    return total;
+  }
+
+  getTotalCellColor(value: number): string {
+    if (this.maxTotal === this.minTotal) return '';
+    const ratio = (value - this.minTotal) / (this.maxTotal - this.minTotal);
+    return tinycolor.mix('#ff4d4f', '#52c41a', ratio * 100).toHexString();
+  }
+
+  getScoreCellColor(value: number): string {
+    if (this.maxScore === this.minScore) return '';
+    const ratio = (value - this.minScore) / (this.maxScore - this.minScore);
+    return tinycolor.mix('#ff4d4f', '#52c41a', ratio * 100).toHexString();
+  }
+}
+
 @NgModule({
   imports: [
     CommonModule,
@@ -393,7 +462,7 @@ export class RemoveMatchDialog {}
     MatSelectModule,
     MatTooltipModule,
   ],
-  declarations: [ TournamentMatchEditor, RemoveMatchDialog ],
+  declarations: [ TournamentMatchEditor, RemoveMatchDialog, AvailabilityScoresDialog ],
   exports:      [ TournamentMatchEditor ],
   bootstrap:    [ TournamentMatchEditor ]
 })

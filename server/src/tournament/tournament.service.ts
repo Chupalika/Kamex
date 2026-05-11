@@ -24,6 +24,7 @@ import { OsuApiService } from 'src/osu/osu-api.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { DiscordService } from 'src/discord/discord.service';
 import * as mongoose from 'mongoose';
+import { populateMatch } from 'src/utils';
 
 @Injectable()
 export class TournamentService {
@@ -102,13 +103,14 @@ export class TournamentService {
     const nameChanged = tournamentDto.name !== undefined && tourney.name !== tournamentDto.name;
     const gameModeChanged = tournamentDto.gameMode !== undefined && tourney.gameMode !== tournamentDto.gameMode;
     const enableTeamsChanged = tournamentDto.enableTeams !== undefined && tourney.enableTeams !== tournamentDto.enableTeams;
+    const allowTeamEditsChanged = tournamentDto.allowTeamEdits !== undefined && tourney.allowTeamEdits !== tournamentDto.allowTeamEdits;
     const isRegistrationSettingsChanged = tournamentDto.registrationSettings !== undefined && JSON.stringify(tourney.registrationSettings) !== JSON.stringify(tournamentDto.registrationSettings);
     const isDiscordSettingsChanged = tournamentDto.discordSettings !== undefined && JSON.stringify(tourney.discordSettings) !== JSON.stringify(tournamentDto.discordSettings);
     const bannerChanged = tournamentDto.bannerLink !== undefined && tourney.bannerLink !== tournamentDto.bannerLink;
     const descriptionChanged = tournamentDto.description !== undefined && tourney.description !== tournamentDto.description;
     const linksChanged = tournamentDto.links !== undefined && JSON.stringify(tourney.links) !== JSON.stringify(tournamentDto.links);
     const slotCategoriesChanged = tournamentDto.slotCategories !== undefined && JSON.stringify(tourney.slotCategories) !== JSON.stringify(tournamentDto.slotCategories);
-    const otherSettingsChanged = nameChanged || gameModeChanged || enableTeamsChanged || isRegistrationSettingsChanged || isDiscordSettingsChanged || bannerChanged || descriptionChanged || linksChanged || slotCategoriesChanged;
+    const otherSettingsChanged = nameChanged || gameModeChanged || enableTeamsChanged || allowTeamEditsChanged || isRegistrationSettingsChanged || isDiscordSettingsChanged || bannerChanged || descriptionChanged || linksChanged || slotCategoriesChanged;
 
     if (progressChanged) {
       if (otherSettingsChanged) throw new ProgressChangeConflictError();
@@ -131,7 +133,7 @@ export class TournamentService {
         throw new ProgressLockedError();
       }
 
-      if ([TournamentProgress.CONCLUDED].includes(tourney.progress) && (isDiscordSettingsChanged || bannerChanged || descriptionChanged || linksChanged || slotCategoriesChanged)) {
+      if ([TournamentProgress.CONCLUDED].includes(tourney.progress) && (allowTeamEditsChanged || isDiscordSettingsChanged || bannerChanged || descriptionChanged || linksChanged || slotCategoriesChanged)) {
         throw new ProgressLockedError();
       }
 
@@ -583,8 +585,8 @@ export class TournamentService {
     }
 
     // Assert that the players are registered
-    const registeredPlayerIds = tourney.players.map((player: HydratedDocument<TournamentPlayer>) => player.playerId);
-    if (tournamentTeamDto.players.some(player => !registeredPlayerIds.includes(player.playerId))) {
+    const registeredPlayerIds = tourney.players.map((player: HydratedDocument<TournamentPlayer>) => player._id.toString());
+    if (tournamentTeamDto.players.some(player => !registeredPlayerIds.includes(player._id.toString()))) {
       throw new PlayerNotRegisteredError();
     }
 
@@ -617,7 +619,7 @@ export class TournamentService {
 
     // Assert that the players are registered
     const registeredPlayerIds = tourney.players.map((player: HydratedDocument<TournamentPlayer>) => player._id.toString());
-    if (tournamentTeamDto.players.some(player => !registeredPlayerIds.includes(player._id))) {
+    if (tournamentTeamDto.players.some(player => !registeredPlayerIds.includes(player._id.toString()))) {
       throw new PlayerNotRegisteredError();
     }
 
@@ -1126,7 +1128,7 @@ export class TournamentService {
       ]}});
     }
 
-    await Promise.all(tourneyRound.matches.map(match => this.populateMatch(match as HydratedDocument<TournamentMatch>)));
+    await Promise.all(tourneyRound.matches.map(match => populateMatch(match as HydratedDocument<TournamentMatch>, this.tournamentPlayerModel, this.tournamentTeamModel)));
 
     return tourneyRound;
   }
@@ -1314,23 +1316,6 @@ export class TournamentService {
     return createdBeatmap;
   }
 
-  // manually populates match participants and conditionals with player/team info based on whether it's a team match or not
-  // (note, do NOT use this before saving the doc, or else it will save the whole object instead of an ObjectId under playerOrTeam!)
-  async populateMatch(match: HydratedDocument<TournamentMatch>) {
-    await match.populate([{ path: "referees", populate: "roles" }, { path: "streamers", populate: "roles" }, { path: "commentators", populate: "roles" }]);
-    if (match.isTeamMatch) {
-      await Promise.all([
-        match.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } }),
-        match.populate({ path: "conditionals", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } })
-      ]);
-    } else {
-      return Promise.all([
-        match.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } }),
-        match.populate({ path: "conditionals", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } })
-      ]);
-    }
-  }
-
   async addTournamentMatch(acronym: string, roundId: Types.ObjectId, tournamentMatchDto: TournamentMatchDto): Promise<TournamentMatch> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds").populate("staffMembers");
 
@@ -1388,7 +1373,7 @@ export class TournamentService {
     tourneyRound.matches.push(createdMatch);
     await tourneyRound.save();
 
-    await this.populateMatch(createdMatch);
+    await populateMatch(createdMatch, this.tournamentPlayerModel, this.tournamentTeamModel);
     return createdMatch;
   }
 
@@ -1476,7 +1461,7 @@ export class TournamentService {
     tourneyMatch.notes = tournamentMatchDto.notes;
 
     await tourneyMatch.save();
-    await this.populateMatch(tourneyMatch);
+    await populateMatch(tourneyMatch, this.tournamentPlayerModel, this.tournamentTeamModel);
     return tourneyMatch;
   }
 
@@ -1544,7 +1529,7 @@ export class TournamentService {
       await tourneyMatch.save();
     }
 
-    await this.populateMatch(tourneyMatch);
+    await populateMatch(tourneyMatch, this.tournamentPlayerModel, this.tournamentTeamModel);
     return tourneyMatch;
   }
 
@@ -1586,7 +1571,7 @@ export class TournamentService {
       await tourneyMatch.save();
     }
 
-    await this.populateMatch(tourneyMatch);
+    await populateMatch(tourneyMatch, this.tournamentPlayerModel, this.tournamentTeamModel);
     return tourneyMatch;
   }
 
@@ -1694,7 +1679,7 @@ export class TournamentService {
     // I hate mongoose
     tourneyMatch.markModified('participants');
     await tourneyMatch.save();
-    await this.populateMatch(tourneyMatch);
+    await populateMatch(tourneyMatch, this.tournamentPlayerModel, this.tournamentTeamModel);
     return tourneyMatch;
   }
 
@@ -2120,7 +2105,7 @@ export class TournamentService {
     }
 
     await tourneyMatch.save();
-    await this.populateMatch(tourneyMatch);
+    await populateMatch(tourneyMatch, this.tournamentPlayerModel, this.tournamentTeamModel);
     return tourneyMatch;
   }
 
@@ -2152,7 +2137,7 @@ export class TournamentService {
     }
 
     await tourneyMatch.save();
-    await this.populateMatch(tourneyMatch);
+    await populateMatch(tourneyMatch, this.tournamentPlayerModel, this.tournamentTeamModel);
     return tourneyMatch;
   }
 
