@@ -29,10 +29,10 @@ export class DiscordOAuthStrategy extends PassportStrategy(Strategy, 'discord') 
       headers: { Authorization: `Bearer ${accessToken}` },
     }).then((res) => res.json());
 
-    const exists = await this.appUserModel.exists({ discordId: me.id.toString() });
-    if (exists) throw new DiscordUserAlreadyLinkedError(me.id.toString());
-
     const existingUser = await this.appUserModel.findOne({ osuId: req.user.osuId });
+    const exists = await this.appUserModel.exists({ discordId: me.id.toString() });
+    if (exists && existingUser.discordId !== me.id.toString()) throw new DiscordUserAlreadyLinkedError(me.id.toString());
+
     existingUser.discordId = me.id.toString();
     existingUser.discordUsername = me.username;
     await existingUser.save();
