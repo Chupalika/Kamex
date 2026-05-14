@@ -12,6 +12,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { ThemeService } from 'src/app/services/custom-theme.service';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { UserSettingsDialog } from '../components/user_settings_dialog';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'nav-bar',
@@ -23,6 +24,7 @@ export class NavBar {
   tourneyPath = "";
   appUser?: AppUser;
   mobileMode = false;
+  activeLanguage = "en";
 
   constructor(
       private router: Router,
@@ -31,13 +33,8 @@ export class NavBar {
       private tournamentService: TournamentsService,
       private themeService: ThemeService,
       private breakpointObserver: BreakpointObserver,
-      private dialogService: MatDialog) {
-    /*
-    this.route.paramMap.pipe(
-      tap((params: ParamMap) => {
-        this.tourneyPath = `/tournament/${params.get("acronym")}` || "";
-      })).subscribe();
-    */
+      private dialogService: MatDialog,
+      private translocoService: TranslocoService) {
     this.router.events.subscribe((event: any) => {
       let r = this.route;
       while (r.firstChild) {
@@ -70,6 +67,8 @@ export class NavBar {
       }
     });
     this.authService.appUser$.subscribe((user) => this.appUser = user);
+    const savedLanguage = localStorage.getItem("language") ?? "en";
+    this.changeLanguage(savedLanguage);
   }
 
   refreshUser() {
@@ -99,10 +98,6 @@ export class NavBar {
         this.refreshUser();
       }
     });
-    //popup?.addEventListener("beforeunload", (event) => console.log(event));
-    //popup?.addEventListener("close", (event) => console.log(event));
-    
-    //this.authService.loginOsu().subscribe((what) => console.log(what));
   }
 
   logout() {
@@ -124,6 +119,12 @@ export class NavBar {
       }
     });
   }
+
+  changeLanguage(language: string) {
+    this.activeLanguage = language;
+    this.translocoService.setActiveLang(this.activeLanguage);
+    localStorage.setItem("language", language);
+  }
 }
 
 @NgModule({
@@ -134,6 +135,7 @@ export class NavBar {
     MatMenuModule,
     RouterModule,
     MatToolbarModule,
+    TranslocoModule,
   ],
   declarations: [ NavBar ],
   exports:      [ NavBar ],

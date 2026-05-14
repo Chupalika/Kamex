@@ -35,7 +35,7 @@
             *ngIf="editable && player.playerId !== captain!.playerId"
             class="remove-button"
             (click)="transferCaptainHelper(i)"
-            matTooltip="transfer captain"
+            [matTooltip]="('tournament.registration.transferCaptain' | transloco)"
           >
             <mat-icon class="material-symbols-outlined">manage_accounts</mat-icon>
           </div>
@@ -43,7 +43,7 @@
             *ngIf="editable"
             class="remove-button"
             (click)="removePlayerHelper(i)"
-            matTooltip="remove"
+            [matTooltip]="('tournament.registration.remove' | transloco)"
           >
             <mat-icon>close</mat-icon>
           </div>

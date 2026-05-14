@@ -18,6 +18,7 @@ import { NavBarModule } from './nav_bar/nav_bar';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
+import { TranslocoRootModule } from './transloco-root.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -35,6 +36,7 @@ import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
     MatTooltipModule,
     NavBarModule,
     MarkdownModule.forRoot(),
+    TranslocoRootModule,
   ],
   providers: [
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },

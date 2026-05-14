@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { combineLatest, interval, Observable, throwError } from 'rxjs';
 import { finalize, switchMap, take, map, catchError } from 'rxjs/operators';
@@ -46,7 +47,8 @@ export class TournamentRegistrationPage implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private titleService: Title) {}
+    private titleService: Title,
+    private translocoService: TranslocoService) {}
 
   ngOnInit() {
     this.route.paramMap.pipe(
@@ -78,9 +80,9 @@ export class TournamentRegistrationPage implements OnInit {
   }
 
   get registrationStatus() {
-    if (!this.isLoggedIn) return "Login to check";
-    if (this.isRegistered) return "Registered";
-    return "Not registered";
+    if (!this.isLoggedIn) return "tournament.registration.loginToCheck";
+    if (this.isRegistered) return "tournament.registration.registered";
+    return "tournament.registration.notRegistered";
   }
 
   get isRegistrationClosed() {
@@ -111,11 +113,11 @@ export class TournamentRegistrationPage implements OnInit {
   }
 
   get registerButtonText() {
-    if (this.isRegistrationClosed) return "Registration closed";
-    if (!this.isLoggedIn) return "Login to register";
-    if (this.isRegistered) return "Unregister";
-    if (!this.isAllowedToRegister) return "Not allowed to register with current staff roles";
-    return "Register";
+    if (this.isRegistrationClosed) return "tournament.registration.registrationClosed";
+    if (!this.isLoggedIn) return "tournament.registration.loginToRegister";
+    if (this.isRegistered) return "tournament.registration.unregister";
+    if (!this.isAllowedToRegister) return "tournament.registration.staffRestricted";
+    return "tournament.registration.register";
   }
 
   registerDialog() {
@@ -191,22 +193,21 @@ export class TournamentRegistrationPage implements OnInit {
 
   removePlayer(team: TournamentTeam, player: TournamentPlayer) {
     const isRemovingSelf = player.playerId === this.appUser?.osuId;
-    let message = `Remove ${player.username} from the team?`;
+    let message = this.translocoService.translate("tournament.registration.removePlayerPrompt", { username: player.username });
     if (isRemovingSelf) {
-      message = "Leave your team?";
       const isCaptain = team.players[0]?.playerId === this.appUser?.osuId;
-      if (team.players.length === 1) message += " Team will be disbanded as you are the only player.";
-      else if (isCaptain) message += " Captain will be transferred to another player.";
+      if (team.players.length === 1) message = this.translocoService.translate("tournament.registration.leaveYourTeamPrompt1");
+      else if (isCaptain) message = this.translocoService.translate("tournament.registration.leaveYourTeamPrompt2");
     }
     
     if (window.confirm(message)) {
       this.requestInProgress = true;
       const request = isRemovingSelf ? this.tournamentsService.leaveTournamentTeam(this.acronym, team._id) :
                                        this.tournamentsService.removeTeamMember(this.acronym, team._id, player.playerId);
-      const successMessage = isRemovingSelf ? `Successfully removed ${player.username} from team.` : "Successfully left team.";
+      const successMessage = isRemovingSelf ? this.translocoService.translate("tournament.registration.removedFromTeam", { username: player.username }) : this.translocoService.translate("tournament.registration.leftTeam");
       request.pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe((updatedTeam) => {
         this.requestInProgress = false;
@@ -221,18 +222,16 @@ export class TournamentRegistrationPage implements OnInit {
   }
 
   transferCaptain(team: TournamentTeam, player: TournamentPlayer) {
-    const isRemovingSelf = player.playerId === this.appUser?.osuId;
-    
-    if (window.confirm(`Transfer captain to ${player.username}?`)) {
+    if (window.confirm(this.translocoService.translate("tournament.registration.transferCaptainPrompt", { username: player.username }))) {
       this.requestInProgress = true;
       const request = this.tournamentsService.transferCaptain(this.acronym, team._id, player.playerId);
       request.pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe((updatedTeam) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Successfully transferred captain to ${player.username}.`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.registration.captainTransferred", { username: player.username }), "", { duration: 10000 });
         const teamIndex = this.tournament?.teams.findIndex((t) => t._id === team._id);
         if (teamIndex !== undefined) {
           if (updatedTeam) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
@@ -249,11 +248,11 @@ export class TournamentRegistrationPage implements OnInit {
       this.acronym, teamId, event.target.files[0]
     ).pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
     })).subscribe((updatedTeam) => {
       this.requestInProgress = false;
-      this.snackBar.open("Successfully updated team image", "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("tournament.registration.teamImageUpdated"), "", { duration: 10000 });
       const teamIndex = this.tournament?.teams.findIndex((team) => team._id === teamId);
       if (teamIndex !== undefined) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
     });
@@ -268,11 +267,11 @@ export class TournamentRegistrationPage implements OnInit {
           this.acronym, this.currentTeam!._id, result
         ).pipe(catchError((error) => {
           this.requestInProgress = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
           return throwError(error);
         })).subscribe((updatedTeam) => {
           this.requestInProgress = false;
-          this.snackBar.open("Successfully updated team name", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.registration.teamNameUpdated"), "", { duration: 10000 });
           const teamIndex = this.tournament?.teams.findIndex((team) => team._id === updatedTeam._id);
           if (teamIndex !== undefined) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
         });
@@ -288,12 +287,12 @@ export class TournamentRegistrationPage implements OnInit {
         this.tournamentsService.createTournamentTeam(this.acronym, { name: result }).pipe(
           catchError((error) => {
             this.requestInProgress = false;
-            this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+            this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
             return throwError(error);
           })
         ).subscribe((createdTeam) => {
           this.requestInProgress = false;
-          this.snackBar.open("Successfully created team", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.registration.teamCreated"), "", { duration: 10000 });
           this.tournament!.teams.push(createdTeam);
         });
       }
@@ -305,12 +304,12 @@ export class TournamentRegistrationPage implements OnInit {
     this.tournamentsService.acceptTeamJoinRequest(this.acronym, team._id, player.playerId).pipe(
       catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })
     ).subscribe((updatedTeam) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Accepted ${player.username} to the team!`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("tournament.registration.acceptedToTeam", { username: player.username }), "", { duration: 10000 });
       const teamIndex = this.tournament?.teams.findIndex((team) => team._id === updatedTeam._id);
       if (teamIndex !== undefined) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
     });
@@ -321,12 +320,12 @@ export class TournamentRegistrationPage implements OnInit {
     this.tournamentsService.denyTeamJoinRequest(this.acronym, team._id, player.playerId).pipe(
       catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })
     ).subscribe((updatedTeam) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Denied ${player.username} from the team.`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("tournament.registration.deniedFromTeam", { username: player.username }), "", { duration: 10000 });
       const teamIndex = this.tournament?.teams.findIndex((team) => team._id === updatedTeam._id);
       if (teamIndex !== undefined) this.tournament?.teams.splice(teamIndex, 1, updatedTeam);
     });
@@ -347,12 +346,12 @@ export class TournamentRegistrationPage implements OnInit {
     this.tournamentsService.retractTeamJoinRequest(this.acronym, team._id).pipe(
       catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })
     ).subscribe((updatedTournamentTeam) => {
       this.requestInProgress = false;
-      this.snackBar.open("Successfully retracted request to join team", "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("tournament.registration.retractedJoinRequest"), "", { duration: 10000 });
       const teamIndex = this.tournament!.teams.findIndex((team) => team._id === updatedTournamentTeam._id);
       if (teamIndex !== undefined) this.tournament!.teams.splice(teamIndex, 1, updatedTournamentTeam);
     });
@@ -374,13 +373,13 @@ export class RegisterDialog {
 @Component({
   selector: 'edit-team-name-dialog',
   template: `<div class="dialog-wrapper">
-               <h2 mat-dialog-title>Edit Team Name</h2>
+               <h2 mat-dialog-title>{{ "tournament.registration.updateTeamName" | transloco }}</h2>
                <mat-form-field>
-                 <mat-label>Team name</mat-label>
+                 <mat-label>{{ "tournament.registration.teamName" | transloco }}</mat-label>
                  <input #teamNameInput matInput type="text" [value]="data.initialName ?? ''">
                </mat-form-field>
                <mat-dialog-actions align="end">
-                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">Submit</button>
+                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">{{ "tournament.common.submit" | transloco }}</button>
                </mat-dialog-actions>
              </div>`,
 })
@@ -391,13 +390,13 @@ export class EditTeamNameDialog {
 @Component({
   selector: 'create-team-dialog',
   template: `<div class="dialog-wrapper">
-               <h2 mat-dialog-title>Create Team</h2>
+               <h2 mat-dialog-title>{{ "tournament.registration.createTeam" | transloco }}</h2>
                <mat-form-field>
-                 <mat-label>Team name</mat-label>
+                 <mat-label>{{ "tournament.registration.teamName" | transloco }}</mat-label>
                  <input #teamNameInput matInput type="text">
                </mat-form-field>
                <mat-dialog-actions align="end">
-                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">Submit</button>
+                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">{{ "tournament.common.submit" | transloco }}</button>
                </mat-dialog-actions>
              </div>`,
 })
@@ -408,11 +407,11 @@ export class CreateTeamDialog {
 @Component({
   selector: 'team-join-request-dialog',
   template: `<div class="dialog-wrapper">
-               <h2 mat-dialog-title>Request to join a team</h2>
+               <h2 mat-dialog-title>{{ "tournament.registration.requestToJoinTeam" | transloco }}</h2>
                <mat-dialog-content class="mat-typography">
                  <form [formGroup]="teamPickerForm">
                    <mat-form-field>
-                     <mat-label>Team</mat-label>
+                     <mat-label>{{ "tournament.common.team" | transloco }}</mat-label>
                      <mat-select formControlName="selectedTeam" (selectionChange)="switchSelectedTeam($event.value)">
                        <mat-option *ngFor="let team of sortedTeams" [value]="team._id">{{ team.name }}</mat-option>
                      </mat-select>
@@ -421,7 +420,7 @@ export class CreateTeamDialog {
                  <tournament-team-card *ngIf="selectedTeam" [team]="selectedTeam" [gameMode]="data.gameMode"></tournament-team-card>
                </mat-dialog-content>
                <mat-dialog-actions align="end">
-                 <button mat-raised-button color="primary" (click)="submitRequest()" [disabled]="requestInProgress || !selectedTeam">Request</button>
+                 <button mat-raised-button color="primary" (click)="submitRequest()" [disabled]="requestInProgress || !selectedTeam">{{ "tournament.registration.request" | transloco }}</button>
                </mat-dialog-actions>
              </div>`,
 })
@@ -436,7 +435,8 @@ export class TeamJoinRequestDialog {
     @Inject(MAT_DIALOG_DATA) public data: { acronym: string, teams: TournamentTeam[], gameMode: GameMode },
     private tournamentsService: TournamentsService,
     private snackBar: MatSnackBar,
-    private dialogRef: MatDialogRef<TeamJoinRequestDialog>
+    private dialogRef: MatDialogRef<TeamJoinRequestDialog>,
+    private translocoService: TranslocoService,
   ) {
     this.selectedTeamFormControl = new FormControl("");
     this.teamPickerForm = new FormGroup({
@@ -458,11 +458,11 @@ export class TeamJoinRequestDialog {
     this.tournamentsService.requestToJoinTeam(this.data.acronym, this.selectedTeam!._id).pipe(
       catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })
     ).subscribe((updatedTournamentTeam) => {
-      this.snackBar.open("Successfully submitted request to join team", "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("tournament.registration.submittedJoinRequest"), "", { duration: 10000 });
       this.dialogRef.close(updatedTournamentTeam);
     });
   }
@@ -483,6 +483,7 @@ export class TeamJoinRequestDialog {
         TournamentPlayerCardModule,
         TournamentTeamCardModule,
         TournamentTeamEditorModule,
+        TranslocoModule,
     ],
   declarations: [ TournamentRegistrationPage, RegisterDialog, EditTeamNameDialog, CreateTeamDialog, TeamJoinRequestDialog ],
   exports: [ TournamentRegistrationPage ],

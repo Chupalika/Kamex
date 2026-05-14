@@ -11,6 +11,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule, MatSelectChange } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslocoModule } from '@jsverse/transloco';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
 
@@ -628,6 +629,7 @@ export class MatchEditorDialog {
         MatSlideToggleModule,
         TournamentMatchCardModule,
         TournamentMatchEditorModule,
+        TranslocoModule,
     ],
   declarations: [ TournamentMatchesPage, MatchEditorDialog ],
   exports: [ TournamentMatchesPage ],

@@ -364,6 +364,8 @@ export class TournamentSettingsPage implements OnInit {
     })).subscribe((updatedTournamentTeam) => {
       this.refreshTournament().add(() => {
         this.requestInProgress = false;
+        const newIndex = this.teams.findIndex((team) => team._id === updatedTournamentTeam._id);
+        this.selectedTeamIndex = newIndex;
         this.selectedTeam = this.teams[this.selectedTeamIndex];
         this.snackBar.open(successMessage, "", { duration: 10000 });
       });
@@ -651,8 +653,9 @@ export class TournamentSettingsPage implements OnInit {
     })).subscribe((updatedTournamentSlot) => {
       this.refreshRound(this.selectedRound!._id).add(() => {
         this.requestInProgress = false;
-        const maybeANewIndex = this.slots.findIndex((slot) => slot._id === updatedTournamentSlot._id);
-        this.selectedSlot = this.slots[maybeANewIndex];
+        const newIndex = this.slots.findIndex((slot) => slot._id === updatedTournamentSlot._id);
+        this.selectedSlotIndex = newIndex;
+        this.selectedSlot = this.slots[newIndex];
         this.snackBar.open(successMessage, "", { duration: 10000 });
       });
     });

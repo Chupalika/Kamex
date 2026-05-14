@@ -47,7 +47,7 @@
       </div>
     </ng-container>
     <div class="match-detail staff">
-      <div *ngIf="isHeader">Referees</div>
+      <div *ngIf="isHeader">{{ "tournament.matches.referees" | transloco }}</div>
       <ng-container *ngIf="!isHeader">
         <div *ngFor="let referee of match!.referees">
           <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: referee }"></ng-container>
@@ -58,7 +58,7 @@
           mat-button
           type="button"
           color="primary"
-          [matTooltip]="refereeStatus === 'can_register' ? 'Register as a referee' : 'Unregister as a referee'"
+          [matTooltip]="(refereeStatus === 'can_register' ? 'tournament.matches.registerReferee' : 'tournament.matches.unregisterReferee') | transloco"
           [disabled]="requestInProgress"
           (click)="toggleRefereeHelper()"
         >
@@ -67,7 +67,7 @@
       </ng-container>
     </div>
     <div class="match-detail staff">
-      <div *ngIf="isHeader">Streamers</div>
+      <div *ngIf="isHeader">{{ "tournament.matches.streamers" | transloco }}</div>
       <ng-container *ngIf="!isHeader">
         <div *ngFor="let streamer of match!.streamers">
           <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: streamer }"></ng-container>
@@ -78,7 +78,7 @@
           mat-button
           type="button"
           color="primary"
-          [matTooltip]="streamerStatus === 'can_register' ? 'Register as a streamer' : 'Unregister as a streamer'"
+          [matTooltip]="(streamerStatus === 'can_register' ? 'tournament.matches.registerStreamer' : 'tournament.matches.unregisterStreamer') | transloco"
           [disabled]="requestInProgress"
           (click)="toggleStreamerHelper()"
         >
@@ -87,7 +87,7 @@
       </ng-container>
     </div>
     <div class="match-detail staff">
-      <div *ngIf="isHeader">Commentators</div>
+      <div *ngIf="isHeader">{{ "tournament.matches.commentators" | transloco }}</div>
       <ng-container *ngIf="!isHeader">
         <div *ngFor="let commentator of match!.commentators">
           <ng-container *ngTemplateOutlet="staffMemberName; context: { $implicit: commentator }"></ng-container>
@@ -98,7 +98,7 @@
           mat-button
           type="button"
           color="primary"
-          [matTooltip]="commentatorStatus === 'can_register' ? 'Register as a commentator' : 'Unregister as a commentator'"
+          [matTooltip]="(commentatorStatus === 'can_register' ? 'tournament.matches.registerCommentator' : 'tournament.matches.unregisterCommentator') | transloco"
           [disabled]="requestInProgress"
           (click)="toggleCommentatorHelper()"
         >

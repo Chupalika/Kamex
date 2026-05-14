@@ -16,6 +16,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { TranslocoModule } from '@jsverse/transloco';
 import { catchError, finalize, map, switchMap, take } from 'rxjs/operators';
 import { Observable, of, throwError } from "rxjs";
 
@@ -892,6 +893,7 @@ export class ScoreDetailsDialog implements OnInit {
     TournamentRoundNavBarModule,
     HovercardModule,
     ScoreDetailsModule,
+    TranslocoModule,
   ],
   declarations: [ TournamentStatsPage, AssignSeedsDialog, ScoreDetailsDialog ],
   exports: [ TournamentStatsPage ],

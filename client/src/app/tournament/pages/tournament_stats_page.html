@@ -1,8 +1,8 @@
-<div *ngIf="loadingTournament" class="mat-headline-5">Loading...</div>
-<div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">Tournament "{{ acronym }}" doesn't exist or failed to load!</div>
+<div *ngIf="loadingTournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 
 <div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
-  <div class="mat-headline-5">Stats for {{ tournament.name }}</div>
+  <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.common.stats" | transloco }}</div>
 
   <item-selector
       [labels]="getRoundlabels()"
@@ -10,12 +10,12 @@
       (selectedIndexChange)="switchSelectedRoundIndex($event)"
   ></item-selector>
 
-  <div *ngIf="loadingRound" class="mat-headline-6">Loading Round...</div>
-  <div *ngIf="loadingStats" class="mat-headline-6">Loading Stats...</div>
+  <div *ngIf="loadingRound" class="mat-headline-6">{{ "common.loading" | transloco }}</div>
+  <div *ngIf="loadingStats" class="mat-headline-6">{{ "common.loading" | transloco }}</div>
 
   <ng-container *ngIf="!loadingRound && !loadingStats">
-    <div *ngIf="selectedTournamentRound?.mappoolWip && !canViewHiddenMappool()" class="mat-headline-6">Mappool is not currently public!</div>
-    <div *ngIf="selectedTournamentRound?.scoresheetWip && !canViewHiddenScoresheet()" class="mat-headline-6">Scoresheet is not currently public!</div>
+    <div *ngIf="selectedTournamentRound?.mappoolWip && !canViewHiddenMappool()" class="mat-headline-6">{{ "tournament.mappools.mappoolNotPublic" | transloco }}</div>
+    <div *ngIf="selectedTournamentRound?.scoresheetWip && !canViewHiddenScoresheet()" class="mat-headline-6">{{ "tournament.stats.scoresheetNotPublic" | transloco }}</div>
   </ng-container>
 
   <div *ngIf="selectedTournamentRound && !loadingRound && !loadingStats &&
@@ -24,31 +24,31 @@
     <form [formGroup]="settingsForm" class="settings-container">
       <div class="settings-options">
         <mat-form-field appearance="outline">
-          <mat-label>Display</mat-label>
+          <mat-label>{{ "tournament.stats.display" | transloco }}</mat-label>
           <mat-select formControlName="displayMode">
-            <mat-option value="leaderboard">Leaderboard</mat-option>
-            <mat-option value="scoresheet">Scoresheet</mat-option>
+            <mat-option value="leaderboard">{{ "tournament.stats.leaderboard" | transloco }}</mat-option>
+            <mat-option value="scoresheet">{{ "tournament.stats.scoresheet" | transloco }}</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" *ngIf="tournament.enableTeams">
-          <mat-label>Whomst</mat-label>
+          <mat-label>{{ "tournament.common.whomst" | transloco }}</mat-label>
           <mat-select formControlName="playerOrTeamStats" (change)="recalcStats()">
-            <mat-option value="player">Players</mat-option>
-            <mat-option value="team">Teams</mat-option>
+            <mat-option value="player">{{ "tournament.common.players" | transloco }}</mat-option>
+            <mat-option value="team">{{ "tournament.common.teams" | transloco }}</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field *ngIf="displayModeFormControl.value === 'leaderboard'" appearance="outline">
-          <mat-label>Sort Method</mat-label>
+          <mat-label>{{ "tournament.stats.sortMethod" | transloco }}</mat-label>
           <mat-select formControlName="sortMethod" (selectionChange)="recalcStats()">
-            <mat-option value="ranksum">Rank Sum/Avg</mat-option>
-            <mat-option value="totalscore">Total Score</mat-option>
-            <mat-option value="zscore">Z-Score</mat-option>
+            <mat-option value="ranksum">{{ "tournament.stats.rankSumAvg" | transloco }}</mat-option>
+            <mat-option value="totalscore">{{ "tournament.stats.totalScore" | transloco }}</mat-option>
+            <mat-option value="zscore">{{ "tournament.stats.zscore" | transloco }}</mat-option>
           </mat-select>
         </mat-form-field>
-        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="combinedView">Combined View</mat-checkbox>
-        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="detailedStats">Detailed Stats</mat-checkbox>
-        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="ignoreZero" (change)="recalcStats()">Ignore Zero Scores</mat-checkbox>
-        <mat-slide-toggle [formControl]="playerFlagsFormControl">Player Flags</mat-slide-toggle>
+        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="combinedView">{{ "tournament.stats.combinedView" | transloco }}</mat-checkbox>
+        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="detailedStats">{{ "tournament.stats.detailedStats" | transloco }}</mat-checkbox>
+        <mat-checkbox *ngIf="displayModeFormControl.value === 'leaderboard'" formControlName="ignoreZero" (change)="recalcStats()">{{ "tournament.stats.ignoreZeroScores" | transloco }}</mat-checkbox>
+        <mat-slide-toggle [formControl]="playerFlagsFormControl">{{ "tournament.common.playerFlags" | transloco }}</mat-slide-toggle>
         <button *ngIf="displayModeFormControl.value === 'leaderboard' && canAssignSeeds" mat-raised-button type="button" color="primary" (click)="assignSeeds()" [disabled]="isTourneyConcluded">Assign Seeds</button>
         <button
           *ngIf="displayModeFormControl.value === 'leaderboard' && canAssignSeeds"
@@ -57,7 +57,7 @@
           (click)="generateAndCopyBracketJson()"
           matTooltip="Generate a bracket.json with seeding results using the leaderboard from the currently selected round and copy it to clipboard"
         >
-          Copy Bracket JSON
+          {{ "tournament.stats.copyBracketJson" | transloco }}
         </button>
         <button
           *ngIf="displayModeFormControl.value === 'leaderboard'"
@@ -66,7 +66,7 @@
           (click)="copytable()"
           matTooltip="Copy the currently displayed table to clipboard, formatted to be pasted into a spreadsheet"
         >
-          Copy Table
+          {{ "tournament.common.copyTable" | transloco }}
         </button>
       </div>
       <item-selector
@@ -84,13 +84,13 @@
         <mat-table [dataSource]="playerOrTeamStatsFormControl.value === 'team' ? overallTeamRanking : overallPlayerRanking">
           <ng-container matColumnDef="rank">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-              <span class="header-text">Rank</span>
+              <span class="header-text">{{ "tournament.stats.rank" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.rank }}</mat-cell>
           </ng-container>
           <ng-container matColumnDef="playerName">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-l">
-              <span class="header-text">{{ playerOrTeamStatsFormControl.value === 'player' ? "Player" : "Team" }}</span>
+              <span class="header-text">{{ (playerOrTeamStatsFormControl.value === 'player' ? "tournament.common.player" : "tournament.common.team") | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">
               <span
@@ -121,13 +121,13 @@
           </ng-container>
           <ng-container matColumnDef="numMaps">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-              <span class="header-text">Num Maps</span>
+              <span class="header-text">{{ "tournament.stats.numMaps" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.numMaps }}</mat-cell>
           </ng-container>
           <ng-container matColumnDef="rankSum">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-              <span class="header-text">Rank {{ ignoreZeroFormControl.value ? 'Avg' : 'Sum' }}</span>
+              <span class="header-text">{{ (ignoreZeroFormControl.value ? 'tournament.stats.rankAvg' : 'tournament.stats.rankSum') | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">
               {{ ignoreZeroFormControl.value ? formatAvg(element.rankSum / element.numMaps) : element.rankSum }}
@@ -135,19 +135,19 @@
           </ng-container>
           <ng-container matColumnDef="scoreSum">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
-              <span class="header-text">Score Sum</span>
+              <span class="header-text">{{ "tournament.stats.scoreSum" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element.scoreSum }}</mat-cell>
           </ng-container>
           <ng-container matColumnDef="zscoreSum">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
-              <span class="header-text">Z-Score Sum</span>
+              <span class="header-text">{{ "tournament.stats.zscoreSum" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element.zscoreSum.toFixed(3) }}</mat-cell>
           </ng-container>
           <ng-container matColumnDef="overall">
             <mat-header-cell *matHeaderCellDef class="stats-header center-text" [attr.colspan]="overallColumnNames.length">
-              <span class="header-text">Overall</span>
+              <span class="header-text">{{ "tournament.stats.overall" | transloco }}</span>
             </mat-header-cell>
           </ng-container>
 
@@ -169,7 +169,7 @@
           >
             <ng-container matColumnDef="rank">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-                <span class="header-text">Rank</span>
+                <span class="header-text">{{ "tournament.stats.rank" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element.rank }}</mat-cell>
             </ng-container>
@@ -206,7 +206,7 @@
             </ng-container>
             <ng-container matColumnDef="score">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
-                <span class="header-text">Score</span>
+                <span class="header-text">{{ "tournament.stats.score" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">
                 <span class="score-text">
@@ -217,7 +217,7 @@
             </ng-container>
             <ng-container matColumnDef="zscore">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
-                <span class="header-text">Z-Score</span>
+                <span class="header-text">{{ "tournament.stats.zscore" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">
                 <span class="score-text">{{ element?.zscore.toFixed(3) ?? "" }}</span>
@@ -225,31 +225,31 @@
             </ng-container>
             <ng-container matColumnDef="accuracy">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-                <span class="header-text">Accuracy</span>
+                <span class="header-text">{{ "tournament.stats.accuracy" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element ? (element.accuracy * 100).toFixed(2) : "" }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="countOk">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-                <span class="header-text">100s</span>
+                <span class="header-text">{{ "tournament.stats.okCount" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element?.countOk ?? "" }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="countMeh">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-                <span class="header-text">50s</span>
+                <span class="header-text">{{ "tournament.stats.mehCount" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element?.countMeh ?? "" }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="countMiss">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-s">
-                <span class="header-text">0s</span>
+                <span class="header-text">{{ "tournament.stats.missCount" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-s">{{ element?.countMiss ?? "" }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="mods">
               <mat-header-cell *matHeaderCellDef class="stats-header stats-cell-m">
-                <span class="header-text">Mods</span>
+                <span class="header-text">{{ "tournament.stats.mods" | transloco }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m">{{ element ? getModsString(element.mods) : "" }}</mat-cell>
             </ng-container>
@@ -274,7 +274,7 @@
         <mat-table [dataSource]="alphaSortedTeams">
           <ng-container matColumnDef="teamName">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-m">
-              <span class="header-text">Team</span>
+              <span class="header-text">{{ "tournament.common.team" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element._id) + 'px'">
               <span
@@ -300,7 +300,7 @@
         <mat-table [dataSource]="alphaSortedPlayers">
           <ng-container matColumnDef="playerName">
             <mat-header-cell *matHeaderCellDef class="stats-header stats-header-wide stats-cell-m">
-              <span class="header-text">Player</span>
+              <span class="header-text">{{ "tournament.common.player" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element.playerId) + 'px'">
               <span

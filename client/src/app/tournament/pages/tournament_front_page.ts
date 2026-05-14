@@ -3,6 +3,7 @@ import { Component, NgModule, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { TranslocoModule } from '@jsverse/transloco';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { finalize, switchMap, take } from 'rxjs/operators';
 import { MarkdownModule } from 'ngx-markdown';
@@ -55,6 +56,7 @@ export class TournamentFrontPage implements OnInit {
         MatButtonModule,
         MatMenuModule,
         MarkdownModule,
+        TranslocoModule,
     ],
   declarations: [ TournamentFrontPage ],
   exports: [ TournamentFrontPage ],

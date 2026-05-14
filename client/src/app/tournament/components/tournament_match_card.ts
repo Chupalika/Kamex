@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslocoModule } from '@jsverse/transloco';
 import { HovercardModule } from 'src/app/components/hovercard';
 import { TournamentPlayerCard } from '../components/tournament_player_card';
 import { TournamentTeamCard } from '../components/tournament_team_card';
@@ -261,6 +262,7 @@ export class MatchNotesDialog {
     MatTooltipModule,
     MatchProgressionModule,
     TournamentSubmitMatchEditorModule,
+    TranslocoModule,
   ],
   declarations: [ TournamentMatchCard, MatchProgressionDialog, SubmitMatchEditorDialog, MatchNotesDialog ],
   exports:      [ TournamentMatchCard ],

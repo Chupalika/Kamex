@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslocoModule } from '@jsverse/transloco';
 
 import { TournamentTeam, GameMode, TournamentPlayer } from '../../models/models';
 import { TournamentPlayerCard } from './tournament_player_card';
@@ -81,6 +82,7 @@ export class TournamentTeamCard {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    TranslocoModule,
   ],
   declarations: [ TournamentTeamCard ],
   exports:      [ TournamentTeamCard ],

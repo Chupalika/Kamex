@@ -11,6 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Title } from '@angular/platform-browser';
+import { TranslocoModule } from '@jsverse/transloco';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
 import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare } from '../utils';
@@ -520,6 +521,7 @@ export class PlayerTeamEditorDialog {
         TournamentTeamCardModule,
         TournamentTeamEditorModule,
         TournamentStaffMemberCardModule,
+        TranslocoModule,
     ],
   declarations: [ TournamentParticipantsPage, PlayerTeamEditorDialog ],
   exports: [ TournamentParticipantsPage ],

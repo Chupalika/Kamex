@@ -1,25 +1,25 @@
-<div *ngIf="loading" class="mat-headline-5">Loading...</div>
-<div *ngIf="!loading && !tournament" class="mat-headline-5">Tournament "{{ acronym }}" doesn't exist or failed to load!</div>
+<div *ngIf="loading" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="!loading && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 <div *ngIf="!loading && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
-  <div class="mat-headline-6">{{ tournament.name }} registration status</div>
+  <div class="mat-headline-6">{{ tournament.name }} {{ "tournament.registration.registrationStatus" | transloco }}</div>
   
   <div class="mat-body-1 registration-info" *ngIf="(countdowns$ | async) as countdowns">
     <ng-container *ngIf="countdowns.start >= 0">
-      <div>Registration has not started yet.</div>
+      <div>{{ "tournament.registration.registrationNotStarted" | transloco }}</div>
       <div *ngIf="tournament.progress === TournamentProgress.PLANNING">
-        Tournament is still in planning phase.
+        {{ "tournament.registration.tournamentPlanningPhase" | transloco }}
       </div>
       <div *ngIf="tournament.progress === TournamentProgress.REGISTRATION">
-        Time until registration starts: {{ getTimeString(countdowns.start) }}
+        {{ "tournament.registration.registrationStartTimer" | transloco }} {{ getTimeString(countdowns.start) }}
       </div>
     </ng-container>
     <ng-container *ngIf="countdowns.start < 0 && countdowns.end >= 0">
       <div *ngIf="tournament.progress === TournamentProgress.PLANNING">
-        Registration has not started yet. Tournament is still in planning phase.
+        {{ "tournament.registration.registrationNotStarted" | transloco }} {{ "tournament.registration.tournamentPlanningPhase" | transloco }}
       </div>
       <ng-container *ngIf="tournament.progress === TournamentProgress.REGISTRATION">
-        <div>Registration is open!</div>
-        <div>Time until registration ends: {{ getTimeString(countdowns.end) }}</div>
+        <div>{{ "tournament.registration.registrationOpen" | transloco }}</div>
+        <div>{{ "tournament.registration.registrationEndTimer" | transloco }} {{ getTimeString(countdowns.end) }}</div>
         <button
           mat-raised-button
           class="register-button"
@@ -27,27 +27,27 @@
           (click)="registerDialog()"
           [disabled]="requestInProgress || registerButtonDisabledStatus"
         >
-          {{ registerButtonText }}
+          {{ registerButtonText | transloco }}
         </button>
 
         <div class="mat-body-1" *ngIf="tournament.registrationSettings.enforceDiscord">
-          <p>Note: This tournament requires you to be a member of the Discord server before registering.</p>
-          <p>You can link your Discord account in your user settings at the top right.</p>
+          <p>{{ "tournament.registration.discordRequirement1" | transloco }}</p>
+          <p>{{ "tournament.registration.discordRequirement2" | transloco }}</p>
         </div>
       </ng-container>
       <div *ngIf="[TournamentProgress.ONGOING, TournamentProgress.CONCLUDED].includes(tournament.progress)">
-        Registration has ended.
+        {{ "tournament.registration.registrationEnded" | transloco }}
       </div>
     </ng-container>
-    <div *ngIf="countdowns.end < 0">Registration has ended.</div>
+    <div *ngIf="countdowns.end < 0">{{ "tournament.registration.registrationEnded" | transloco }}</div>
   </div>
 
-  <div class="mat-body-1">Your registration status: <span class="tournament-progress">{{ registrationStatus }}</span></div>
+  <div class="mat-body-1">{{ "tournament.registration.yourRegistrationStatus" | transloco }} <span class="tournament-progress">{{ registrationStatus | transloco }}</span></div>
 
   <ng-container *ngIf="tournament.enableTeams">
-    <div class="mat-headline-6">Your team</div>
-    <div *ngIf="!isLoggedIn" class="mat-body-1">Not logged in</div>
-    <div *ngIf="isLoggedIn && !isRegistered" class="mat-body-1">Not registered</div>
+    <div class="mat-headline-6">{{ "tournament.registration.yourTeam" | transloco }}</div>
+    <div *ngIf="!isLoggedIn" class="mat-body-1">{{ "tournament.registration.notLoggedIn" | transloco }}</div>
+    <div *ngIf="isLoggedIn && !isRegistered" class="mat-body-1">{{ "tournament.registration.notRegistered" | transloco }}</div>
     <ng-container *ngIf="isRegistered">
       <div *ngIf="currentTeam as team">
         <tournament-team-card
@@ -66,7 +66,7 @@
           >
             <mat-icon>edit</mat-icon>
           </button>
-          Update team name
+          {{ "tournament.registration.updateTeamName" | transloco }}
         </div>
         <input type="file" style="display: none;" (change)="onFileSelected($event)" #fileUpload>
         <div *ngIf="canEditTeam" class="team-edit-item mat-body-1">
@@ -78,7 +78,7 @@
           >
             <mat-icon>attach_file</mat-icon>
           </button>
-          {{ team.imageLink ? "Update" : "Upload" }} team image
+          {{ "tournament.registration.uploadTeamImage" | transloco }}
         </div>
         <div *ngIf="tournament.allowTeamEdits" class="team-edit-item mat-body-1">
           <button
@@ -89,11 +89,11 @@
           >
             <mat-icon>cancel</mat-icon>
           </button>
-          Leave team
+          {{ "tournament.registration.leaveTeam" | transloco }}
         </div>
         <ng-container *ngIf="canEditTeam">
-          <div class="mat-headline-6">Pending team join requests</div>
-          <div class="mat-body-1" *ngIf="currentPendingJoinRequests.length === 0">None</div>
+          <div class="mat-headline-6">{{ "tournament.registration.pendingRequests" | transloco }}</div>
+          <div class="mat-body-1" *ngIf="currentPendingJoinRequests.length === 0">{{ "tournament.registration.none" | transloco }}</div>
           <div class="join-requests" *ngIf="currentPendingJoinRequests.length > 0">
             <div class="join-request" *ngFor="let joinRequest of currentPendingJoinRequests">
               <tournament-player-card [player]="joinRequest" [gameMode]="tournament.gameMode"></tournament-player-card>
@@ -107,7 +107,7 @@
                   >
                     <mat-icon>check</mat-icon>
                   </button>
-                  Accept
+                  {{ "tournament.registration.accept" | transloco }}
                 </div>
                 <div class="request-action mat-body-1">
                   <button
@@ -118,7 +118,7 @@
                   >
                     <mat-icon>close</mat-icon>
                   </button>
-                  Deny
+                  {{ "tournament.registration.deny" | transloco }}
                 </div>
               </div>
             </div>
@@ -126,7 +126,7 @@
         </ng-container>
       </div>
       <div *ngIf="currentPendingJoinRequestTeam as team">
-        <div class="mat-body-1">Pending request to join team</div>
+        <div class="mat-body-1">{{ "tournament.registration.pendingRequestToJoinTeam" | transloco }}</div>
         <tournament-team-card [team]="team" [gameMode]="tournament.gameMode"></tournament-team-card>
         <div *ngIf="tournament.allowTeamEdits" class="team-edit-item mat-body-1">
           <button
@@ -137,11 +137,11 @@
           >
             <mat-icon>front_hand</mat-icon>
           </button>
-          Retract join request
+          {{ "tournament.registration.retractJoinRequest" | transloco }}
         </div>
       </div>
       <div *ngIf="!currentTeam && !currentPendingJoinRequestTeam">
-        <div class="mat-body-1">Not currently on a team</div>
+        <div class="mat-body-1">{{ "tournament.registration.notOnTeam" | transloco }}</div>
         <div *ngIf="tournament.allowTeamEdits" class="team-edit-item mat-body-1">
           <button
             mat-mini-fab
@@ -151,7 +151,7 @@
           >
             <mat-icon class="material-symbols-outlined">add_ad</mat-icon>
           </button>
-          Create a team
+          {{ "tournament.registration.createTeam" | transloco }}
         </div>
         <div *ngIf="tournament.allowTeamEdits" class="team-edit-item mat-body-1">
           <button
@@ -162,7 +162,7 @@
           >
             <mat-icon class="material-symbols-outlined">person_raised_hand</mat-icon>
           </button>
-          Request to join a team
+          {{ "tournament.registration.requestTeam" | transloco }}
         </div>
       </div>
     </ng-container>
