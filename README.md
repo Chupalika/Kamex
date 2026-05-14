@@ -28,3 +28,6 @@ CLOUDINARY_CLOUD_NAME=<cloudinary-cloud-name>
 CLOUDINARY_API_KEY=<cloudinary-api-key>
 CLOUDINARY_API_SECRET=<cloudinary-api-secret>
 ```
+
+## Special Thanks
+* [shinjinhome](https://osu.ppy.sh/users/30147970) - Japanese translation
