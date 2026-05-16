@@ -9,21 +9,25 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule, MatSelectChange } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Title } from '@angular/platform-browser';
 import { TranslocoModule } from '@jsverse/transloco';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
-import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare } from '../utils';
+import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare, getRolesSortedByPermission, getStaffMemberListSortedByRole } from '../utils';
 
 import { AppUser, GameMode, Tournament, TournamentPlayer, TournamentProgress, TournamentStaffMember, TournamentStaffPermission, TournamentTeam } from 'src/app/models/models';
+import { HovercardModule } from 'src/app/components/hovercard';
 import { NavBarModule } from "src/app/nav_bar/nav_bar";
 import { TournamentsService } from 'src/app/services/tournaments.service';
-import { TournamentPlayerCardModule } from 'src/app/tournament/components/tournament_player_card';
+import { TournamentPlayerCard, TournamentPlayerCardModule } from 'src/app/tournament/components/tournament_player_card';
 import { TournamentPlayerEditorModule } from '../components/tournament_player_editor';
-import { TournamentTeamCardModule } from 'src/app/tournament/components/tournament_team_card';
+import { TournamentTeamCard, TournamentTeamCardModule } from 'src/app/tournament/components/tournament_team_card';
 import { TournamentTeamEditorModule } from "../components/tournament_team_editor";
-import { TournamentStaffMemberCardModule } from 'src/app/tournament/components/tournament_staff_member_card';
+import { TournamentStaffMemberCard, TournamentStaffMemberCardModule } from 'src/app/tournament/components/tournament_staff_member_card';
 import { RefreshPlayerDataDialog } from './tournament_settings_page';
 import { AuthService } from 'src/app/services/auth.service';
 import { AssignSeedsDialog } from './tournament_stats_page';
@@ -43,11 +47,18 @@ export class TournamentParticipantsPage implements OnInit {
   teams: TournamentTeam[] = [];
   staffMembers: TournamentStaffMember[] = [];
   sortMethodFormControl: FormControl;
+  staffSortMethodFormControl: FormControl;
   filterFormControl: FormControl;
   displayFormControl: FormControl;
   playerSortFormControl: FormControl
+  playerFlagsFormControl: FormControl;
+  tableViewFormControl: FormControl
+  displayByStaffRoleFormControl: FormControl;
   mobileMode = false;
 
+  TournamentPlayerCard = TournamentPlayerCard;
+  TournamentTeamCard = TournamentTeamCard;
+  TournamentStaffMemberCard = TournamentStaffMemberCard;
   TournamentStaffPermission = TournamentStaffPermission;
   GameMode = GameMode;
 
@@ -61,9 +72,13 @@ export class TournamentParticipantsPage implements OnInit {
     private snackBar: MatSnackBar,
     private titleService: Title) {
       this.sortMethodFormControl = new FormControl("rank");
+      this.staffSortMethodFormControl = new FormControl("default");
       this.filterFormControl = new FormControl("");
       this.displayFormControl = new FormControl("players");
       this.playerSortFormControl = new FormControl("rank");
+      this.playerFlagsFormControl = new FormControl(false);
+      this.tableViewFormControl = new FormControl(false);
+      this.displayByStaffRoleFormControl = new FormControl(false);
   }
 
   ngOnInit() {
@@ -122,23 +137,17 @@ export class TournamentParticipantsPage implements OnInit {
     }
     // sort by average rank by default
     else {
-      const getPlayerRank = (player: TournamentPlayer) => {
-        switch (this.tournament!.gameMode) {
-          case GameMode.OSU: return player.osuRank;
-          case GameMode.TAIKO: return player.taikoRank;
-          case GameMode.FRUITS: return player.fruitsRank;
-          case GameMode.MANIA: return player.maniaRank;
-          case GameMode.ALL: return Math.min(player.osuRank ?? Number.MAX_SAFE_INTEGER, player.taikoRank ?? Number.MAX_SAFE_INTEGER, player.fruitsRank ?? Number.MAX_SAFE_INTEGER, player.maniaRank ?? Number.MAX_SAFE_INTEGER);
-          default: return Number.MAX_SAFE_INTEGER;
-        }
-      };
       this.teams = [...this.tournament!.teams].sort(
-        (a,b) => (a.players.reduce((acc, player) => acc + (getPlayerRank(player) ?? 0), 0) / a.players.length) - (b.players.reduce((acc, player) => acc + (getPlayerRank(player) ?? 0), 0) / b.players.length));
+        (a,b) => (a.players.reduce((acc, player) => acc + (this.getPlayerRank(player) ?? 0), 0) / a.players.length) - (b.players.reduce((acc, player) => acc + (this.getPlayerRank(player) ?? 0), 0) / b.players.length));
     }
   }
 
   sortStaffMembers() {
-    this.staffMembers = [...this.tournament!.staffMembers].sort(playerNameCompare);
+    if (this.staffSortMethodFormControl.value === "name") {
+      this.staffMembers = [...this.tournament!.staffMembers].sort(playerNameCompare);
+    } else {
+      this.staffMembers = getStaffMemberListSortedByRole(this.tournament!.staffMembers);
+    }
   }
 
   filterStaffMembers() {
@@ -169,8 +178,113 @@ export class TournamentParticipantsPage implements OnInit {
     }
   }
 
+  get playerColumns() {
+    return this.tournament!.enableTeams ? ['name', 'team', 'rank', 'seed', 'playerId', 'discord', 'timezone'] : ['name', 'rank', 'seed', 'playerId', 'discord', 'timezone'];
+  }
+
+  get teamColumns() {
+    return ['name', 'players', 'rank', 'seed'];
+  }
+
+  get staffMemberColumns() {
+    return ['name', 'roles'];
+  }
+
   getPlayerTeams(playerId: number) {
     return this.teams.filter((team) => team.players.some(player => player.playerId === playerId));
+  }
+
+  getPlayerImage(player: TournamentPlayer|TournamentStaffMember) {
+    if (this.playerFlagsFormControl.value) {
+      return 'https://flagcdn.com/w40/' + player.country.toLowerCase() + '.png';
+    } else {
+      return `https://a.ppy.sh/${player.playerId}`;
+    }
+  }
+
+  getPlayerRank(player: TournamentPlayer) {
+    switch (this.tournament!.gameMode) {
+      case GameMode.OSU: return player.osuRank;
+      case GameMode.TAIKO: return player.taikoRank;
+      case GameMode.FRUITS: return player.fruitsRank;
+      case GameMode.MANIA: return player.maniaRank;
+      case GameMode.ALL: return Math.min(player.osuRank ?? Number.MAX_SAFE_INTEGER, player.taikoRank ?? Number.MAX_SAFE_INTEGER, player.fruitsRank ?? Number.MAX_SAFE_INTEGER, player.maniaRank ?? Number.MAX_SAFE_INTEGER);
+      default: return Number.MAX_SAFE_INTEGER;
+    }
+  }
+
+  getPlayerRankDisplay(player: TournamentPlayer) {
+    const rank = this.getPlayerRank(player);
+    return rank === Number.MAX_SAFE_INTEGER ? "Unranked" : `#${rank}`;
+  }
+
+  getPlayerTimezone(player: TournamentPlayer) {
+    return player.appUser?.timezone ? (player.appUser?.timezone >= 0 ? `+${player.appUser?.timezone}` : `${player.appUser?.timezone}`) : "";
+  }
+
+  getTeamCaptain(team: TournamentTeam) {
+    return team.players[0];
+  }
+
+  getTeamAvgRank(team: TournamentTeam) {
+    return (team.players.reduce((acc, player) => acc + (this.getPlayerRank(player) ?? 0), 0) / team.players.length);
+  }
+
+  getSortedTeamPlayers(team: TournamentTeam) {
+    const playersClone = [...team.players];
+    switch (this.playerSortFormControl.value) {
+      case "seed": return playersClone.sort(seedCompare);
+      case "name": return playersClone.sort(playerNameCompare);
+      case "rank": return playersClone.sort(getRankCompare(this.tournament!.gameMode));
+      default: return team.players;
+    }
+  }
+
+  get sortedStaffRoles() {
+    if (this.staffSortMethodFormControl.value === "name") {
+      return [...this.tournament!.staffRoles].sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+    } else {
+      return getRolesSortedByPermission(this.tournament!.staffRoles);
+    }
+  }
+
+  getStaffMembersWithRole(roleId: string) {
+    return this.staffMembers.filter((staffMember) => staffMember.roles.some((role) => role._id === roleId)).sort(playerNameCompare);
+  }
+
+  copyTable() {
+    let header: string[] = [];
+    let rows: string[] = [];
+    switch (this.displayFormControl.value) {
+      case "players": {
+        header = ['Name', 'Team', 'Rank', 'Seed', 'Player ID', 'Discord', 'Timezone'];
+        rows = this.players.map(player => {
+          const teamNames = this.getPlayerTeams(player.playerId).map(team => team.name).join(", ");
+          return [player.username, teamNames, this.getPlayerRankDisplay(player), player.seed || "", player.playerId, player.appUser?.discordUsername || "", this.getPlayerTimezone(player)].join('\t');
+        });
+        break;
+      }
+      case "teams": {
+        header = ['Name', 'Players', 'Avg Rank', 'Seed'];
+        rows = this.teams.map(team => {
+          const playerNames = this.getSortedTeamPlayers(team).map(player => player.username).join(", ");
+          const avgRank = this.getTeamAvgRank(team).toFixed();
+          return [team.name, playerNames, avgRank, team.seed || ""].join('\t');
+        });
+        break;
+      };
+      case "staff": {
+        header = ['Name', 'Roles'];
+        rows = this.staffMembers.map(staffMember => {
+          const roleNames = staffMember.roles.map(role => role.name).join(", ");
+          return [staffMember.username, roleNames].join('\t');
+        });
+        break;
+      };
+    }
+    const theText = [header.join('\t'), ...rows].join('\n');
+    navigator.clipboard.writeText(theText);
+    this.snackBar.open('Table copied to clipboard!', '', { duration: 3000 });
   }
 
   get currentStaffMember() {
@@ -508,12 +622,16 @@ export class PlayerTeamEditorDialog {
     imports: [
         CommonModule,
         FormsModule,
+        HovercardModule,
         MatButtonModule,
         MatDialogModule,
         MatFormFieldModule,
         MatIconModule,
         MatMenuModule,
         MatSelectModule,
+        MatSlideToggleModule,
+        MatTableModule,
+        MatTooltipModule,
         NavBarModule,
         ReactiveFormsModule,
         TournamentPlayerCardModule,

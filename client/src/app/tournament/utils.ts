@@ -1,4 +1,4 @@
-import { Mappool, MappoolSlot, Scoresheet, TournamentPlayer, TournamentTeam, Score, TournamentScoreWithRank, TournamentTeamScoreWithRank, MappoolSlotWithRanking, TournamentStatsPlayers, TournamentStatsTeams, TournamentRoundPlayerOverallStats, TournamentRoundTeamOverallStats, Tournament, TournamentStaffPermission, TournamentRound, ScoreMod, TournamentStaffMember, GameMode } from '../models/models';
+import { Mappool, MappoolSlot, Scoresheet, TournamentPlayer, TournamentTeam, Score, TournamentScoreWithRank, TournamentTeamScoreWithRank, MappoolSlotWithRanking, TournamentStatsPlayers, TournamentStatsTeams, TournamentRoundPlayerOverallStats, TournamentRoundTeamOverallStats, Tournament, TournamentStaffPermission, TournamentRound, ScoreMod, TournamentStaffMember, GameMode, TournamentStaffRole } from '../models/models';
 import * as countries from 'i18n-iso-countries';
 
 //const MAP_FIELDS: string[] = [];
@@ -323,6 +323,30 @@ export function getLatestRoundIndex(tournamentRounds: TournamentRound[]): number
     }
   }
   return latestRoundIndex;
+}
+
+export function getRolesSortedByPermission(roles: TournamentStaffRole[]): TournamentStaffRole[] {
+  return [...roles].sort((a, b) => {
+    for (let permission of Object.values(TournamentStaffPermission)) {
+      const aHasPermission = a.permissions.includes(permission);
+      const bHasPermission = b.permissions.includes(permission);
+      if (aHasPermission && !bHasPermission) return -1;
+      if (!aHasPermission && bHasPermission) return 1;
+    }
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+  });
+}
+
+export function getStaffMemberListSortedByRole(staffMembers: TournamentStaffMember[]): TournamentStaffMember[] {
+  return [...staffMembers].sort((a, b) => {
+    for (let permission of Object.values(TournamentStaffPermission)) {
+      const aHasPermission = a.roles.some(r => r.permissions.includes(permission));
+      const bHasPermission = b.roles.some(r => r.permissions.includes(permission));
+      if (aHasPermission && !bHasPermission) return -1;
+      if (!aHasPermission && bHasPermission) return 1;
+    }
+    return playerNameCompare(a, b);
+  });
 }
 
 export function getSortedMappool(tourney: Tournament, mappool: Mappool): MappoolSlot[] {

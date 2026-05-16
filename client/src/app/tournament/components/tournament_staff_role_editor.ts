@@ -29,21 +29,21 @@ export class TournamentStaffRoleEditor implements OnInit, OnChanges {
 
   permissionChoices = [
     { label: "Edit Tournament Settings", value: TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS },
-    { label: "Register", value: TournamentStaffPermission.REGISTER },
     { label: "Manage Players", value: TournamentStaffPermission.MANAGE_PLAYERS },
     { label: "Manage Teams", value: TournamentStaffPermission.MANAGE_TEAMS },
     { label: "Manage Staff Members", value: TournamentStaffPermission.MANAGE_STAFF_MEMBERS },
     { label: "Manage Staff Roles", value: TournamentStaffPermission.MANAGE_STAFF_ROLES },
+    { label: "Manage Stats", value: TournamentStaffPermission.MANAGE_STATS },
     { label: "Manage Rounds", value: TournamentStaffPermission.MANAGE_ROUNDS },
     { label: "Manage Mappool Slots", value: TournamentStaffPermission.MANAGE_SLOTS },
     { label: "Manage Matches", value: TournamentStaffPermission.MANAGE_MATCHES },
-    { label: "Submit Matches", value: TournamentStaffPermission.SUBMIT_MATCHES },
     { label: "View WIP Mappools", value: TournamentStaffPermission.VIEW_WIP_MAPPOOLS },
     { label: "View WIP Scoresheets", value: TournamentStaffPermission.VIEW_WIP_SCORESHEETS },
+    { label: "Submit Matches", value: TournamentStaffPermission.SUBMIT_MATCHES },
     { label: "Register to match as Referee", value: TournamentStaffPermission.REGISTER_REFEREE },
     { label: "Register to match as Streamer", value: TournamentStaffPermission.REGISTER_STREAMER },
     { label: "Register to match as Commentator", value: TournamentStaffPermission.REGISTER_COMMENTATOR },
-    { label: "Manage Stats", value: TournamentStaffPermission.MANAGE_STATS },
+    { label: "Register", value: TournamentStaffPermission.REGISTER },
   ];
 
   constructor() {
