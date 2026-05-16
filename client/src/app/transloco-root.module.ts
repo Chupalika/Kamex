@@ -11,7 +11,7 @@ import { environment } from '../environments/environment';
   providers: [
       provideTransloco({
         config: {
-          availableLangs: ['en', 'ja'],
+          availableLangs: ['en', 'ja', 'pt'],
           defaultLang: 'en',
           fallbackLang: ['en'],
           // Remove this option if your application doesn't support changing language in runtime.

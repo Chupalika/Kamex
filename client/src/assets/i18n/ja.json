@@ -2,17 +2,30 @@
   "common": {
     "frontPage": "トップページ",
     "loading": "読み込み中...",
-    "requestFailed": "リクエストの送信に失敗しました: {{error}}"
+    "requestFailed": "リクエストの送信に失敗しました: {{error}}",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "submit": "決定する",
+    "update": "更新する",
+    "timezone": "タイムゾーン"
+  },
+  "userSettings": {
+    "userSettings": "ユーザー設定",
+    "link": "リンク",
+    "unlink": "リンクを解除する",
+    "userSettingsUpdated": "ユーザーの設定を更新しました"
   },
   "tournament": {
-    "common": {
+    "pages": {
       "home": "大会概要",
       "registration": "登録",
       "participants": "参加者",
       "mappools": "マッププール",
       "matches": "マッチ",
       "stats": "統計",
-      "settings": "設定",
+      "settings": "設定"
+    },
+    "common": {
       "whomst": "欄",
       "player": "プレイヤー",
       "players": "プレイヤー",
@@ -21,13 +34,6 @@
       "staff": "スタッフ",
       "staffMembers": "スタッフメンバー",
       "playerFlags": "プレイヤーフラッグ",
-      "userSettings": "{{username}} のユーザー設定",
-      "link": "リンク",
-      "unlink": "リンクを解除する",
-      "update": "更新する",
-      "submit": "決定する",
-      "timezone": "タイムゾーン",
-      "userSettingsUpdated": "ユーザーの設定を更新しました",
       "copyTable": "表をコピー",
       "sortBy": "並び替え",
       "noTourney": "大会 {{acronym}} は存在しないか、又は読み込みに失敗しました",

@@ -5,6 +5,7 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { TranslocoModule } from '@jsverse/transloco';
 import { AppUser } from '../models/models';
 import { AuthService } from '../services/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -99,6 +100,7 @@ export class UserSettingsDialog {
     MatFormFieldModule,
     MatInputModule,
     ReactiveFormsModule,
+    TranslocoModule,
   ],
   declarations: [ UserSettingsDialog ],
   exports:      [ UserSettingsDialog ],

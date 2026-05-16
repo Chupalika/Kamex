@@ -2,17 +2,30 @@
   "common": {
     "frontPage": "Front Page",
     "loading": "Loading...",
-    "requestFailed": "Request failed: {{error}}"
+    "requestFailed": "Request failed: {{error}}",
+    "login": "Login",
+    "logout": "Logout",
+    "submit": "Submit",
+    "update": "Update",
+    "timezone": "Timezone"
+  },
+  "userSettings": {
+    "userSettings": "User Settings",
+    "link": "Link",
+    "unlink": "Unlink",
+    "userSettingsUpdated": "User settings updated."
   },
   "tournament": {
-    "common": {
+    "pages": {
       "home": "Home",
       "registration": "Registration",
       "participants": "Participants",
       "mappools": "Mappools",
       "matches": "Matches",
       "stats": "Stats",
-      "settings": "Settings",
+      "settings": "Settings"
+    },
+    "common": {
       "whomst": "Whomst",
       "player": "Player",
       "players": "Players",
@@ -21,13 +34,6 @@
       "staff": "Staff",
       "staffMembers": "Staff Members",
       "playerFlags": "Player flags",
-      "userSettings": "User Settings for {{username}}",
-      "link": "Link",
-      "unlink": "Unlink",
-      "update": "Update",
-      "submit": "Submit",
-      "timezone": "Timezone",
-      "userSettingsUpdated": "User settings updated.",
       "copyTable": "Copy Table",
       "sortBy": "Sort By",
       "noTourney": "Tournament {{acronym}} doesn't exist or failed to load!",

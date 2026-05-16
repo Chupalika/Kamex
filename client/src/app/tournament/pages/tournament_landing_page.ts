@@ -13,7 +13,7 @@ import { Tournament } from 'src/app/models/models';
 export class TournamentLandingPage {
   tournaments: Tournament[];
 
-  tournamentsTableColumns = ["name", "gameMode", "progress"];
+  tournamentsTableColumns = ["name", /*"banner",*/ "gameMode", "progress"];
   
   constructor(private tournamentsService: TournamentsService) {
     this.tournaments = [];

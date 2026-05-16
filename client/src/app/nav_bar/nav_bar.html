@@ -10,13 +10,13 @@
 
     <div *ngIf="!mobileMode" class="right-side">
       <ng-container *ngIf="tourneyPath">
-        <a mat-button color="primary" [routerLink]="getLink('')">{{ "tournament.common.home" | transloco }}</a>
-        <a mat-button color="primary" [routerLink]="getLink('registration')">{{ "tournament.common.registration" | transloco }}</a>
-        <a mat-button color="primary" [routerLink]="getLink('participants')">{{ "tournament.common.participants" | transloco }}</a>
-        <a mat-button color="primary" [routerLink]="getLink('mappools')">{{ "tournament.common.mappools" | transloco }}</a>
-        <a mat-button color="primary" [routerLink]="getLink('matches')">{{ "tournament.common.matches" | transloco }}</a>
-        <a mat-button color="primary" [routerLink]="getLink('stats')">{{ "tournament.common.stats" | transloco }}</a>
-        <a mat-button color="primary" [routerLink]="getLink('settings')" *ngIf="isStaffMember">{{ "tournament.common.settings" | transloco }}</a>
+        <a mat-button color="primary" [routerLink]="getLink('')">{{ "tournament.pages.home" | transloco }}</a>
+        <a mat-button color="primary" [routerLink]="getLink('registration')">{{ "tournament.pages.registration" | transloco }}</a>
+        <a mat-button color="primary" [routerLink]="getLink('participants')">{{ "tournament.pages.participants" | transloco }}</a>
+        <a mat-button color="primary" [routerLink]="getLink('mappools')">{{ "tournament.pages.mappools" | transloco }}</a>
+        <a mat-button color="primary" [routerLink]="getLink('matches')">{{ "tournament.pages.matches" | transloco }}</a>
+        <a mat-button color="primary" [routerLink]="getLink('stats')">{{ "tournament.pages.stats" | transloco }}</a>
+        <a mat-button color="primary" [routerLink]="getLink('settings')" *ngIf="isStaffMember">{{ "tournament.pages.settings" | transloco }}</a>
         <div class="separator"></div>
       </ng-container>
       <button mat-button color="primary" [matMenuTriggerFor]="languageMenu"><mat-icon>language</mat-icon>{{ activeLanguage }}</button>
@@ -29,7 +29,7 @@
         </button>
       </ng-container>
       <ng-container *ngIf="!appUser">
-        <button mat-button color="primary" (click)="login()">Login</button>
+        <button mat-button color="primary" (click)="login()">{{ "common.login" | transloco }}</button>
       </ng-container>
     </div>
 
@@ -38,13 +38,13 @@
         <mat-icon>menu</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
-        <button mat-menu-item [routerLink]="getLink('')">Home</button>
-        <button mat-menu-item [routerLink]="getLink('registration')">Registration</button>
-        <button mat-menu-item [routerLink]="getLink('participants')">Participants</button>
-        <button mat-menu-item [routerLink]="getLink('mappools')">Mappools</button>
-        <button mat-menu-item [routerLink]="getLink('matches')">Matches</button>
-        <button mat-menu-item [routerLink]="getLink('stats')">Stats</button>
-        <button mat-menu-item [routerLink]="getLink('settings')">Settings</button>
+        <button mat-menu-item [routerLink]="getLink('')">{{ "tournament.pages.home" | transloco }}</button>
+        <button mat-menu-item [routerLink]="getLink('registration')">{{ "tournament.pages.registration" | transloco }}</button>
+        <button mat-menu-item [routerLink]="getLink('participants')">{{ "tournament.pages.participants" | transloco }}</button>
+        <button mat-menu-item [routerLink]="getLink('mappools')">{{ "tournament.pages.mappools" | transloco }}</button>
+        <button mat-menu-item [routerLink]="getLink('matches')">{{ "tournament.pages.matches" | transloco }}</button>
+        <button mat-menu-item [routerLink]="getLink('stats')">{{ "tournament.pages.stats" | transloco }}</button>
+        <button mat-menu-item [routerLink]="getLink('settings')">{{ "tournament.pages.settings" | transloco }}</button>
         <ng-container *ngIf="appUser">
           <button mat-menu-item [matMenuTriggerFor]="userMenu" class="username-menu-button">
             <div class="user-div">
@@ -54,19 +54,20 @@
           </button>
         </ng-container>
         <ng-container *ngIf="!appUser">
-          <button mat-menu-item (click)="login()">Login</button>
+          <button mat-menu-item (click)="login()">{{ "common.login" | transloco }}</button>
         </ng-container>
       </mat-menu>
     </div>
 
     <mat-menu #userMenu="matMenu">
-      <button mat-menu-item (click)="openUserSettings()">User Settings</button>
-      <button mat-menu-item (click)="logout()">Logout</button>
+      <button mat-menu-item (click)="openUserSettings()">{{ "userSettings.userSettings" | transloco }}</button>
+      <button mat-menu-item (click)="logout()">{{ "common.logout" | transloco }}</button>
     </mat-menu>
 
     <mat-menu #languageMenu="matMenu">
       <button mat-menu-item (click)="changeLanguage('en')">English</button>
-      <button mat-menu-item (click)="changeLanguage('ja')">Japanese</button>
+      <button mat-menu-item (click)="changeLanguage('pt')">Português</button>
+      <button mat-menu-item (click)="changeLanguage('ja')">日本語</button>
     </mat-menu>
   </mat-toolbar>
 </div>

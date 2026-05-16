@@ -379,7 +379,7 @@ export class RegisterDialog {
                  <input #teamNameInput matInput type="text" [value]="data.initialName ?? ''">
                </mat-form-field>
                <mat-dialog-actions align="end">
-                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">{{ "tournament.common.submit" | transloco }}</button>
+                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">{{ "common.submit" | transloco }}</button>
                </mat-dialog-actions>
              </div>`,
 })
@@ -396,7 +396,7 @@ export class EditTeamNameDialog {
                  <input #teamNameInput matInput type="text">
                </mat-form-field>
                <mat-dialog-actions align="end">
-                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">{{ "tournament.common.submit" | transloco }}</button>
+                 <button mat-raised-button color="primary" [mat-dialog-close]="teamNameInput.value">{{ "common.submit" | transloco }}</button>
                </mat-dialog-actions>
              </div>`,
 })

@@ -2,7 +2,7 @@
 <div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 
 <div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
-  <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.common.participants" | transloco }}</div>
+  <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.participants" | transloco }}</div>
 
   <div class="header" [ngClass]="{'mobile-mode': mobileMode}">
     <mat-form-field class="option-dropdown" *ngIf="displayFormControl.value !== 'staff'" appearance="outline">

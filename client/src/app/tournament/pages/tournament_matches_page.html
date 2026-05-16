@@ -2,7 +2,7 @@
 <div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 
 <div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
-  <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.common.matches" | transloco }}</div>
+  <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.matches" | transloco }}</div>
 
   <!-- <div class="matches-page-container" [style.flexDirection]="mobileMode ? 'column' : 'row'"> -->
   <div class="matches-page-container">
@@ -27,7 +27,7 @@
           </mat-select>
         </mat-form-field>
         <mat-form-field *ngIf="appUser" appearance="outline">
-          <mat-label>{{ "tournament.common.timezone" | transloco }}</mat-label>
+          <mat-label>{{ "common.timezone" | transloco }}</mat-label>
           <mat-select [formControl]="displayTimeFormControl">
             <mat-option value="utc">UTC</mat-option>
             <mat-option value="local">{{ localUTC }}</mat-option>

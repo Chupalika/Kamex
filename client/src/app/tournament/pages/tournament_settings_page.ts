@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { TranslocoModule } from '@jsverse/transloco';
 import { catchError, finalize, map, switchMap, take } from 'rxjs/operators';
 import { Observable, Subscription, of, throwError } from "rxjs";
 
@@ -836,6 +837,7 @@ export class RefreshPlayerDataDialog {}
     TournamentStaffMemberEditorModule,
     TournamentStaffRoleEditorModule,
     TournamentTeamEditorModule,
+    TranslocoModule,
   ],
   declarations: [ TournamentSettingsPage, RefreshPlayerDataDialog ],
   exports: [ TournamentSettingsPage ],

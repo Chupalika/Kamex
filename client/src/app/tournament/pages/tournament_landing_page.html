@@ -9,6 +9,16 @@
       <a [routerLink]="['/tournament', element.acronym]">{{ element.name }} ({{ element.acronym }})</a>
     </mat-cell>
   </ng-container>
+  <!--
+  <ng-container matColumnDef="banner">
+    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
+      <span class="tournaments-table-header-text">Banner</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let element" class="tournaments-table-cell">
+      <img *ngIf="element.bannerLink" [src]="element.bannerLink" class="tournament-banner">
+    </mat-cell>
+  </ng-container>
+  -->
   <ng-container matColumnDef="gameMode">
     <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
       <span class="tournaments-table-header-text">Game Mode</span>
