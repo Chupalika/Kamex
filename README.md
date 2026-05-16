@@ -31,3 +31,4 @@ CLOUDINARY_API_SECRET=<cloudinary-api-secret>
 
 ## Special Thanks
 * [shinjinhome](https://osu.ppy.sh/users/30147970) - Japanese translation
+* [Foxeru](https://osu.ppy.sh/users/7479684) - Portuguese translation
