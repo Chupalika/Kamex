@@ -17,7 +17,7 @@ import { Title } from '@angular/platform-browser';
 import { TranslocoModule } from '@jsverse/transloco';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
-import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare, getRolesSortedByPermission, getStaffMemberListSortedByRole } from '../utils';
+import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare, getRolesSortedByPermission, getStaffMemberListSortedByRole, getPlayerRank } from '../utils';
 
 import { AppUser, GameMode, Tournament, TournamentPlayer, TournamentProgress, TournamentStaffMember, TournamentStaffPermission, TournamentTeam } from 'src/app/models/models';
 import { HovercardModule } from 'src/app/components/hovercard';
@@ -31,6 +31,8 @@ import { TournamentStaffMemberCard, TournamentStaffMemberCardModule } from 'src/
 import { RefreshPlayerDataDialog } from './tournament_settings_page';
 import { AuthService } from 'src/app/services/auth.service';
 import { AssignSeedsDialog } from './tournament_stats_page';
+import { TournamentPlayerLabelModule } from '../components/tournament_player_label';
+import { TournamentTeamLabelModule } from '../components/tournament_team_label';
 
 @Component({
   selector: 'tournament_participants_page',
@@ -194,23 +196,8 @@ export class TournamentParticipantsPage implements OnInit {
     return this.teams.filter((team) => team.players.some(player => player.playerId === playerId));
   }
 
-  getPlayerImage(player: TournamentPlayer|TournamentStaffMember) {
-    if (this.playerFlagsFormControl.value) {
-      return 'https://flagcdn.com/w40/' + player.country.toLowerCase() + '.png';
-    } else {
-      return `https://a.ppy.sh/${player.playerId}`;
-    }
-  }
-
   getPlayerRank(player: TournamentPlayer) {
-    switch (this.tournament!.gameMode) {
-      case GameMode.OSU: return player.osuRank;
-      case GameMode.TAIKO: return player.taikoRank;
-      case GameMode.FRUITS: return player.fruitsRank;
-      case GameMode.MANIA: return player.maniaRank;
-      case GameMode.ALL: return Math.min(player.osuRank ?? Number.MAX_SAFE_INTEGER, player.taikoRank ?? Number.MAX_SAFE_INTEGER, player.fruitsRank ?? Number.MAX_SAFE_INTEGER, player.maniaRank ?? Number.MAX_SAFE_INTEGER);
-      default: return Number.MAX_SAFE_INTEGER;
-    }
+    return getPlayerRank(player, this.tournament!.gameMode);
   }
 
   getPlayerRankDisplay(player: TournamentPlayer) {
@@ -636,8 +623,10 @@ export class PlayerTeamEditorDialog {
         ReactiveFormsModule,
         TournamentPlayerCardModule,
         TournamentPlayerEditorModule,
+        TournamentPlayerLabelModule,
         TournamentTeamCardModule,
         TournamentTeamEditorModule,
+        TournamentTeamLabelModule,
         TournamentStaffMemberCardModule,
         TranslocoModule,
     ],

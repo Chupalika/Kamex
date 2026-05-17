@@ -96,31 +96,25 @@
           <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef class="table-cell table-cell-m">{{ "tournament.participants.name" | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let player" class="table-cell table-cell-m">
-              <span
-                class="participant-name"
-                [hovercardComponent]="TournamentPlayerCard"
-                [hovercardData]="{ player: player, teams: getPlayerTeams(player.playerId), gameMode: tournament.gameMode }"
-              >
-                <img
-                  [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
-                  [src]="getPlayerImage(player)"
-                >
-                {{ player.username }}
-              </span>
+              <tournament-player-label
+                [player]="player"
+                [teams]="getPlayerTeams(player.playerId)"
+                [gameMode]="tournament.gameMode"
+                [playerFlagsToggle]="playerFlagsFormControl.value"
+              ></tournament-player-label>
             </mat-cell>
           </ng-container>
           <ng-container matColumnDef="team">
             <mat-header-cell *matHeaderCellDef class="table-cell table-cell-l">{{ "tournament.common.team" | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let player" class="table-cell table-cell-l">
               <div class="player-teams">
-                <span
+                <tournament-team-label
                   *ngFor="let team of getPlayerTeams(player.playerId)"
-                  class="participant-name"
-                  [hovercardComponent]="TournamentTeamCard"
-                  [hovercardData]="{ team: team, gameMode: tournament.gameMode, playerFlagsToggle: playerFlagsFormControl.value, playerSortMethod: playerSortFormControl.value }"
-                >
-                  <img class="flag-avatar" [src]="team.imageLink"> {{ team.name }}
-                </span>
+                  [team]="team"
+                  [gameMode]="tournament.gameMode"
+                  [playerFlagsToggle]="playerFlagsFormControl.value"
+                  [playerSortMethod]="playerSortFormControl.value"
+                ></tournament-team-label>
               </div>
             </mat-cell>
           </ng-container>
@@ -162,32 +156,27 @@
           <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef class="table-cell table-cell-l">{{ "tournament.participants.name" | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let team" class="table-cell table-cell-l">
-              <span
-                class="participant-name"
-                [hovercardComponent]="TournamentTeamCard"
-                [hovercardData]="{ team: team, gameMode: tournament.gameMode, playerFlagsToggle: playerFlagsFormControl.value, playerSortMethod: playerSortFormControl.value }"
-              >
-                <img class="flag-avatar" [src]="team.imageLink"> {{ team.name }}
-              </span>
+              <tournament-team-label
+                [team]="team"
+                [gameMode]="tournament.gameMode"
+                [playerFlagsToggle]="playerFlagsFormControl.value"
+                [playerSortMethod]="playerSortFormControl.value"
+              ></tournament-team-label>
             </mat-cell>
           </ng-container>
           <ng-container matColumnDef="players">
             <mat-header-cell *matHeaderCellDef class="table-cell table-cell-l">{{ "tournament.common.players" | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let team" class="table-cell table-cell-l">
               <div class="team-players">
-                <span
+                <tournament-player-label
                   *ngFor="let player of getSortedTeamPlayers(team)"
-                  class="participant-name"
-                  [class.captain]="player.playerId === getTeamCaptain(team).playerId"
-                  [hovercardComponent]="TournamentPlayerCard"
-                  [hovercardData]="{ player: player, teams: getPlayerTeams(player.playerId), gameMode: tournament.gameMode }"
-                >
-                  <img
-                    [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
-                    [src]="getPlayerImage(player)"
-                  >
-                  {{ player.username }} ({{ getPlayerRankDisplay(player) }})
-                </span>
+                  [player]="player"
+                  [teams]="getPlayerTeams(player.playerId)"
+                  [gameMode]="tournament.gameMode"
+                  [playerFlagsToggle]="playerFlagsFormControl.value"
+                  [isCaptain]="player.playerId === getTeamCaptain(team).playerId"
+                  [showRank]="true"
+                ></tournament-player-label>
               </div>
             </mat-cell>
           </ng-container>
@@ -226,17 +215,7 @@
           <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef>{{ "tournament.participants.name" | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let staffMember">
-              <span
-                class="participant-name"
-                [hovercardComponent]="TournamentStaffMemberCard"
-                [hovercardData]="{ staffMember: staffMember }"
-              >
-                <img
-                  [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
-                  [src]="getPlayerImage(staffMember)"
-                >
-                {{ staffMember.username }}
-              </span>
+              <tournament-player-label [player]="staffMember" [isStaff]="true" [playerFlagsToggle]="playerFlagsFormControl.value"></tournament-player-label>
             </mat-cell>
           </ng-container>
           <ng-container matColumnDef="roles">

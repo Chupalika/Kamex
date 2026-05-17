@@ -81,20 +81,12 @@
         &.mobile-mode {
           min-width: 120px;
           max-width: 120px;
-
-          .participant-name {
-            //border: 1px solid var(--custom-theme-palette-400);
-          }
         }
 
         .participant {
           display: flex;
           align-items: flex-start;
           width: 100%;
-
-          .participant-name {
-            //flex-grow: 1;
-          }
 
           .filler {
             flex-grow: 1;
@@ -140,7 +132,7 @@
 
       .register-button {
         border-radius: 12px;
-        margin: 0 6px;
+        margin: 0 3px;
 
         mat-icon {
           font-size: 20px;
@@ -152,27 +144,6 @@
       .lobby-participant {
         display: flex;
       }
-    }
-  }
-
-  .square-avatar {
-    width: 24px;
-    height: 24px;
-    margin-left: 6px;
-    margin-right: 10px;
-    border-radius: 2px;
-  }
-
-  .flag-avatar {
-    width: 36px;
-    height: 24px;
-    object-fit: contain;
-    margin-right: 4px;
-    border-radius: 2px;
-
-    &.flipped {
-      margin-right: unset;
-      margin-left: 4px;
     }
   }
 }

@@ -286,56 +286,36 @@
 
 <ng-template #participantInfo let-participant="participant" let-flipped="flipped" let-hideExtraInfo="hideExtraInfo" let-hideIcon="hideIcon">
   <div class="participant">
-    <img
-      *ngIf="!hideExtraInfo && !hideIcon && !flipped"
-      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam) && !playerFlagsToggle, 'flag-avatar': !isPlayer(participant.playerOrTeam) || playerFlagsToggle, 'flipped': flipped}"
-      [src]="getParticipantImage(participant)"
-    >
     <span *ngIf="!hideExtraInfo && flipped && participant.playerOrTeam.seed" class="seed">
       <span class="material-symbols-outlined icon">potted_plant</span> {{ participant.playerOrTeam.seed }}
     </span>
     <span *ngIf="flipped" class="filler"></span>
-    <span
+    <tournament-player-label
       *ngIf="isPlayer(participant.playerOrTeam)"
-      class="participant-name"
-      [hovercardComponent]="TournamentPlayerCard"
-      [hovercardData]="{ player: participant.playerOrTeam, gameMode: gameMode }"
-    >
-      {{ participant.playerOrTeam.username }}
-    </span>
-    <span
+      [player]="participant.playerOrTeam"
+      [gameMode]="gameMode"
+      [playerFlagsToggle]="playerFlagsToggle"
+      [flipped]="flipped"
+      [hideIcon]="hideIcon"
+    ></tournament-player-label>
+    <tournament-team-label
       *ngIf="!isPlayer(participant.playerOrTeam)"
-      class="participant-name"
-      [hovercardComponent]="TournamentTeamCard"
-      [hovercardData]="{ team: participant.playerOrTeam, gameMode: gameMode, playerFlagsToggle: playerFlagsToggle }"
-    >
-      {{ participant.playerOrTeam.name }}
-    </span>
+      [team]="participant.playerOrTeam"
+      [gameMode]="gameMode"
+      [playerFlagsToggle]="playerFlagsToggle"
+      [flipped]="flipped"
+      [hideIcon]="hideIcon"
+    ></tournament-team-label>
     <span *ngIf="!flipped" class="filler"></span>
     <span *ngIf="!hideExtraInfo && !flipped && participant.playerOrTeam.seed" class="seed">
       <span class="material-symbols-outlined icon">potted_plant</span> {{ participant.playerOrTeam.seed }}
     </span>
-    <img
-      *ngIf="!hideExtraInfo && !hideIcon && flipped"
-      [ngClass]="{'square-avatar': isPlayer(participant.playerOrTeam) && !playerFlagsToggle, 'flag-avatar': !isPlayer(participant.playerOrTeam) || playerFlagsToggle, 'flipped': flipped}"
-      [src]="getParticipantImage(participant)"
-    >
   </div>
 </ng-template>
 
 <ng-template #staffMemberName let-staffMember let-hideIcon="hideIcon">
   <div class="staff-member">
-    <img
-      *ngIf="!hideIcon"
-      [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}"
-      [src]="getStaffMemberImage(staffMember)"
-    >
-    <span
-      [hovercardComponent]="TournamentStaffMemberCard"
-      [hovercardData]="{ staffMember: staffMember }"
-    >
-      {{ staffMember.username }}
-    </span>
+    <tournament-player-label [player]="staffMember" [isStaff]="true" [playerFlagsToggle]="playerFlagsToggle" [hideIcon]="hideIcon"></tournament-player-label>
   </div>
 </ng-template>
 

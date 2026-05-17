@@ -138,24 +138,3 @@
     color: var(--custom-theme-palette-400);
   }
 }
-
-.square-avatar {
-  width: 24px;
-  height: 24px;
-  margin-left: 6px;
-  margin-right: 10px;
-  border-radius: 2px;
-}
-
-.flag-avatar {
-  width: 36px;
-  height: 24px;
-  object-fit: contain;
-  margin-right: 4px;
-  border-radius: 2px;
-}
-
-.participant-name {
-  display: flex;
-  align-items: center;
-}

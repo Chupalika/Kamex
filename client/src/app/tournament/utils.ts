@@ -325,6 +325,17 @@ export function getLatestRoundIndex(tournamentRounds: TournamentRound[]): number
   return latestRoundIndex;
 }
 
+export function getPlayerRank(player: TournamentPlayer, gameMode: GameMode): number {
+  switch (gameMode) {
+    case GameMode.OSU: return player.osuRank ?? Number.MAX_SAFE_INTEGER;
+    case GameMode.TAIKO: return player.taikoRank ?? Number.MAX_SAFE_INTEGER;
+    case GameMode.FRUITS: return player.fruitsRank ?? Number.MAX_SAFE_INTEGER;
+    case GameMode.MANIA: return player.maniaRank ?? Number.MAX_SAFE_INTEGER;
+    case GameMode.ALL: return Math.min(player.osuRank ?? Number.MAX_SAFE_INTEGER, player.taikoRank ?? Number.MAX_SAFE_INTEGER, player.fruitsRank ?? Number.MAX_SAFE_INTEGER, player.maniaRank ?? Number.MAX_SAFE_INTEGER);
+    default: return Number.MAX_SAFE_INTEGER;
+  }
+}
+
 export function getRolesSortedByPermission(roles: TournamentStaffRole[]): TournamentStaffRole[] {
   return [...roles].sort((a, b) => {
     for (let permission of Object.values(TournamentStaffPermission)) {

@@ -14,10 +14,12 @@ import { TournamentTeamCard } from '../components/tournament_team_card';
 import { TournamentStaffMemberCard } from '../components/tournament_staff_member_card';
 import { MarkdownModule } from 'ngx-markdown';
 
-import { SubmitMatchDto, TournamentMatch, TournamentMatchEvent, TournamentMatchParticipant, TournamentPlayer, TournamentStaffMember, TournamentTeam } from '../../models/models';
+import { GameMode, SubmitMatchDto, TournamentMatch, TournamentMatchEvent, TournamentMatchParticipant, TournamentPlayer, TournamentStaffMember, TournamentTeam } from '../../models/models';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { MatchProgressionModule } from 'src/app/components/match_progression';
 import { TournamentSubmitMatchEditorModule } from './tournament_submit_match_editor';
+import { TournamentPlayerLabelModule } from '../components/tournament_player_label';
+import { TournamentTeamLabelModule } from '../components/tournament_team_label';
 import { catchError } from 'rxjs/internal/operators/catchError';
 import { throwError } from 'rxjs/internal/observable/throwError';
 
@@ -29,7 +31,7 @@ import { throwError } from 'rxjs/internal/observable/throwError';
 export class TournamentMatchCard {
   @Input() match?: TournamentMatch;
   @Input() timezone: number = 0;
-  @Input() gameMode: string = "";
+  @Input() gameMode: GameMode = GameMode.OSU;
   @Input() tourneyAcronym: string = "";
   @Input() tourneyRoundId: string = "";
   @Input() isHeader: boolean = false;
@@ -261,7 +263,9 @@ export class MatchNotesDialog {
     MatMenuModule,
     MatTooltipModule,
     MatchProgressionModule,
+    TournamentPlayerLabelModule,
     TournamentSubmitMatchEditorModule,
+    TournamentTeamLabelModule,
     TranslocoModule,
   ],
   declarations: [ TournamentMatchCard, MatchProgressionDialog, SubmitMatchEditorDialog, MatchNotesDialog ],

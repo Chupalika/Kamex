@@ -32,6 +32,8 @@ import { NavBarModule } from "../../nav_bar/nav_bar";
 import { TournamentsService } from '../../services/tournaments.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { ScoreDetailsModule } from 'src/app/components/score_details';
+import { TournamentPlayerLabelModule } from '../components/tournament_player_label';
+import { TournamentTeamLabelModule } from '../components/tournament_team_label';
 
 interface OverallPlayerStats extends TournamentRoundPlayerOverallStats {
   playerName: string;
@@ -449,24 +451,6 @@ export class TournamentStatsPage implements OnInit {
     return this.alphaSortedTeams.filter((team) => team.players.some(player => player.playerId === playerId));
   }
 
-  getPlayerImage(id: number) {
-    const player = this.getPlayer(id);
-    if (player) {
-      if (this.playerFlagsFormControl.value) {
-        return 'https://flagcdn.com/w40/' + player.country.toLowerCase() + '.png';
-      } else {
-        return `https://a.ppy.sh/${player.playerId}`;
-      }
-    } else {
-      return '';
-    }
-  }
-
-  getTeamImage(id: string) {
-    const team = this.getTeam(id);
-    return team?.imageLink ?? '';
-  }
-
   formatScore(score: Score) {
     return score.score.toLocaleString();
   }
@@ -876,6 +860,7 @@ export class ScoreDetailsDialog implements OnInit {
   imports: [
     CommonModule,
     FormsModule,
+    HovercardModule,
     ItemSelectorModule,
     MatButtonModule,
     MatCheckboxModule,
@@ -890,9 +875,10 @@ export class ScoreDetailsDialog implements OnInit {
     MatTooltipModule,
     NavBarModule,
     ReactiveFormsModule,
-    TournamentRoundNavBarModule,
-    HovercardModule,
     ScoreDetailsModule,
+    TournamentPlayerLabelModule,
+    TournamentRoundNavBarModule,
+    TournamentTeamLabelModule,
     TranslocoModule,
   ],
   declarations: [ TournamentStatsPage, AssignSeedsDialog, ScoreDetailsDialog ],

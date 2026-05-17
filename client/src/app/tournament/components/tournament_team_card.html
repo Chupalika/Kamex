@@ -3,7 +3,8 @@
     <div class="top-side">
       <div class="info-name" #teamName [matTooltip]="isNameOverflowing ? team.name : ''" matTooltipPosition="above">{{ team.name }}</div>
       <div class="top-right-side">
-        <img class="team-image" [src]="team.imageLink" />
+        <img *ngIf="team.imageLink" class="team-image" [src]="team.imageLink" />
+        <div *ngIf="!team.imageLink" class="team-image-empty"></div>
         <div class="info-seed"><span class="material-symbols-outlined icon" [class.no-seed]="!team.seed">potted_plant</span> {{ team.seed ?? "" }}</div>
       </div>
     </div>

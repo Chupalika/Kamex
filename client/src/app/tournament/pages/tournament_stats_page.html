@@ -93,30 +93,19 @@
               <span class="header-text">{{ (playerOrTeamStatsFormControl.value === 'player' ? "tournament.common.player" : "tournament.common.team") | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">
-              <span
+              <tournament-player-label
                 *ngIf="playerOrTeamStatsFormControl.value === 'player'"
-                class="participant-name"
-                [hovercardComponent]="TournamentPlayerCard"
-                [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
-              >
-                <img
-                  [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
-                  [src]="getPlayerImage(element.playerId)"
-                >
-                {{ element.playerName }}
-              </span>
-              <span
+                [player]="getPlayer(element.playerId)"
+                [teams]="getPlayerTeams(element.playerId)"
+                [gameMode]="gameMode"
+                [playerFlagsToggle]="playerFlagsFormControl.value"
+              ></tournament-player-label>
+              <tournament-team-label
                 *ngIf="playerOrTeamStatsFormControl.value === 'team'"
-                class="participant-name"
-                [hovercardComponent]="TournamentTeamCard"
-                [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode, playerFlagsToggle: playerFlagsFormControl.value }"
-              >
-                <img
-                  class="flag-avatar"
-                  [src]="getTeamImage(element.teamId)"
-                >
-                {{ element.teamName }}
-              </span>
+                [team]="getTeam(element.teamId)"
+                [gameMode]="gameMode"
+                [playerFlagsToggle]="playerFlagsFormControl.value"
+              ></tournament-team-label>
             </mat-cell>
           </ng-container>
           <ng-container matColumnDef="numMaps">
@@ -178,30 +167,19 @@
                 <span class="header-text">{{ playerOrTeamStatsFormControl.value === 'player' ? "Player" : "Team" }}</span>
               </mat-header-cell>
               <mat-cell *matCellDef="let element" class="stats-cell stats-cell-l">
-                <span
+                <tournament-player-label
                   *ngIf="playerOrTeamStatsFormControl.value === 'player'"
-                  class="participant-name"
-                  [hovercardComponent]="TournamentPlayerCard"
-                  [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
-                >
-                  <img
-                    [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
-                    [src]="getPlayerImage(element.playerId)"
-                  >
-                  {{ element.playerName }}
-                </span>
-                <span
+                  [player]="getPlayer(element.playerId)"
+                  [teams]="getPlayerTeams(element.playerId)"
+                  [gameMode]="gameMode"
+                  [playerFlagsToggle]="playerFlagsFormControl.value"
+                ></tournament-player-label>
+                <tournament-team-label
                   *ngIf="playerOrTeamStatsFormControl.value === 'team'"
-                  class="participant-name"
-                  [hovercardComponent]="TournamentTeamCard"
-                  [hovercardData]="{ team: getTeam(element.teamId), gameMode: gameMode, playerFlagsToggle: playerFlagsFormControl.value }"
-                >
-                  <img
-                    class="flag-avatar"
-                    [src]="getTeamImage(element.teamId)"
-                  >
-                  {{ element.teamName }}
-                </span>
+                  [team]="getTeam(element.teamId)"
+                  [gameMode]="gameMode"
+                  [playerFlagsToggle]="playerFlagsFormControl.value"
+                ></tournament-team-label>
               </mat-cell>
             </ng-container>
             <ng-container matColumnDef="score">
@@ -277,17 +255,11 @@
               <span class="header-text">{{ "tournament.common.team" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element._id) + 'px'">
-              <span
-                class="participant-name"
-                [hovercardComponent]="TournamentTeamCard"
-                [hovercardData]="{ team: getTeam(element._id), gameMode: gameMode }"
-              >
-                <img
-                  class="flag-avatar"
-                  [src]="getTeamImage(element._id)"
-                >
-                {{ element.name }}
-              </span>
+              <tournament-team-label
+                [team]="getTeam(element._id)"
+                [gameMode]="gameMode"
+                [playerFlagsToggle]="playerFlagsFormControl.value"
+              ></tournament-team-label>
             </mat-cell>
           </ng-container>
 
@@ -303,17 +275,12 @@
               <span class="header-text">{{ "tournament.common.player" | transloco }}</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let element" class="stats-cell stats-cell-m" [style.height]="getCellHeight(element.playerId) + 'px'">
-              <span
-                class="participant-name"
-                [hovercardComponent]="TournamentPlayerCard"
-                [hovercardData]="{ player: getPlayer(element.playerId), teams: getPlayerTeams(element.playerId), gameMode: gameMode }"
-              >
-                <img
-                  [ngClass]="{'square-avatar': !playerFlagsFormControl.value, 'flag-avatar': playerFlagsFormControl.value}"
-                  [src]="getPlayerImage(element.playerId)"
-                >
-                {{ element.username }}
-              </span>
+              <tournament-player-label
+                [player]="getPlayer(element.playerId)"
+                [teams]="getPlayerTeams(element.playerId)"
+                [gameMode]="gameMode"
+                [playerFlagsToggle]="playerFlagsFormControl.value"
+              ></tournament-player-label>
             </mat-cell>
           </ng-container>
 
