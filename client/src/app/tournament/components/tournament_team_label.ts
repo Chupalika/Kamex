@@ -14,15 +14,16 @@ import { TournamentTeamCard } from './tournament_team_card';
       [hovercardComponent]="TournamentTeamCard"
       [hovercardData]="{ team: team, gameMode: gameMode, playerFlagsToggle: playerFlagsToggle, playerSortMethod: playerSortMethod }"
     >
-      <img *ngIf="team.imageLink && !flipped && !hideIcon" class="team-image" [src]="team.imageLink" />
+      <div class="img-container" *ngIf="team.imageLink && !flipped && !hideIcon"><img class="team-image" [src]="team.imageLink" /></div>
       <div *ngIf="!team.imageLink && !flipped && !hideIcon" class="team-image empty"></div>
       <span class="name">{{ team.name }}</span>
       <div *ngIf="!team.imageLink && flipped && !hideIcon" class="team-image empty flipped"></div>
-      <img *ngIf="team.imageLink && flipped && !hideIcon" class="team-image flipped"[src]="team.imageLink" />
+      <div class="img-container" *ngIf="team.imageLink && flipped && !hideIcon"><img class="team-image flipped"[src]="team.imageLink" /></div>
     </span>`,
   styles:
-   `.label { display: flex; align-items: center; }
+   `.label { display: flex; align-items: center; line-height: 30px; }
     .name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .img-container { display: flex; align-self: flex-start; }
     .team-image { width: 30px; height: 30px; margin-right: 6px; border-radius: 2px; object-fit: contain; }
     .flipped { margin-right: unset; margin-left: 6px; }
     .empty { border: 1px solid var(--mat-fab-disabled-state-container-color); }`,

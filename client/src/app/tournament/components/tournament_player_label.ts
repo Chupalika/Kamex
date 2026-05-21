@@ -17,13 +17,14 @@ import { TournamentStaffMemberCard } from './tournament_staff_member_card';
       [hovercardComponent]="isStaff ? TournamentStaffMemberCard : TournamentPlayerCard"
       [hovercardData]="{ player: player, teams: teams, gameMode: gameMode, staffMember: player }"
     >
-      <img *ngIf="!flipped && !hideIcon" [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}" [src]="playerImage">
+      <div class="img-container" *ngIf="!flipped && !hideIcon"><img [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}" [src]="playerImage"></div>
       {{ player.username }} <ng-container *ngIf="showRank">({{ getPlayerRankDisplay(player) }})</ng-container>
-      <img *ngIf="flipped && !hideIcon" [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle, 'flipped': true}" [src]="playerImage">
+      <div class="img-container" *ngIf="flipped && !hideIcon"><img [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle, 'flipped': true}" [src]="playerImage"></div>
     </span>`,
   styles:
-   `.label { display: flex; align-items: center; }
+   `.label { display: flex; align-items: center; line-height: 30px; }
     .captain { font-weight: bold; }
+    .img-container { display: flex; align-self: flex-start; }
     .square-avatar { width: 30px; height: 30px; margin-right: 6px; border-radius: 2px; object-fit: contain; }
     .flag-avatar { width: 30px; height: 20px; margin: 5px 6px 5px 0; border-radius: 2px; object-fit: contain; }
     .flipped { margin-right: unset; margin-left: 6px; }`,

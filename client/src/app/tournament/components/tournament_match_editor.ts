@@ -36,6 +36,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
   timeFormControl: FormControl;
   isTeamMatchFormControl: FormControl;
   typeFormControl: FormControl;
+  nameFormControl: FormControl;
   enableSignupsFormControl: FormControl
   maxLobbyParticipantsFormControl: FormControl;
   participantsFormControl: FormArray;
@@ -54,6 +55,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
     this.timeFormControl = new FormControl("", [Validators.required]);
     this.isTeamMatchFormControl = new FormControl(false);
     this.typeFormControl = new FormControl("versus", [Validators.required]);
+    this.nameFormControl = new FormControl("");
     this.enableSignupsFormControl = new FormControl(false);
     this.maxLobbyParticipantsFormControl = new FormControl(8);
     this.participantsFormControl = new FormArray<FormControl>([]);
@@ -76,6 +78,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       referees: this.refereesFormControl,
       streamers: this.streamersFormControl,
       commentators: this.commentatorsFormControl,
+      name: this.nameFormControl,
       matchIds: this.matchIdsFormControl,
       vodLinks: this.vodLinksFormControl,
       notes: this.notesFormControl,
@@ -98,6 +101,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.timeFormControl.setValue(convertDateToDatetimeLocal(this.match.time));
       this.isTeamMatchFormControl.setValue(this.match.isTeamMatch);
       this.typeFormControl.setValue(this.match.type);
+      this.nameFormControl.setValue(this.match.name);
       this.enableSignupsFormControl.setValue(this.match.enableSignups);
       this.maxLobbyParticipantsFormControl.setValue(this.match.maxLobbyParticipants);
       //this.playersFormControl.setValue(this.match.players!.map(player => player._id));
@@ -122,6 +126,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.timeFormControl.setValue(undefined);
       this.isTeamMatchFormControl.setValue(this.enableTeams);
       this.typeFormControl.setValue("versus");
+      this.nameFormControl.setValue("");
       this.enableSignupsFormControl.setValue(false);
       this.maxLobbyParticipantsFormControl.setValue(8);
       this.getParticipantsFormArray().clear();
@@ -143,6 +148,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       time: convertDatetimeLocalToDate(formValues.time),
       isTeamMatch: formValues.isTeamMatch,
       type: formValues.type,
+      name: formValues.name,
       enableSignups: formValues.enableSignups,
       maxLobbyParticipants: formValues.maxLobbyParticipants,
       participants: formValues.participants,
@@ -173,6 +179,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       convertDateToDatetimeLocal(this.match.time) !== this.timeFormControl.value ||
       this.match.isTeamMatch !== this.isTeamMatchFormControl.value ||
       this.match.type !== this.typeFormControl.value ||
+      this.match.name !== this.nameFormControl.value ||
       this.match.enableSignups !== this.enableSignupsFormControl.value ||
       this.match.maxLobbyParticipants !== this.maxLobbyParticipantsFormControl.value ||
       JSON.stringify(this.match.participants?.map(participant => this.simplifyParticipant(participant))) !== JSON.stringify(this.participantsFormControl.value) ||
@@ -185,12 +192,16 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.match.notes !== this.notesFormControl.value;
   }
 
-  isTeamMatch(): boolean {
+  get isTeamMatch(): boolean {
     return this.isTeamMatchFormControl.value;
   }
 
-  isLobbyType(): boolean {
+  get isLobbyType(): boolean {
     return this.typeFormControl.value === "lobby";
+  }
+
+  get isShowcaseType(): boolean {
+    return this.typeFormControl.value === "showcase";
   }
 
   simplifyParticipant(participant: TournamentMatchParticipant) {
@@ -334,7 +345,7 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
   generateAvailabilityScores(): Map<string, number[]> {
     const timezones = new Map<string, number>();
     const availabilityScores = new Map<string, number[]>();
-    if (this.isTeamMatch()) {
+    if (this.isTeamMatch) {
       for (let participantForm of this.getParticipantsFormArray().controls) {
         const teamId = participantForm.get("playerOrTeam")?.value;
         const team = this.teams.find(t => t._id === teamId);

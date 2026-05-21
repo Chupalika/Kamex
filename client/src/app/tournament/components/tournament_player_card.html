@@ -24,7 +24,8 @@
       </ng-container>
       <div class="info-teams" *ngIf="teams.length > 0">
         <div class="team-row" *ngFor="let team of teams">
-          <img class="team-image" [src]="team.imageLink" />
+          <img *ngIf="team.imageLink" class="team-image" [src]="team.imageLink" />
+          <div *ngIf="!team.imageLink" class="team-image empty"></div>
           <span [hovercardComponent]="TournamentTeamCard" [hovercardData]="{ team: team, gameMode: gameMode }">{{ team.name }}</span>
         </div>
       </div>

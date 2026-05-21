@@ -1325,32 +1325,25 @@ export class TournamentService {
     const round = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`);
     if (round === undefined) throw new TournamentRoundNotFoundError();
 
-    // Assert that the players and teams are registered
-    // The type doesn't have the _id property for some reason so I'm casting to any
-    /*
-    if (tourney.isTeamTourney) {
-      const registeredTeamIds = tourney.teams.map((team: any) => team._id.toString());
-      if (!tournamentMatchDto.teams.every((team: any) => registeredTeamIds.includes(team._id))) {
-        throw new TeamNotRegisteredError();
-      }
+    if (tournamentMatchDto.type === "showcase") {
+      tournamentMatchDto = {
+        ...tournamentMatchDto,
+        enableSignups: false,
+        participants: [],
+        conditionals: [],
+      };
     } else {
-      const registeredPlayerIds = tourney.players.map((player: any) => player._id.toString());
-      if (!tournamentMatchDto.players.every((player: any) => registeredPlayerIds.includes(player._id))) {
-        throw new PlayerNotRegisteredError();
-      }
-    }
-    */
-
-    // Assert that the players/teams are valid
-    if (tournamentMatchDto.isTeamMatch) {
-      const registeredTeamIds = tourney.teams.map((team: any) => team._id.toString());
-      if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredTeamIds.includes(participant.playerOrTeam))) {
-        throw new TeamNotFoundError();
-      }
-    } else {
-      const registeredPlayerIds = tourney.players.map((player: any) => player._id.toString());
-      if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredPlayerIds.includes(participant.playerOrTeam))) {
-        throw new PlayerNotRegisteredError();
+      // Assert that the players/teams are valid
+      if (tournamentMatchDto.isTeamMatch) {
+        const registeredTeamIds = tourney.teams.map((team: any) => team._id.toString());
+        if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredTeamIds.includes(participant.playerOrTeam))) {
+          throw new TeamNotFoundError();
+        }
+      } else {
+        const registeredPlayerIds = tourney.players.map((player: any) => player._id.toString());
+        if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredPlayerIds.includes(participant.playerOrTeam))) {
+          throw new PlayerNotRegisteredError();
+        }
       }
     }
     
@@ -1410,18 +1403,20 @@ export class TournamentService {
     */
 
     // Assert that the players/teams are valid
-    if (tournamentMatchDto.isTeamMatch) {
-      const registeredTeamIds = tourney.teams.map((team: any) => team._id.toString());
-      if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredTeamIds.includes(participant.playerOrTeam))) {
-        throw new TeamNotFoundError();
+    if (tournamentMatchDto.type !== "showcase") {
+      if (tournamentMatchDto.isTeamMatch) {
+        const registeredTeamIds = tourney.teams.map((team: any) => team._id.toString());
+        if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredTeamIds.includes(participant.playerOrTeam.toString()))) {
+          throw new TeamNotFoundError();
+        }
+        await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
+      } else {
+        const registeredPlayerIds = tourney.players.map((player: any) => player._id.toString());
+        if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredPlayerIds.includes(participant.playerOrTeam.toString()))) {
+          throw new PlayerNotRegisteredError();
+        }
+        await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
       }
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentTeamModel, populate: { path: "players" } } });
-    } else {
-      const registeredPlayerIds = tourney.players.map((player: any) => player._id.toString());
-      if (!tournamentMatchDto.participants.every((participant: TournamentMatchParticipant) => registeredPlayerIds.includes(participant.playerOrTeam))) {
-        throw new PlayerNotRegisteredError();
-      }
-      await tourneyMatch.populate({ path: "participants", populate: { path: "playerOrTeam", model: this.tournamentPlayerModel } });
     }
 
     // Assert that all the staff members are valid
@@ -1449,9 +1444,16 @@ export class TournamentService {
     tourneyMatch.time = tournamentMatchDto.time;
     tourneyMatch.isTeamMatch = tournamentMatchDto.isTeamMatch;
     tourneyMatch.type = tournamentMatchDto.type;
-    tourneyMatch.enableSignups = tournamentMatchDto.enableSignups;
-    tourneyMatch.participants = tournamentMatchDto.participants;
-    tourneyMatch.conditionals = tournamentMatchDto.conditionals;
+    if (tournamentMatchDto.type === "showcase") {
+      tourneyMatch.enableSignups = false;
+      tourneyMatch.participants = [];
+      tourneyMatch.conditionals = [];
+    } else {
+      tourneyMatch.enableSignups = tournamentMatchDto.enableSignups;
+      tourneyMatch.participants = tournamentMatchDto.participants;
+      tourneyMatch.conditionals = tournamentMatchDto.conditionals;
+    }
+    tourneyMatch.name = tournamentMatchDto.name;
     tourneyMatch.referees = tournamentMatchDto.referees as TournamentStaffMember[];
     tourneyMatch.streamers = tournamentMatchDto.streamers as TournamentStaffMember[];
     tourneyMatch.commentators = tournamentMatchDto.commentators as TournamentStaffMember[];

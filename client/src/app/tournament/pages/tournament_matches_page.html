@@ -4,15 +4,8 @@
 <div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.matches" | transloco }}</div>
 
-  <!-- <div class="matches-page-container" [style.flexDirection]="mobileMode ? 'column' : 'row'"> -->
   <div class="matches-page-container">
     <div class="left-side" [class.mobile-mode]="mobileMode">
-      <!-- <item-selector
-          [labels]="getRoundlabels()"
-          [selectedIndex]="selectedRoundIndex"
-          (selectedIndexChange)="switchSelectedRoundIndex($event)"
-          [isVertical]="!mobileMode"
-      ></item-selector> -->
       <item-selector
           [labels]="getRoundlabels()"
           [selectedIndex]="selectedRoundIndex"

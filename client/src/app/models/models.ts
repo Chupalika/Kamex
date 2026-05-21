@@ -313,7 +313,8 @@ export interface TournamentMatch {
   id: string;
   time: Date;
   isTeamMatch: boolean;
-  type: "versus" | "lobby";
+  type: "versus"|"lobby"|"showcase";
+  name?: string;
   enableSignups: boolean;
   maxLobbyParticipants: number;
   participants: TournamentMatchParticipant[];

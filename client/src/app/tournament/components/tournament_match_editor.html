@@ -13,7 +13,7 @@
   <div *ngFor="let matchId of conditionalScheduleConflicts2" class="mat-body-1">
     Warning: Match {{ matchId }} has this match listed as a conditional, and this match's time would occur after it
   </div>
-  <div class="row">
+  <div class="row" *ngIf="!isShowcaseType">
     <button
       mat-raised-button
       class="other-button"
@@ -25,28 +25,33 @@
     </button>
     <mat-icon class="info-icon" matTooltip="Calculates and displays scores for each hour based on players' timezone settings">info</mat-icon>
   </div>
-  
-  <ng-container *ngIf="enableTeams">
-    <mat-checkbox formControlName="isTeamMatch">Team Match</mat-checkbox>
-  </ng-container>
+
   <mat-form-field>
     <mat-label>Type</mat-label>
     <mat-select formControlName="type">
       <mat-option value="versus">Versus</mat-option>
       <mat-option value="lobby">Lobby</mat-option>
+      <mat-option value="showcase">Showcase</mat-option>
     </mat-select>
   </mat-form-field>
-  <mat-checkbox formControlName="enableSignups">
+  <mat-form-field *ngIf="isShowcaseType">
+    <mat-label>Name</mat-label>
+    <input matInput type="text" formControlName="name">
+  </mat-form-field>
+  <ng-container *ngIf="enableTeams && isShowcaseType">
+    <mat-checkbox formControlName="isTeamMatch" *ngIf="!isShowcaseType">Team Match</mat-checkbox>
+  </ng-container>
+  <mat-checkbox formControlName="enableSignups" *ngIf="!isShowcaseType">
     Enable Signups
     <mat-icon class="info-icon" matTooltip="Allow participants to register themselves to the match. Typically used in lobby formats (e.g. qualifiers rounds)">info</mat-icon>
   </mat-checkbox>
-  <ng-container *ngIf="isLobbyType()">
+  <ng-container *ngIf="isLobbyType">
     <mat-form-field>
       <mat-label>Max Lobby Participants</mat-label>
       <input matInput type="number" formControlName="maxLobbyParticipants">
     </mat-form-field>
   </ng-container>
-  <ng-container formArrayName="participants">
+  <ng-container formArrayName="participants" *ngIf="!isShowcaseType">
     <div class="mat-body-1 participants-header">
       Participants
       <button mat-icon-button type="button" color="primary" (click)="addParticipant()"><mat-icon>add</mat-icon></button>
@@ -59,10 +64,10 @@
           <mat-form-field>
             <mat-label>Participant</mat-label>
             <mat-select formControlName="playerOrTeam">
-              <ng-container *ngIf="!isTeamMatch()">
+              <ng-container *ngIf="!isTeamMatch">
                 <mat-option *ngFor="let player of getSortedPlayers()" [value]="player._id">{{ player.username }}</mat-option>
               </ng-container>
-              <ng-container *ngIf="isTeamMatch()">
+              <ng-container *ngIf="isTeamMatch">
                 <mat-option *ngFor="let team of getSortedTeams()" [value]="team._id">{{ team.name }}</mat-option>
               </ng-container>
             </mat-select>
@@ -76,7 +81,7 @@
       </ng-container>
     </div>
   </ng-container>
-  <ng-container formArrayName="conditionals">
+  <ng-container formArrayName="conditionals" *ngIf="!isShowcaseType">
     <div class="mat-body-1 participants-header">
       Conditionals
       <mat-icon class="info-icon" matTooltip="A match with conditionals will be hidden if at least 1 conditional match is scored and its condition is not met">info</mat-icon>
@@ -95,10 +100,10 @@
           <mat-form-field>
             <mat-label>Participant</mat-label>
             <mat-select formControlName="playerOrTeam">
-              <ng-container *ngIf="!isTeamMatch()">
+              <ng-container *ngIf="!isTeamMatch">
                 <mat-option *ngFor="let player of getPlayersFromMatch(conditionalForm.get('matchId')?.value)" [value]="player._id">{{ player.username }}</mat-option>
               </ng-container>
-              <ng-container *ngIf="isTeamMatch()">
+              <ng-container *ngIf="isTeamMatch">
                 <mat-option *ngFor="let team of getTeamsFromMatch(conditionalForm.get('matchId')?.value)" [value]="team._id">{{ team.name }}</mat-option>
               </ng-container>
             </mat-select>

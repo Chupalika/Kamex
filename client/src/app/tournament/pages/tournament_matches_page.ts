@@ -240,12 +240,24 @@ export class TournamentMatchesPage implements OnInit {
     return theMatches.filter((match) => !filteredOut.has(match.id));
   }
 
+  updateMatch(updatedMatch: TournamentMatch) {
+    this.populatedTournamentRound.matches = this.populatedTournamentRound.matches.map((match) => match.id === updatedMatch.id ? updatedMatch : match);
+    this.populateAppUsers();
+    this.sortMatches();
+  }
+
+  updateMatches(updatedMatches: TournamentMatch[]) {
+    this.populatedTournamentRound.matches = updatedMatches;
+    this.populateAppUsers();
+    this.sortMatches();
+  }
+
   getRoundlabels() {
     return this.sortedRounds.map(round => round.name) ?? [];
   }
 
   get isLobby() {
-    return !this.populatedTournamentRound.matches.every((match) => match.type === 'versus') || false;
+    return !this.populatedTournamentRound.matches.every((match) => match.type !== 'lobby') || false;
   }
 
   get participantType() {
@@ -329,7 +341,7 @@ export class TournamentMatchesPage implements OnInit {
         }))
         .subscribe((updatedMatch) => {
           this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
+          this.updateMatch(updatedMatch);
           this.snackBar.open("Successfully unregistered from match", "", { duration: 10000 });
         });
     }
@@ -403,7 +415,7 @@ export class TournamentMatchesPage implements OnInit {
         }))
         .subscribe((updatedMatch) => {
           this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
+          this.updateMatch(updatedMatch);
           this.snackBar.open("Successfully registered as referee", "", { duration: 10000 });
         });
     } else if (this.refereeStatus(match) === "can_unregister") {
@@ -416,7 +428,7 @@ export class TournamentMatchesPage implements OnInit {
         }))
         .subscribe((updatedMatch) => {
           this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
+          this.updateMatch(updatedMatch);
           this.snackBar.open("Successfully unregistered as referee", "", { duration: 10000 });
         });
     }
@@ -433,7 +445,7 @@ export class TournamentMatchesPage implements OnInit {
         }))
         .subscribe((updatedMatch) => {
           this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
+          this.updateMatch(updatedMatch);
           this.snackBar.open("Successfully registered as streamer", "", { duration: 10000 });
         });
     } else if (this.streamerStatus(match) === "can_unregister") {
@@ -446,7 +458,7 @@ export class TournamentMatchesPage implements OnInit {
         }))
         .subscribe((updatedMatch) => {
           this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
+          this.updateMatch(updatedMatch);
           this.snackBar.open("Successfully unregistered as streamer", "", { duration: 10000 });
         });
     }
@@ -463,7 +475,7 @@ export class TournamentMatchesPage implements OnInit {
         }))
         .subscribe((updatedMatch) => {
           this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
+          this.updateMatch(updatedMatch);
           this.snackBar.open("Successfully registered as commentator", "", { duration: 10000 });
         });
     } else if (this.commentatorStatus(match) === "can_unregister") {
@@ -476,7 +488,7 @@ export class TournamentMatchesPage implements OnInit {
         }))
         .subscribe((updatedMatch) => {
           this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
+          this.updateMatch(updatedMatch);
           this.snackBar.open("Successfully unregistered as commentator", "", { duration: 10000 });
         });
     }
@@ -488,15 +500,13 @@ export class TournamentMatchesPage implements OnInit {
     );
     dialogRef.afterClosed().subscribe((updatedMatches: TournamentMatch[]) => {
       if (updatedMatches) {
-        this.matches = updatedMatches;
-        this.sortMatches();
+        this.updateMatches(updatedMatches);
       }
     });
   }
 
   onMatchUpdated(updatedMatch: TournamentMatch) {
-    this.matches = this.matches.map((match) => match.id === updatedMatch.id ? updatedMatch : match);
-    this.sortMatches();
+    this.updateMatch(updatedMatch);
   }
 }
 

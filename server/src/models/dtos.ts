@@ -153,7 +153,8 @@ export class TournamentMatchDto {
   readonly id?: string;
   readonly time?: Date;
   readonly isTeamMatch?: boolean;
-  readonly type?: "versus"|"lobby";
+  readonly type?: "versus"|"lobby"|"showcase";
+  readonly name?: string;
   readonly enableSignups?: boolean;
   readonly participants?: TournamentMatchParticipant[];
   readonly conditionals?: TournamentMatchConditional[];

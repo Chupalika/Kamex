@@ -1,6 +1,6 @@
 <div *ngIf="(match || isHeader) && !mobileMode" class="tournament-match-card mat-body-1 mat-elevation-z4">
   <div class="match-details">
-    <div class="match-detail">{{ isHeader ? 'ID' : match!.id }}</div>
+    <div class="match-detail">{{ isHeader ? 'ID' : (match!.type === 'showcase' ? '' : match!.id) }}</div>
     <div class="match-detail time">{{ isHeader ? "Time (" + timezoneLabel + ")" : getFormattedMatchTime(match!.time) }}</div>
     <ng-container *ngIf="!isLobby">
       <div
@@ -17,6 +17,7 @@
         <ng-container *ngIf="!isHeader">
           <ng-container *ngTemplateOutlet="signupButton"></ng-container>
         </ng-container>
+        <ng-container *ngIf="!isHeader && match!.type === 'showcase'">{{ match!.name }}</ng-container>
       </div>
       <div class="match-detail name right">
         <span *ngIf="isHeader">{{ participantType }} 2</span>
@@ -43,6 +44,7 @@
             {{ participant?.score ? participant.score : '' }}
           </div>
         </div>
+        <ng-container *ngIf="match!.type === 'showcase'">{{ match!.name }}</ng-container>
         <ng-container *ngTemplateOutlet="signupButton"></ng-container>
       </div>
     </ng-container>
@@ -170,7 +172,7 @@
 <div *ngIf="mobileMode" class="tournament-match-card mat-body-1 mat-elevation-z4">
   <div class="match-details mobile-mode">
     <div class="match-details-row">
-      <div class="match-detail id mobile-mode">{{ match!.id }}</div>
+      <div class="match-detail id mobile-mode">{{ match!.type === 'showcase' ? '' : match!.id }}</div>
       <div class="match-detail time mobile-mode">{{ getFormattedMatchTime(match!.time) }}</div>
       <div class="match-detail link mobile-mode">
         <div *ngIf="isHeader">MP</div>
@@ -202,6 +204,7 @@
           <ng-container *ngIf="match!.participants.length === 0">
             <ng-container *ngTemplateOutlet="signupButton"></ng-container>
           </ng-container>
+          <ng-container *ngIf="match!.type === 'showcase'">{{ match!.name }}</ng-container>
         </div>
         <div class="match-detail name right mobile-mode">
           <ng-container *ngIf="match!.participants.length > 1">
@@ -223,6 +226,7 @@
           <div *ngFor="let participant of match!.participants" class="participant-name">
             <ng-container *ngTemplateOutlet="participantInfo; context: { participant: participant, hideExtraInfo: true }"></ng-container>
           </div>
+          <ng-container *ngIf="match!.type === 'showcase'">{{ match!.name }}</ng-container>
           <ng-container *ngTemplateOutlet="signupButton"></ng-container>
         </div>
       </ng-container>

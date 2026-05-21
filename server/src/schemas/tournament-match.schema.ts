@@ -22,7 +22,10 @@ export class TournamentMatch {
   isTeamMatch: boolean;
 
   @Prop({ required: true, default: "versus" })
-  type: "versus"|"lobby";
+  type: "versus"|"lobby"|"showcase";
+
+  @Prop({ required: true, default: "" })
+  name: string;
 
   @Prop({ required: true, default: false })
   enableSignups: boolean;

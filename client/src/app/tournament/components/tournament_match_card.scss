@@ -9,6 +9,7 @@
   .match-details {
     display: flex;
     align-items: start;
+    line-height: 30px;
 
     &.mobile-mode {
       flex-direction: column;
@@ -61,7 +62,8 @@
       &.score {
         text-align: center;
         width: 24px;
-        margin: 0 8px;
+        height: 24px;
+        margin: 3px 8px;
       }
 
       &.winner {

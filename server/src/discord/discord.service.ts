@@ -99,7 +99,7 @@ export class DiscordService implements OnModuleInit {
 
       for (const round of tourney.rounds) {
         await Promise.all(round.matches.map(match => populateMatch(match as HydratedDocument<TournamentMatch>, this.tournamentPlayerModel, this.tournamentTeamModel)));
-        const filteredMatches = filterConditionalMatches(round.matches);
+        const filteredMatches = filterConditionalMatches(round.matches).filter((match) => match.type !== "showcase");
         for (const match of filteredMatches) {
           const reminderTime = match.time.getTime() - (reminderMinutes * 60000);
           const nowTime = (new Date()).getTime();
