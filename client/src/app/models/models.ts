@@ -315,7 +315,8 @@ export interface TournamentMatch {
   isTeamMatch: boolean;
   type: "versus"|"lobby"|"showcase";
   name?: string;
-  enableSignups: boolean;
+  enableParticipantSignups: boolean;
+  enableStaffSignups: boolean;
   maxLobbyParticipants: number;
   participants: TournamentMatchParticipant[];
   conditionals: TournamentMatchConditional[];

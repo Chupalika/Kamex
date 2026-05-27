@@ -28,7 +28,10 @@ export class TournamentMatch {
   name: string;
 
   @Prop({ required: true, default: false })
-  enableSignups: boolean;
+  enableParticipantSignups: boolean;
+
+  @Prop({ required: true, default: true })
+  enableStaffSignups: boolean;
 
   @Prop({ required: true, default: 8 })
   maxLobbyParticipants: number;

@@ -290,7 +290,7 @@ export class TournamentMatchesPage implements OnInit {
   }
 
   signupStatus(match: TournamentMatch) {
-    if (!match.enableSignups || !this.appUser || !this.isRegisteredPlayer) return "";
+    if (!match.enableParticipantSignups || !this.appUser || !this.isRegisteredPlayer) return "";
     if (match.time.getTime() < Date.now()) return "";
     if (match.isTeamMatch) {
       if (!this.playerTeam) return "";
@@ -378,6 +378,7 @@ export class TournamentMatchesPage implements OnInit {
   }
 
   refereeStatus(match: TournamentMatch) {
+    if (!match.enableStaffSignups) return "";
     if (!this.canRegisterReferee) return "";
     if (match.time.getTime() < Date.now()) return "";
     else {
@@ -387,6 +388,7 @@ export class TournamentMatchesPage implements OnInit {
   }
 
   streamerStatus(match: TournamentMatch) {
+    if (!match.enableStaffSignups) return "";
     if (!this.canRegisterStreamer) return "";
     if (match.time.getTime() < Date.now()) return "";
     else {
@@ -396,6 +398,7 @@ export class TournamentMatchesPage implements OnInit {
   }
 
   commentatorStatus(match: TournamentMatch) {
+    if (!match.enableStaffSignups) return "";
     if (!this.canRegisterCommentator) return "";
     if (match.time.getTime() < Date.now()) return "";
     else {

@@ -318,9 +318,15 @@ export class AlreadySignedUpToMatchError extends HttpException {
   }
 }
 
-export class MatchSignupsNotEnabledError extends HttpException {
+export class MatchParticipantSignupsNotEnabledError extends HttpException {
   constructor() {
-    super("Signups aren't enabled for this match.", HttpStatus.BAD_REQUEST);
+    super("Participant signups aren't enabled for this match.", HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class MatchStaffSignupsNotEnabledError extends HttpException {
+  constructor() {
+    super("Staff signups aren't enabled for this match.", HttpStatus.BAD_REQUEST);
   }
 }
 

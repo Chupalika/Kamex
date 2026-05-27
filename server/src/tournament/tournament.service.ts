@@ -2,7 +2,7 @@ import { Model, Types, HydratedDocument, isValidObjectId, Document, ObjectId } f
 import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MappoolSlotDto, TournamentDto, TournamentMatchDto, TournamentRoundDto, TournamentPlayerDto, TournamentStaffMemberDto, TournamentStaffRoleDto, ScoreDto, TournamentTeamDto, SubmitMatchDto, OsuUserDto, EditTeamNameDto } from '../models/dtos';
-import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupsNotEnabledError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError } from '../models/errors';
+import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError } from '../models/errors';
 import { GameMode, TournamentProgress } from '../models/enums';
 import { PlayerOrTeam, ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
 import { AppUser } from 'src/schemas/app-user.schema';
@@ -1328,7 +1328,7 @@ export class TournamentService {
     if (tournamentMatchDto.type === "showcase") {
       tournamentMatchDto = {
         ...tournamentMatchDto,
-        enableSignups: false,
+        enableParticipantSignups: false,
         participants: [],
         conditionals: [],
       };
@@ -1445,14 +1445,15 @@ export class TournamentService {
     tourneyMatch.isTeamMatch = tournamentMatchDto.isTeamMatch;
     tourneyMatch.type = tournamentMatchDto.type;
     if (tournamentMatchDto.type === "showcase") {
-      tourneyMatch.enableSignups = false;
+      tourneyMatch.enableParticipantSignups = false;
       tourneyMatch.participants = [];
       tourneyMatch.conditionals = [];
     } else {
-      tourneyMatch.enableSignups = tournamentMatchDto.enableSignups;
+      tourneyMatch.enableParticipantSignups = tournamentMatchDto.enableParticipantSignups;
       tourneyMatch.participants = tournamentMatchDto.participants;
       tourneyMatch.conditionals = tournamentMatchDto.conditionals;
     }
+    tourneyMatch.enableStaffSignups = tournamentMatchDto.enableStaffSignups;
     tourneyMatch.name = tournamentMatchDto.name;
     tourneyMatch.referees = tournamentMatchDto.referees as TournamentStaffMember[];
     tourneyMatch.streamers = tournamentMatchDto.streamers as TournamentStaffMember[];
@@ -1500,7 +1501,7 @@ export class TournamentService {
     const match = tourneyRound.matches.find((match: HydratedDocument<TournamentMatch>) => `${match._id}` === `${matchId}`);
     if (match === undefined) throw new MatchNotFoundError();
     
-    if (!tourneyMatch.enableSignups) throw new MatchSignupsNotEnabledError();
+    if (!tourneyMatch.enableParticipantSignups) throw new MatchParticipantSignupsNotEnabledError();
 
     // Assert that the match time hasn't passed yet
     if (Date.now() > new Date(match.time).getTime()) throw new MatchSignupLateError();
@@ -1552,7 +1553,7 @@ export class TournamentService {
     const match = tourneyRound.matches.find((match: HydratedDocument<TournamentMatch>) => `${match._id}` === `${matchId}`);
     if (match === undefined) throw new MatchNotFoundError();
     
-    if (!tourneyMatch.enableSignups) throw new MatchSignupsNotEnabledError();
+    if (!tourneyMatch.enableParticipantSignups) throw new MatchParticipantSignupsNotEnabledError();
 
     // Assert that the match time hasn't passed yet
     if (Date.now() > new Date(match.time).getTime()) throw new MatchSignupLateError();
@@ -2085,6 +2086,8 @@ export class TournamentService {
     // assuming this is guaranteed from the auth guard
     const staffMember = tourney.staffMembers.find((member: HydratedDocument<TournamentStaffMember>) => member.playerId === playerId);
 
+    if (!tourneyMatch.enableStaffSignups) throw new MatchStaffSignupsNotEnabledError();
+
     switch (type) {
       case "referee":
         if (tourneyMatch.referees.find((member) => member.playerId === playerId)) {
@@ -2125,6 +2128,8 @@ export class TournamentService {
 
     // assuming this is guaranteed from the auth guard
     const staffMember = tourney.staffMembers.find((member: HydratedDocument<TournamentStaffMember>) => member.playerId === playerId);
+
+    if (!tourneyMatch.enableStaffSignups) throw new MatchStaffSignupsNotEnabledError();
 
     switch (type) {
       case "referee":

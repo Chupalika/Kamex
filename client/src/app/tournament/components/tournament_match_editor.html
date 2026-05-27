@@ -41,9 +41,13 @@
   <ng-container *ngIf="enableTeams && isShowcaseType">
     <mat-checkbox formControlName="isTeamMatch" *ngIf="!isShowcaseType">Team Match</mat-checkbox>
   </ng-container>
-  <mat-checkbox formControlName="enableSignups" *ngIf="!isShowcaseType">
-    Enable Signups
-    <mat-icon class="info-icon" matTooltip="Allow participants to register themselves to the match. Typically used in lobby formats (e.g. qualifiers rounds)">info</mat-icon>
+  <mat-checkbox formControlName="enableParticipantSignups" *ngIf="!isShowcaseType">
+    Enable Participant Signups
+    <mat-icon class="info-icon" matTooltip="Allow participants to register themselves to the match (before match time). Typically used in lobby formats (e.g. qualifiers rounds)">info</mat-icon>
+  </mat-checkbox>
+  <mat-checkbox formControlName="enableStaffSignups">
+    Enable Staff Signups
+    <mat-icon class="info-icon" matTooltip="Allow staff members to register themselves to the match (before match time).">info</mat-icon>
   </mat-checkbox>
   <ng-container *ngIf="isLobbyType">
     <mat-form-field>

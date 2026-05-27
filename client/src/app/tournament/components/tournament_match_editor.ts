@@ -37,7 +37,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
   isTeamMatchFormControl: FormControl;
   typeFormControl: FormControl;
   nameFormControl: FormControl;
-  enableSignupsFormControl: FormControl
+  enableParticipantSignupsFormControl: FormControl;
+  enableStaffSignupsFormControl: FormControl;
   maxLobbyParticipantsFormControl: FormControl;
   participantsFormControl: FormArray;
   conditionalsFormControl: FormArray;
@@ -56,7 +57,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
     this.isTeamMatchFormControl = new FormControl(false);
     this.typeFormControl = new FormControl("versus", [Validators.required]);
     this.nameFormControl = new FormControl("");
-    this.enableSignupsFormControl = new FormControl(false);
+    this.enableParticipantSignupsFormControl = new FormControl(false);
+    this.enableStaffSignupsFormControl = new FormControl(true);
     this.maxLobbyParticipantsFormControl = new FormControl(8);
     this.participantsFormControl = new FormArray<FormControl>([]);
     this.conditionalsFormControl = new FormArray<FormControl>([]);
@@ -71,7 +73,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       time: this.timeFormControl,
       isTeamMatch: this.isTeamMatchFormControl,
       type: this.typeFormControl,
-      enableSignups: this.enableSignupsFormControl,
+      enableParticipantSignups: this.enableParticipantSignupsFormControl,
+      enableStaffSignups: this.enableStaffSignupsFormControl,
       maxLobbyParticipants: this.maxLobbyParticipantsFormControl,
       participants: this.participantsFormControl,
       conditionals: this.conditionalsFormControl,
@@ -102,7 +105,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.isTeamMatchFormControl.setValue(this.match.isTeamMatch);
       this.typeFormControl.setValue(this.match.type);
       this.nameFormControl.setValue(this.match.name);
-      this.enableSignupsFormControl.setValue(this.match.enableSignups);
+      this.enableParticipantSignupsFormControl.setValue(this.match.enableParticipantSignups ?? false);
+      this.enableStaffSignupsFormControl.setValue(this.match.enableStaffSignups ?? true);
       this.maxLobbyParticipantsFormControl.setValue(this.match.maxLobbyParticipants);
       //this.playersFormControl.setValue(this.match.players!.map(player => player._id));
       //this.teamsFormControl.setValue(this.match.teams!.map(team => team._id));
@@ -127,7 +131,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.isTeamMatchFormControl.setValue(this.enableTeams);
       this.typeFormControl.setValue("versus");
       this.nameFormControl.setValue("");
-      this.enableSignupsFormControl.setValue(false);
+      this.enableParticipantSignupsFormControl.setValue(false);
+      this.enableStaffSignupsFormControl.setValue(true);
       this.maxLobbyParticipantsFormControl.setValue(8);
       this.getParticipantsFormArray().clear();
       this.getConditionalsFormArray().clear();
@@ -149,7 +154,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       isTeamMatch: formValues.isTeamMatch,
       type: formValues.type,
       name: formValues.name,
-      enableSignups: formValues.enableSignups,
+      enableParticipantSignups: formValues.enableParticipantSignups,
+      enableStaffSignups: formValues.enableStaffSignups,
       maxLobbyParticipants: formValues.maxLobbyParticipants,
       participants: formValues.participants,
       conditionals: formValues.conditionals,
@@ -180,7 +186,8 @@ export class TournamentMatchEditor implements OnInit, OnChanges {
       this.match.isTeamMatch !== this.isTeamMatchFormControl.value ||
       this.match.type !== this.typeFormControl.value ||
       this.match.name !== this.nameFormControl.value ||
-      this.match.enableSignups !== this.enableSignupsFormControl.value ||
+      this.match.enableParticipantSignups !== this.enableParticipantSignupsFormControl.value ||
+      this.match.enableStaffSignups !== this.enableStaffSignupsFormControl.value ||
       this.match.maxLobbyParticipants !== this.maxLobbyParticipantsFormControl.value ||
       JSON.stringify(this.match.participants?.map(participant => this.simplifyParticipant(participant))) !== JSON.stringify(this.participantsFormControl.value) ||
       JSON.stringify(this.match.conditionals?.map(conditional => this.simplifyConditional(conditional))) !== JSON.stringify(this.conditionalsFormControl.value) ||

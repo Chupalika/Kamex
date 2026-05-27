@@ -24,7 +24,7 @@ import { TournamentTeamCard } from './tournament_team_card';
    `.label { display: flex; align-items: center; line-height: 30px; }
     .name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
     .img-container { display: flex; align-self: flex-start; }
-    .team-image { width: 30px; height: 30px; margin-right: 6px; border-radius: 2px; object-fit: contain; }
+    .team-image { width: 30px; min-width: 30px; height: 30px; margin-right: 6px; border-radius: 2px; object-fit: contain; }
     .flipped { margin-right: unset; margin-left: 6px; }
     .empty { border: 1px solid var(--mat-fab-disabled-state-container-color); }`,
 })

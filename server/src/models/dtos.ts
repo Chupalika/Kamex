@@ -155,7 +155,8 @@ export class TournamentMatchDto {
   readonly isTeamMatch?: boolean;
   readonly type?: "versus"|"lobby"|"showcase";
   readonly name?: string;
-  readonly enableSignups?: boolean;
+  readonly enableParticipantSignups?: boolean;
+  readonly enableStaffSignups?: boolean;
   readonly participants?: TournamentMatchParticipant[];
   readonly conditionals?: TournamentMatchConditional[];
   readonly referees?: TournamentStaffMemberDto[];
