@@ -127,7 +127,14 @@
     "mappools": {
       "mappoolNotPublic": "マッププールはまだ公開されていません！",
       "noSlots": "このラウンドのスロットはまだありません！",
-      "mappack": "マップパック"
+      "mappack": "マップパック",
+      "label": "Label",
+      "artist": "Artist",
+      "title": "Title",
+      "difficulty": "Difficulty",
+      "mapper": "Mapper",
+      "starRating": "Star Rating",
+      "length": "Length"
     },
     "matches": {
       "noMatches": "このラウンドではまだ試合がありません！",

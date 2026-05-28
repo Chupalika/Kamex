@@ -54,7 +54,7 @@ export class TournamentParticipantsPage implements OnInit {
   displayFormControl: FormControl;
   playerSortFormControl: FormControl
   playerFlagsFormControl: FormControl;
-  tableViewFormControl: FormControl
+  tableViewFormControl: FormControl;
   displayByStaffRoleFormControl: FormControl;
   mobileMode = false;
 

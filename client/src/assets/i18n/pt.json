@@ -128,7 +128,14 @@
     "mappools": {
       "mappoolNotPublic": "A Mappool ainda não está disponível!",
       "noSlots": "Ainda não há picks nesta rodada!",
-      "mappack": "Mappack"
+      "mappack": "Mappack",
+      "label": "Label",
+      "artist": "Artist",
+      "title": "Title",
+      "difficulty": "Difficulty",
+      "mapper": "Mapper",
+      "starRating": "Star Rating",
+      "length": "Length"
     },
     "matches": {
       "noMatches": "Ainda não há partidas nesta rodada!",

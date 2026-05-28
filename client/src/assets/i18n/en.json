@@ -128,7 +128,14 @@
     "mappools": {
       "mappoolNotPublic": "Mappool is not currently public!",
       "noSlots": "No slots in this round yet!",
-      "mappack": "Mappack"
+      "mappack": "Mappack",
+      "label": "Label",
+      "artist": "Artist",
+      "title": "Title",
+      "difficulty": "Difficulty",
+      "mapper": "Mapper",
+      "starRating": "Star Rating",
+      "length": "Length"
     },
     "matches": {
       "noMatches": "No matches in this round yet!",

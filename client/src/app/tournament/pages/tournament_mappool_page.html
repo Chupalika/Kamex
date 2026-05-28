@@ -4,31 +4,33 @@
 <div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.mappools" | transloco }}</div>
   
-  <div class="mappool-page-container" [ngClass]="{'mobile-mode': mobileMode}">
-    <div class="left-side">
+  <div class="mappool-page-container">
+    <div class="left-side" [class.mobile-mode]="mobileMode">
       <item-selector
-          [labels]="getRoundlabels()"
+          [labels]="roundLabels"
           [selectedIndex]="selectedRoundIndex"
           (selectedIndexChange)="switchSelectedRoundIndex($event)"
-          [isVertical]="!mobileMode"
       ></item-selector>
-      <a
-        *ngIf="mappool.downloadUrl"
-        mat-raised-button
-        color="primary"
-        [href]="mappool.downloadUrl"
-        target="_blank"
-      >
-        {{ "tournament.mappools.mappack" | transloco }}
-      </a>
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="copyTable()"
-        [matTooltip]="('tournament.common.copyTableTooltip' | transloco)"
-      >
-        {{ "tournament.common.copyTable" | transloco }}
-      </button>
+      <div class="display-settings" [class.mobile-mode]="mobileMode">
+        <a
+          *ngIf="mappool.downloadUrl"
+          mat-raised-button
+          color="primary"
+          [href]="mappool.downloadUrl"
+          target="_blank"
+        >
+          {{ "tournament.mappools.mappack" | transloco }}
+        </a>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="copyTable()"
+          [matTooltip]="('tournament.common.copyTableTooltip' | transloco)"
+        >
+          {{ "tournament.common.copyTable" | transloco }}
+        </button>
+        <mat-slide-toggle [formControl]="tableViewFormControl">{{ "tournament.common.tableView" | transloco }}</mat-slide-toggle>
+      </div>
     </div>
 
     <div class="mappool-container" [ngClass]="{'mobile-mode': mobileMode}">
@@ -38,12 +40,74 @@
           <ng-container *ngIf="tourneyRound!.mappoolWip">{{ "tournament.mappools.mappoolNotPublic" | transloco }}</ng-container>
           <ng-container *ngIf="!tourneyRound!.mappoolWip">{{ "tournament.mappools.noSlots" | transloco }}</ng-container>
         </div>
-        <div *ngFor="let slot of getSortedSlots()" class="tournament-slot-card" [ngClass]="{'mobile-mode': mobileMode}">
-          <tournament-slot-card
-            [slot]="slot"
-            [category]="getCategory(slot)"
-          ></tournament-slot-card>
-        </div>
+        <ng-container *ngIf="mappool.slots.length > 0 && !tableViewFormControl.value">
+          <div *ngFor="let slot of sortedSlots" class="tournament-slot-card" [ngClass]="{'mobile-mode': mobileMode}">
+            <tournament-slot-card
+              [slot]="slot"
+              [category]="getCategory(slot)"
+            ></tournament-slot-card>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="mappool.slots.length > 0 && tableViewFormControl.value">
+          <mat-table [dataSource]="sortedSlots" class="mat-elevation-z8 mappool-table">
+            <ng-container matColumnDef="label" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">{{ "tournament.mappools.label" | transloco }}</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.label }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="artist" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-l">{{ "tournament.mappools.artist" | transloco }}</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-l">{{ slot.beatmap.artist }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="title" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-l">{{ "tournament.mappools.title" | transloco }}</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-l">{{ slot.beatmap.title }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="difficulty" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-l">{{ "tournament.mappools.difficulty" | transloco }}</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-l">{{ slot.beatmap.difficultyName }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="mapper" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-m">{{ "tournament.mappools.mapper" | transloco }}</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-m">{{ slot.beatmap.mapper }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="id" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">ID</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">
+                <a target="_blank" [href]="'https://osu.ppy.sh/b/' + slot.beatmap.beatmapId">{{ slot.beatmap.beatmapId }}</a>
+              </mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="sr" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-m">{{ "tournament.mappools.starRating" | transloco }}</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-m">{{ slot.beatmap.starRating }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="length" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">{{ "tournament.mappools.length" | transloco }}</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slotDisplayLength(slot) }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="bpm" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">BPM</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.beatmap.bpm }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="cs" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">CS</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.beatmap.cs }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="ar" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">AR</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.beatmap.ar }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="od" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">OD</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.beatmap.od }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="hp" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">HP</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.beatmap.hp }}</mat-cell>
+            </ng-container>
+            <mat-header-row *matHeaderRowDef="mappoolColumns"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: mappoolColumns;"></mat-row>
+          </mat-table>
+        </ng-container>
       </ng-container>
     </div>
   </div>

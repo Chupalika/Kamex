@@ -157,6 +157,7 @@
             <mat-header-cell *matHeaderCellDef class="table-cell table-cell-l">{{ "tournament.participants.name" | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let team" class="table-cell table-cell-l">
               <tournament-team-label
+                class="team-label"
                 [team]="team"
                 [gameMode]="tournament.gameMode"
                 [playerFlagsToggle]="playerFlagsFormControl.value"

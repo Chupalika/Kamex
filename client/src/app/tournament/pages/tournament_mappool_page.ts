@@ -1,15 +1,18 @@
 import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import { Component, NgModule, OnInit } from '@angular/core';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 import { TranslocoModule } from '@jsverse/transloco';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
 import { map, of, throwError } from "rxjs";
 
-import { AppUser, Mappool, MappoolSlot, Tournament, TournamentRound, TournamentStaffPermission } from 'src/app/models/models';
+import { AppUser, GameMode, Mappool, MappoolSlot, Tournament, TournamentRound, TournamentStaffPermission } from 'src/app/models/models';
 import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { TournamentSlotCardModule } from 'src/app/tournament/components/tournament_slot_card';
@@ -36,6 +39,7 @@ export class TournamentMappoolPage implements OnInit {
   tournamentRounds: Map<string, TournamentRound> = new Map(); // keyed by _id
   appUser?: AppUser;
   mobileMode = false;
+  tableViewFormControl: FormControl;
 
   constructor(
     private tournamentsService: TournamentsService,
@@ -43,7 +47,9 @@ export class TournamentMappoolPage implements OnInit {
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private breakpointObserver: BreakpointObserver,
-    private titleService: Title) {}
+    private titleService: Title) {
+      this.tableViewFormControl = new FormControl(false);
+    }
 
   ngOnInit() {
     this.route.paramMap.pipe(
@@ -117,26 +123,11 @@ export class TournamentMappoolPage implements OnInit {
     }
   }
 
-  getRoundlabels() {
+  get roundLabels() {
     return this.sortedRounds.map(round => round.name) ?? [];
   }
 
-  getSortedSlots() {
-    /*
-    // Default sort first to sort the numbers
-    let theSlots = structuredClone(this.mappool.slots).sort();
-    let sortedSlots: MappoolSlot[] = [];
-    for (let slotCategory of this.tournament?.slotCategories || []) {
-      for (let slot of theSlots) {
-        if (slot.category === slotCategory.name) {
-          sortedSlots.push(slot);
-          theSlots = theSlots.filter((x: MappoolSlot) => x.label !== slot.label);
-        }
-      }
-    }
-    sortedSlots = sortedSlots.concat(theSlots);
-    return sortedSlots;
-    */
+  get sortedSlots() {
     return getSortedMappool(this.tournament!, this.mappool);
   }
 
@@ -145,7 +136,7 @@ export class TournamentMappoolPage implements OnInit {
   }
 
   copyTable() {
-    const slots = this.getSortedSlots();
+    const slots = this.sortedSlots;
     const header = ['Label', 'Artist', 'Title', 'Difficulty', 'Mapper', 'ID', 'CS', 'AR', 'OD', 'HP' ,'SR' ,'Length' ,'BPM'];
     const rows = slots.map(slot => {
       const bm = slot.beatmap;
@@ -156,14 +147,30 @@ export class TournamentMappoolPage implements OnInit {
     navigator.clipboard.writeText(theText);
     this.snackBar.open('Table copied to clipboard!', '', { duration: 3000 });
   }
+
+  get mappoolColumns() {
+    if ([GameMode.TAIKO, GameMode.MANIA].includes(this.tournament!.gameMode)) {
+      return ["label", "artist", "title", "difficulty", "mapper", "id", "sr", "length" ,"bpm", "od", "hp"];
+    } else {
+      return ["label", "artist", "title", "difficulty", "mapper", "id", "sr", "length" ,"bpm", "cs", "ar", "od", "hp"];
+    }
+  }
+
+  slotDisplayLength(slot: MappoolSlot) {
+    return slotDisplayLength(slot);
+  }
 }
 
 @NgModule({
     imports: [
         CommonModule,
         ItemSelectorModule,
+        FormsModule,
         MatButtonModule,
+        MatSlideToggleModule,
+        MatTableModule,
         MatTooltipModule,
+        ReactiveFormsModule,
         TournamentSlotCardModule,
         TournamentRoundNavBarModule,
         TranslocoModule,

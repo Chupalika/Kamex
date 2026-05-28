@@ -15,9 +15,9 @@ import { TournamentTeamCard } from './tournament_team_card';
       [hovercardData]="{ team: team, gameMode: gameMode, playerFlagsToggle: playerFlagsToggle, playerSortMethod: playerSortMethod }"
     >
       <div class="img-container" *ngIf="team.imageLink && !flipped && !hideIcon"><img class="team-image" [src]="team.imageLink" /></div>
-      <div *ngIf="!team.imageLink && !flipped && !hideIcon" class="team-image empty"></div>
+      <div class="img-container" *ngIf="!team.imageLink && !flipped && !hideIcon"><div class="team-image empty"></div></div>
       <span class="name">{{ team.name }}</span>
-      <div *ngIf="!team.imageLink && flipped && !hideIcon" class="team-image empty flipped"></div>
+      <div class="img-container" *ngIf="!team.imageLink && flipped && !hideIcon"><div class="team-image empty flipped"></div></div>
       <div class="img-container" *ngIf="team.imageLink && flipped && !hideIcon"><img class="team-image flipped"[src]="team.imageLink" /></div>
     </span>`,
   styles:
