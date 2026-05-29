@@ -143,7 +143,7 @@ export class TournamentRegistrationPage implements OnInit {
         })).subscribe((tournamentPlayer) => {
           this.tournament?.players.push(tournamentPlayer);
           this.requestInProgress = false;
-          this.snackBar.open("Successfully registered for the tournament!", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.registration.registeredForTournament"), "", { duration: 10000 });
         });
   }
 
@@ -158,7 +158,7 @@ export class TournamentRegistrationPage implements OnInit {
           const index = this.tournament?.players.findIndex((player) => player.playerId === this.appUser?.osuId);
           if (index !== undefined) this.tournament?.players.splice(index, 1);
           this.requestInProgress = false;
-          this.snackBar.open("Successfully unregistered from the tournament", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.registration.unregisteredFromTournament"), "", { duration: 10000 });
         });
   }
 

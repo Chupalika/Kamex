@@ -943,6 +943,7 @@ export class TournamentService {
     await createdTournamentStaffMember.save();
     tourney.staffMembers.push(createdTournamentStaffMember);
     await tourney.save();
+    await createdTournamentStaffMember.populate("roles");
     return createdTournamentStaffMember;
   }
 
@@ -961,7 +962,7 @@ export class TournamentService {
       {
         roles: tournamentStaffMemberDto.roles,
       },
-      { new: true }).orFail();
+      { new: true }).populate("roles").orFail();
   }
 
   async removeStaffMember(acronym: string, playerId: number) {

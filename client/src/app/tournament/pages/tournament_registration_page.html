@@ -57,6 +57,9 @@
           (removePlayer)="removePlayer(team, $event)"
           (transferCaptain)="transferCaptain(team, $event)"
         ></tournament-team-card>
+        <div *ngIf="team.players.length < tournament.registrationSettings.minTeamSize" class="mat-body-1">
+          {{ "tournament.registration.teamSizeTooSmall" | transloco: { minTeamSize: tournament.registrationSettings.minTeamSize } }}
+        </div>
         <div *ngIf="canEditTeam" class="team-edit-item mat-body-1">
           <button
             mat-mini-fab

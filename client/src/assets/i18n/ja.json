@@ -72,6 +72,7 @@
       "notOnTeam": "現在チームには所属していません",
       "createTeam": "チームを作成する",
       "requestTeam": "チームに参加依頼をする",
+      "teamSizeTooSmall": "Note: Your team currently doesn't meet the minimum team size of {{minTeamSize}} players.",
       "teamName": "チーム名",
       "updateTeamName": "チーム名を変更",
       "uploadTeamImage": "チームアイコンをアップロード",
@@ -85,8 +86,8 @@
       "request": "リクエスト",
       "pendingRequestToJoinTeam": "チーム参加申請を送信中",
       "retractJoinRequest": "参加申請を取り消す",
-      "registeredForTheTournament": "大会に参加登録しました！",
-      "unregisteredFromTheTournament": "大会の参加登録を解除しました",
+      "registeredForTournament": "大会に参加登録しました！",
+      "unregisteredFromTournament": "大会の参加登録を解除しました",
       "removedFromTeam": "{{username}} をチームから削除しました",
       "leftTeam": "チームから抜けました",
       "captainTransferred": "{{username}} にキャプテンを譲渡しました",
@@ -113,6 +114,8 @@
       "avgRank": "Avg Rank",
       "playerEditor": "プレイヤー編集",
       "teamEditor": "チーム編集",
+      "staffMemberEditor": "Staff Member Editor",
+      "staffRoleEditor": "Staff Role Editor",
       "copyCsv": "CSVをコピーする",
       "refreshAllPlayerData": "全プレイヤーデータを更新する",
       "assignSeedsByRank": "順位に基づいてシードを割り当てる",
@@ -179,6 +182,23 @@
       "mehCount": "50の数",
       "missCount": "ミスの数",
       "mods": "使用Mod"
+    },
+    "settings": {
+      "addedPlayer": "Successfully added {{username}} as a tournament player.",
+      "editedPlayer": "Successfully edited tournament player {{username}}.",
+      "removedPlayer": "Successfully removed tournament player {{username}}.",
+      "addedTeam": "Successfully added {{teamName}} as a tournament team.",
+      "editedTeam": "Successfully edited tournament team {{teamName}}",
+      "removedTeam": "Successfully removed tournament team {{teamName}}.",
+      "addedStaffMember": "Successfully added {{username}} as a staff member.",
+      "editedStaffMember": "Successfully edited staff member {{username}}.",
+      "removedStaffMember": "Successfully removed staff member {{username}}.",
+      "addedStaffRole": "Successfully added staff role {{roleName}}",
+      "editedStaffRole": "Successfully edited staff role {{roleName}}",
+      "removedStaffRole": "Successfully removed staff role {{roleName}}",
+      "playerDataRefreshed": "Player data refreshed.",
+      "playerSeedsAssigned": "Player seeds assigned.",
+      "playerCsvCopied": "Copied player data csv to clipboard."
     }
   }
 }

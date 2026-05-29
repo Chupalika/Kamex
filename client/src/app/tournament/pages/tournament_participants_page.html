@@ -63,7 +63,7 @@
     </button>
     <button
       mat-icon-button
-      *ngIf="!isTourneyConcluded && hasPermission(TournamentStaffPermission.MANAGE_PLAYERS) && displayFormControl.value !== 'staff'"
+      *ngIf="!isTourneyConcluded && (hasPermission(TournamentStaffPermission.MANAGE_PLAYERS) || hasPermission(TournamentStaffPermission.MANAGE_TEAMS) || hasPermission(TournamentStaffPermission.MANAGE_STAFF_MEMBERS) || hasPermission(TournamentStaffPermission.MANAGE_STAFF_ROLES))"
       color="primary"
       [matMenuTriggerFor]="menu"
       class="small-icon-button more-actions-button"
@@ -71,11 +71,27 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
-      <button mat-menu-item *ngIf="displayFormControl.value === 'players'" (click)="openPlayerEditor()">{{ "tournament.participants.playerEditor" | transloco }}</button>
-      <button mat-menu-item *ngIf="displayFormControl.value === 'teams'" (click)="openTeamEditor()">{{ "tournament.participants.teamEditor" | transloco }}</button>
-      <button mat-menu-item (click)="copyCSV()">{{ "tournament.participants.copyCsv" | transloco }}</button>
-      <button mat-menu-item *ngIf="displayFormControl.value === 'players'" (click)="refreshPlayerData()">{{ "tournament.participants.refreshAllPlayerData" | transloco }}</button>
-      <button mat-menu-item *ngIf="displayFormControl.value === 'players' && sortMethodFormControl.value === 'rank' && tournament.gameMode !== GameMode.ALL" (click)="assignSeeds()">{{ "tournament.participants.assignSeedsByRank" | transloco }}</button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'players' && hasPermission(TournamentStaffPermission.MANAGE_PLAYERS)" (click)="openPlayerEditor()">
+        {{ "tournament.participants.playerEditor" | transloco }}
+      </button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'teams' && hasPermission(TournamentStaffPermission.MANAGE_TEAMS)" (click)="openTeamEditor()">
+        {{ "tournament.participants.teamEditor" | transloco }}
+      </button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'staff' && hasPermission(TournamentStaffPermission.MANAGE_STAFF_MEMBERS)" (click)="openStaffMemberEditor()">
+        {{ "tournament.participants.staffMemberEditor" | transloco }}
+      </button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'staff' && hasPermission(TournamentStaffPermission.MANAGE_STAFF_ROLES)" (click)="openStaffRoleEditor()">
+        {{ "tournament.participants.staffRoleEditor" | transloco }}
+      </button>
+      <button mat-menu-item *ngIf="displayFormControl.value !== 'staff'" (click)="copyCSV()">
+        {{ "tournament.participants.copyCsv" | transloco }}
+      </button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'players'" (click)="refreshAllPlayerData()">
+        {{ "tournament.participants.refreshAllPlayerData" | transloco }}
+      </button>
+      <button mat-menu-item *ngIf="displayFormControl.value === 'players' && sortMethodFormControl.value === 'rank' && tournament.gameMode !== GameMode.ALL" (click)="assignSeeds()">
+        {{ "tournament.participants.assignSeedsByRank" | transloco }}
+      </button>
     </mat-menu>
   </div>
   

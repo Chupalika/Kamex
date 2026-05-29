@@ -73,6 +73,7 @@
       "notOnTeam": "No momento, você não pertence a nenhum time",
       "createTeam": "Criar um time",
       "requestTeam": "Pedir para entrar em um time",
+      "teamSizeTooSmall": "Note: Your team currently doesn't meet the minimum team size of {{minTeamSize}} players.",
       "teamName": "Nome do time",
       "updateTeamName": "Atualizar o nome do time",
       "uploadTeamImage": "Carregar foto do time",
@@ -86,8 +87,8 @@
       "request": "Pedir para entrar",
       "pendingRequestToJoinTeam": "Pedido para entrar no time em espera",
       "retractJoinRequest": "Cancelar pedido para entrar",
-      "registeredForTheTournament": "Você se inscreveu para o torneio!",
-      "unregisteredFromTheTournament": "Sua inscrição para o torneio foi cancelada.",
+      "registeredForTournament": "Você se inscreveu para o torneio!",
+      "unregisteredFromTournament": "Sua inscrição para o torneio foi cancelada.",
       "removedFromTeam": "{{username}} foi removido do time.",
       "leftTeam": "Você saiu do time.",
       "captainTransferred": "Status de capitão transferido para {{username}}.",
@@ -114,6 +115,8 @@
       "avgRank": "Avg Rank",
       "playerEditor": "Editor de Jogador",
       "teamEditor": "Editor de Time",
+      "staffMemberEditor": "Staff Member Editor",
+      "staffRoleEditor": "Staff Role Editor",
       "copyCsv": "Copiar CSV",
       "refreshAllPlayerData": "Atualizar dados dos jogadores",
       "assignSeedsByRank": "Definir seeds por rank",
@@ -180,6 +183,23 @@
       "mehCount": "50s",
       "missCount": "0s",
       "mods": "Mods"
+    },
+    "settings": {
+      "addedPlayer": "Successfully added {{username}} as a tournament player.",
+      "editedPlayer": "Successfully edited tournament player {{username}}.",
+      "removedPlayer": "Successfully removed tournament player {{username}}.",
+      "addedTeam": "Successfully added {{teamName}} as a tournament team.",
+      "editedTeam": "Successfully edited tournament team {{teamName}}",
+      "removedTeam": "Successfully removed tournament team {{teamName}}.",
+      "addedStaffMember": "Successfully added {{username}} as a staff member.",
+      "editedStaffMember": "Successfully edited staff member {{username}}.",
+      "removedStaffMember": "Successfully removed staff member {{username}}.",
+      "addedStaffRole": "Successfully added staff role {{roleName}}",
+      "editedStaffRole": "Successfully edited staff role {{roleName}}",
+      "removedStaffRole": "Successfully removed staff role {{roleName}}",
+      "playerDataRefreshed": "Player data refreshed.",
+      "playerSeedsAssigned": "Player seeds assigned.",
+      "playerCsvCopied": "Copied player data csv to clipboard."
     }
   }
 }
