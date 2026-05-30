@@ -329,7 +329,7 @@ export class TournamentStatsPage implements OnInit {
       this.slotPlayerRankings.set(label, ranking);
     }
 
-    this.sortedSlots = getSortedMappool(this.tournament!, this.selectedTournamentRound!.mappool);
+    this.sortedSlots = getSortedMappool(this.tournament!, this.selectedTournamentRound!.mappool.slots);
     // Auto switch to the slot with the same label as currently selected one if it exists
     const correspondingSlotIndex = this.sortedSlots.findIndex((slot) => slot.label === this.selectedSlotLabel);
     if (correspondingSlotIndex >= 0) this.switchSelectedSlotIndex(correspondingSlotIndex);

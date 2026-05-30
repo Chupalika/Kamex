@@ -1,21 +1,27 @@
 import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { Component, NgModule, OnInit } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Component, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { TranslocoModule } from '@jsverse/transloco';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { catchError, finalize, switchMap, take } from 'rxjs/operators';
-import { map, of, throwError } from "rxjs";
+import { map, Observable, of, throwError } from "rxjs";
 
-import { AppUser, GameMode, Mappool, MappoolSlot, Tournament, TournamentRound, TournamentStaffPermission } from 'src/app/models/models';
+import { AppUser, GameMode, Mappool, MappoolSlot, Tournament, TournamentProgress, TournamentRound, TournamentStaffPermission } from 'src/app/models/models';
 import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { TournamentSlotCardModule } from 'src/app/tournament/components/tournament_slot_card';
+import { TournamentSlotEditorModule } from '../components/tournament_slot_editor';
 import { TournamentRoundNavBarModule } from 'src/app/tournament/components/tournament_round_nav_bar';
 import { getLatestRoundIndex, getSortedMappool, hasPermission, slotStarRating, slotDisplayLength, slotBpm, slotCs, slotHp, slotOd, slotAr } from '../utils';
 import { AuthService } from 'src/app/services/auth.service';
@@ -41,13 +47,18 @@ export class TournamentMappoolPage implements OnInit {
   mobileMode = false;
   tableViewFormControl: FormControl;
 
+  TournamentStaffPermission = TournamentStaffPermission;
+
+  readonly dialogService = inject(MatDialog);
+
   constructor(
     private tournamentsService: TournamentsService,
     private authService: AuthService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private breakpointObserver: BreakpointObserver,
-    private titleService: Title) {
+    private titleService: Title,
+    private translocoService: TranslocoService) {
       this.tableViewFormControl = new FormControl(false);
     }
 
@@ -89,6 +100,14 @@ export class TournamentMappoolPage implements OnInit {
     return hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.VIEW_WIP_MAPPOOLS);
   }
 
+  get isTourneyConcluded(): boolean {
+    return this.tournament?.progress === TournamentProgress.CONCLUDED;
+  }
+
+  hasPermission(permission: TournamentStaffPermission): boolean {
+    return hasPermission(this.tournament!, this.appUser?.osuId, permission);
+  }
+
   switchSelectedRoundIndex(index: number) {
     if (this.loadingRound) return;
     this.selectedRoundIndex = index;
@@ -112,7 +131,7 @@ export class TournamentMappoolPage implements OnInit {
         }),
         catchError((error) => {
           this.loadingRound = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
           return throwError(error);
         })
       ).subscribe(({ tourneyRound, mappool }) => {
@@ -128,7 +147,7 @@ export class TournamentMappoolPage implements OnInit {
   }
 
   get sortedSlots() {
-    return getSortedMappool(this.tournament!, this.mappool);
+    return getSortedMappool(this.tournament!, this.mappool.slots);
   }
 
   getCategory(slot: MappoolSlot) {
@@ -145,7 +164,7 @@ export class TournamentMappoolPage implements OnInit {
     });
     const theText = [header.join('\t'), ...rows].join('\n');
     navigator.clipboard.writeText(theText);
-    this.snackBar.open('Table copied to clipboard!', '', { duration: 3000 });
+    this.snackBar.open(this.translocoService.translate("tournament.common.tableCopied"), '', { duration: 3000 });
   }
 
   get mappoolColumns() {
@@ -159,6 +178,132 @@ export class TournamentMappoolPage implements OnInit {
   slotDisplayLength(slot: MappoolSlot) {
     return slotDisplayLength(slot);
   }
+
+  openSlotEditor() {
+    const dialogRef = this.dialogService.open(
+      SlotEditorDialog, { data: { acronym: this.acronym, roundId: this.selectedRoundId, tournament: this.tournament, slots: this.mappool.slots } }
+    );
+    dialogRef.afterClosed().subscribe((updatedSlots: MappoolSlot[]) => {
+      if (updatedSlots) {
+        this.mappool.slots = updatedSlots;
+      }
+    });
+  }
+}
+
+@Component({
+  selector: 'slot-editor-dialog',
+  template:
+   `<h2 mat-dialog-title>Slot editor</h2>
+    <mat-dialog-content class="mat-typography">
+      <form [formGroup]="slotEditorForm" class="tourney-form">
+        <mat-form-field>
+          <mat-label>Slots</mat-label>
+          <mat-select formControlName="selectedSlot" (selectionChange)="switchSelectedSlot($event.value)">
+            <mat-option value="-1">&lt;New&gt;</mat-option>
+            <mat-option *ngFor="let slot of sortedSlots" [value]="slot._id">{{ slot.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+      <tournament-slot-editor
+        [slot]="selectedSlot"
+        [requestInProgress]="requestInProgress"
+        (submit)="submitUpdateSlotForm($event)"
+        (remove)="removeSlot($event)"
+      >
+      </tournament-slot-editor>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
+      <button mat-raised-button color="secondary" [mat-dialog-close]="workingSlots">Close</button>
+    </mat-dialog-actions>`,
+})
+export class SlotEditorDialog {
+  requestInProgress: boolean = false;
+
+  selectedSlot?: MappoolSlot;
+  selectedSlotIndex = -1;
+  slotEditorForm: FormGroup;
+  selectedSlotFormControl: FormControl;
+  workingSlots: MappoolSlot[] = [];
+
+  constructor(
+      @Inject(MAT_DIALOG_DATA) public data: { acronym: string, roundId: string, tournament: Tournament, slots: MappoolSlot[] },
+      private tournamentsService: TournamentsService,
+      private snackBar: MatSnackBar,
+      private dialogRef: MatDialogRef<SlotEditorDialog>,
+      private translocoService: TranslocoService
+  ) {
+    this.selectedSlotFormControl = new FormControl("-1");
+    this.slotEditorForm = new FormGroup({
+      selectedSlot: this.selectedSlotFormControl,
+    });
+
+    this.dialogRef.backdropClick().subscribe(() => {
+      this.dialogRef.close(this.workingSlots);
+    });
+  }
+
+  ngOnInit() {
+    this.workingSlots = [...this.data.slots];
+  }
+
+  get sortedSlots() {
+    return getSortedMappool(this.data.tournament, this.workingSlots);
+  }
+
+  switchSelectedSlot(slotId: string) {
+    const index = this.workingSlots.findIndex((slot) => slot._id === slotId);
+    this.selectedSlotIndex = index;
+    if (index < 0) this.selectedSlot = undefined;
+    else this.selectedSlot = this.workingSlots[index];
+  }
+
+  submitUpdateSlotForm(formData: any) {
+    if (!formData.label) return;
+    this.requestInProgress = true;
+
+    let request: Observable<MappoolSlot>;
+    let successMessage = "";
+    if (!this.selectedSlot) {
+      request = this.tournamentsService.addTournamentSlot(this.data.acronym, this.data.roundId, formData.beatmapId, formData);
+      successMessage = "tournament.settings.addedSlot";
+    } else {
+      request = this.tournamentsService.editTournamentSlot(this.data.acronym, this.data.roundId, this.selectedSlot._id, formData.beatmapId, formData);
+      successMessage = "tournament.settings.editedSlot";
+    }
+
+    request.pipe(catchError((error) => {
+      this.requestInProgress = false;
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
+      return throwError(error);
+    })).subscribe((updatedTournamentSlot) => {
+      this.requestInProgress = false;
+      if (!this.selectedSlot) {
+        this.workingSlots.push(updatedTournamentSlot);
+      } else {
+        this.workingSlots[this.selectedSlotIndex] = updatedTournamentSlot;
+        this.selectedSlot = updatedTournamentSlot;
+      }
+      this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
+    });
+  }
+
+  removeSlot(slot: MappoolSlot) {
+    this.requestInProgress = true;
+    this.tournamentsService.removeTournamentSlot(this.data.acronym, this.data.roundId, slot._id)
+      .pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
+        return throwError(error);
+      })).subscribe(() => {
+        this.requestInProgress = false;
+        const index = this.workingSlots.findIndex((slot2) => slot2._id === slot._id);
+        if (index !== undefined) this.workingSlots.splice(index, 1);
+        this.selectedSlotFormControl.setValue("-1");
+        this.switchSelectedSlot("-1");
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedSlot"), "", { duration: 10000 });
+      });
+  }
 }
 
 @NgModule({
@@ -167,15 +312,21 @@ export class TournamentMappoolPage implements OnInit {
         ItemSelectorModule,
         FormsModule,
         MatButtonModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatMenuModule,
+        MatSelectModule,
         MatSlideToggleModule,
         MatTableModule,
         MatTooltipModule,
         ReactiveFormsModule,
         TournamentSlotCardModule,
+        TournamentSlotEditorModule,
         TournamentRoundNavBarModule,
         TranslocoModule,
     ],
-  declarations: [ TournamentMappoolPage ],
+  declarations: [ TournamentMappoolPage, SlotEditorDialog ],
   exports: [ TournamentMappoolPage ],
   bootstrap: [ TournamentMappoolPage ]
 })

@@ -138,7 +138,7 @@ export class TournamentRegistrationPage implements OnInit {
     this.tournamentsService.register(this.acronym)
         .pipe(catchError((error) => {
           this.requestInProgress = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
           return throwError(error);
         })).subscribe((tournamentPlayer) => {
           this.tournament?.players.push(tournamentPlayer);
@@ -152,7 +152,7 @@ export class TournamentRegistrationPage implements OnInit {
     this.tournamentsService.unregister(this.acronym)
         .pipe(catchError((error) => {
           this.requestInProgress = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
           return throwError(error);
         })).subscribe(() => {
           const index = this.tournament?.players.findIndex((player) => player.playerId === this.appUser?.osuId);

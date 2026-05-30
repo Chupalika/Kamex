@@ -72,16 +72,16 @@
     </button>
     <mat-menu #menu="matMenu">
       <button mat-menu-item *ngIf="displayFormControl.value === 'players' && hasPermission(TournamentStaffPermission.MANAGE_PLAYERS)" (click)="openPlayerEditor()">
-        {{ "tournament.participants.playerEditor" | transloco }}
+        {{ "tournament.settings.playerEditor" | transloco }}
       </button>
       <button mat-menu-item *ngIf="displayFormControl.value === 'teams' && hasPermission(TournamentStaffPermission.MANAGE_TEAMS)" (click)="openTeamEditor()">
-        {{ "tournament.participants.teamEditor" | transloco }}
+        {{ "tournament.settings.teamEditor" | transloco }}
       </button>
       <button mat-menu-item *ngIf="displayFormControl.value === 'staff' && hasPermission(TournamentStaffPermission.MANAGE_STAFF_MEMBERS)" (click)="openStaffMemberEditor()">
-        {{ "tournament.participants.staffMemberEditor" | transloco }}
+        {{ "tournament.settings.staffMemberEditor" | transloco }}
       </button>
       <button mat-menu-item *ngIf="displayFormControl.value === 'staff' && hasPermission(TournamentStaffPermission.MANAGE_STAFF_ROLES)" (click)="openStaffRoleEditor()">
-        {{ "tournament.participants.staffRoleEditor" | transloco }}
+        {{ "tournament.settings.staffRoleEditor" | transloco }}
       </button>
       <button mat-menu-item *ngIf="displayFormControl.value !== 'staff'" (click)="copyCSV()">
         {{ "tournament.participants.copyCsv" | transloco }}

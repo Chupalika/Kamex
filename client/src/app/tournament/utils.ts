@@ -360,13 +360,13 @@ export function getStaffMemberListSortedByRole(staffMembers: TournamentStaffMemb
   });
 }
 
-export function getSortedMappool(tourney: Tournament, mappool: Mappool): MappoolSlot[] {
+export function getSortedMappool(tourney: Tournament, slots: MappoolSlot[]): MappoolSlot[] {
   const categoryMap = new Map<string, number>();
   for (let i = 0; i < tourney.slotCategories.length; i++) {
     const category = tourney.slotCategories[i];
     categoryMap.set(category.name, i);
   }
-  const ans = [...mappool.slots];
+  const ans = [...slots];
   ans.sort((a, b) => {
     const categoryAIndex = categoryMap.get(a.category) ?? Number.MAX_SAFE_INTEGER;
     const categoryBIndex = categoryMap.get(b.category) ?? Number.MAX_SAFE_INTEGER;

@@ -30,6 +30,18 @@
           {{ "tournament.common.copyTable" | transloco }}
         </button>
         <mat-slide-toggle [formControl]="tableViewFormControl">{{ "tournament.common.tableView" | transloco }}</mat-slide-toggle>
+        <button
+          mat-icon-button
+          *ngIf="!isTourneyConcluded && hasPermission(TournamentStaffPermission.MANAGE_SLOTS)"
+          color="primary"
+          [matMenuTriggerFor]="menu"
+          class="small-icon-button more-actions-button"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="openSlotEditor()">{{ "tournament.settings.slotEditor" | transloco }}</button>
+        </mat-menu>
       </div>
     </div>
 

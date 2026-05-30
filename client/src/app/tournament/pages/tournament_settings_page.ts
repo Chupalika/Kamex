@@ -572,7 +572,7 @@ export class TournamentSettingsPage implements OnInit {
   }
   
   switchRoundHelper() {
-    this.slots = getSortedMappool(this.tournament!, this.selectedRound!.mappool);
+    this.slots = getSortedMappool(this.tournament!, this.selectedRound!.mappool.slots);
     this.matches = [...this.selectedRound!.matches].sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" }));
   }
 

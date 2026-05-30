@@ -119,7 +119,7 @@ export class StatsReveal {
   }
 
   get sortedSlots() {
-    return getSortedMappool(this.tournament!, this.mappool!);
+    return getSortedMappool(this.tournament!, this.mappool!.slots);
   }
 
   getOverallRanking(): OverallStats[] {

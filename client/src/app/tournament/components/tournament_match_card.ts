@@ -65,6 +65,14 @@ export class TournamentMatchCard {
     return `UTC${this.timezone >= 0 ? "+" : ""}${this.timezone}`;
   }
 
+  get participantTypeLabel() {
+    switch(this.participantType) {
+      case "Player": return "tournament.common.player";
+      case "Team": return "tournament.common.team";
+      case "Participant": return "tournament.common.participant";
+    };
+  }
+
   isPlayer(playerOrTeam: TournamentPlayer|TournamentTeam): playerOrTeam is TournamentPlayer {
     return 'username' in playerOrTeam;
   }
