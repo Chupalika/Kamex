@@ -89,6 +89,8 @@ export class TournamentService {
     tourney.staffMembers.forEach((staffMember: TournamentStaffMember) => {
       staffMember.appUser = playerIdToAppUser.get(staffMember.playerId);
     });
+    tourney.podium = await Promise.all(tourney.podium.map(async (playerOrTeamId) =>
+      await this.tournamentPlayerModel.findById(playerOrTeamId) ?? await this.tournamentTeamModel.findById(playerOrTeamId).populate("players")));
     return tourney;
   }
 
@@ -99,7 +101,6 @@ export class TournamentService {
   async editTournament(acronym: string, tournamentDto: TournamentDto): Promise<Tournament> {
     const tourney = await this.getTournamentHelper(acronym);
 
-    const progressChanged = tournamentDto.progress !== undefined && tourney.progress !== tournamentDto.progress;
     const nameChanged = tournamentDto.name !== undefined && tourney.name !== tournamentDto.name;
     const gameModeChanged = tournamentDto.gameMode !== undefined && tourney.gameMode !== tournamentDto.gameMode;
     const enableTeamsChanged = tournamentDto.enableTeams !== undefined && tourney.enableTeams !== tournamentDto.enableTeams;
@@ -107,9 +108,12 @@ export class TournamentService {
     const isRegistrationSettingsChanged = tournamentDto.registrationSettings !== undefined && JSON.stringify(tourney.registrationSettings) !== JSON.stringify(tournamentDto.registrationSettings);
     const isDiscordSettingsChanged = tournamentDto.discordSettings !== undefined && JSON.stringify(tourney.discordSettings) !== JSON.stringify(tournamentDto.discordSettings);
     const bannerChanged = tournamentDto.bannerLink !== undefined && tourney.bannerLink !== tournamentDto.bannerLink;
+    const iconChanged = tournamentDto.iconLink !== undefined && tourney.iconLink !== tournamentDto.iconLink;
     const descriptionChanged = tournamentDto.description !== undefined && tourney.description !== tournamentDto.description;
     const linksChanged = tournamentDto.links !== undefined && JSON.stringify(tourney.links) !== JSON.stringify(tournamentDto.links);
     const slotCategoriesChanged = tournamentDto.slotCategories !== undefined && JSON.stringify(tourney.slotCategories) !== JSON.stringify(tournamentDto.slotCategories);
+    const podiumChanged = tournamentDto.podium !== undefined && JSON.stringify(tourney.podium) !== JSON.stringify(tournamentDto.podium);
+    const progressChanged = tournamentDto.progress !== undefined && tourney.progress !== tournamentDto.progress;
     const otherSettingsChanged = nameChanged || gameModeChanged || enableTeamsChanged || allowTeamEditsChanged || isRegistrationSettingsChanged || isDiscordSettingsChanged || bannerChanged || descriptionChanged || linksChanged || slotCategoriesChanged;
 
     if (progressChanged) {
@@ -133,7 +137,8 @@ export class TournamentService {
         throw new ProgressLockedError();
       }
 
-      if ([TournamentProgress.CONCLUDED].includes(tourney.progress) && (allowTeamEditsChanged || isDiscordSettingsChanged || bannerChanged || descriptionChanged || linksChanged || slotCategoriesChanged)) {
+      if ([TournamentProgress.CONCLUDED].includes(tourney.progress) &&
+          (allowTeamEditsChanged || isDiscordSettingsChanged || bannerChanged || iconChanged || descriptionChanged || linksChanged || slotCategoriesChanged || podiumChanged)) {
         throw new ProgressLockedError();
       }
 
@@ -148,29 +153,24 @@ export class TournamentService {
       tourney.registrationSettings = tournamentDto.registrationSettings;
       tourney.discordSettings = tournamentDto.discordSettings;
       tourney.bannerLink = tournamentDto.bannerLink;
+      tourney.iconLink = tournamentDto.iconLink;
       tourney.theme = tournamentDto.theme;
       tourney.description = tournamentDto.description;
       tourney.links = tournamentDto.links;
       tourney.slotCategories = tournamentDto.slotCategories;
       tourney.unlisted = tournamentDto.unlisted;
       tourney.allowTeamEdits = tournamentDto.allowTeamEdits;
+      tourney.podium = tournamentDto.podium;
     }
 
     await tourney.save();
     return tourney;
   }
 
-  async uploadTourneyBanner(acronym: string, playerId: number, image: Express.Multer.File): Promise<Tournament> {
+  async uploadTourneyBanner(acronym: string, image: Express.Multer.File): Promise<Tournament> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail();
 
-    var staffMemberUpload = false;
-    if (tourney.ownerId === playerId) staffMemberUpload = true;
-    else {
-      const staffMember = tourney.staffMembers.find((staffMember) => staffMember.playerId === playerId);
-      staffMemberUpload = staffMember?.roles.some(role => role.permissions.includes(`PATCH:/api/tournament/:acronym`));
-    }
-    if (staffMemberUpload && [TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
-    else if (!staffMemberUpload) throw new ForbiddenException();
+    if ([TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
     const imageUrl = await this.cloudinaryService.uploadImage(image, "banners", `${acronym.toLowerCase()}-banner`);
     tourney.bannerLink = imageUrl;
@@ -179,17 +179,22 @@ export class TournamentService {
     return tourney;
   }
 
-  async uploadCategoryIcon(acronym: string, categoryName: string, playerId: number, image: Express.Multer.File): Promise<Tournament> {
+  async uploadTourneyIcon(acronym: string, image: Express.Multer.File): Promise<Tournament> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail();
 
-    var staffMemberUpload = false;
-    if (tourney.ownerId === playerId) staffMemberUpload = true;
-    else {
-      const staffMember = tourney.staffMembers.find((staffMember) => staffMember.playerId === playerId);
-      staffMemberUpload = staffMember?.roles.some(role => role.permissions.includes(`PATCH:/api/tournament/:acronym`));
-    }
-    if (staffMemberUpload && [TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
-    else if (!staffMemberUpload) throw new ForbiddenException();
+    if ([TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+
+    const imageUrl = await this.cloudinaryService.uploadImage(image, "banners", `${acronym.toLowerCase()}-icon`);
+    tourney.iconLink = imageUrl;
+
+    await tourney.save();
+    return tourney;
+  }
+
+  async uploadCategoryIcon(acronym: string, categoryName: string, image: Express.Multer.File): Promise<Tournament> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail();
+
+    if ([TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
     const theCategoryIndex = tourney.slotCategories.findIndex((category) => category.name === categoryName);
     const theCategory = tourney.slotCategories[theCategoryIndex];

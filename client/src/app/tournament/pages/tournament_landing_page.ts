@@ -13,7 +13,7 @@ import { Tournament } from 'src/app/models/models';
 export class TournamentLandingPage {
   tournaments: Tournament[];
 
-  tournamentsTableColumns = ["name", /*"banner",*/ "gameMode", "progress"];
+  tournamentsTableColumns = ["icon", "name", "gameMode", "teamSize", "rankRestriction", "progress"];
   
   constructor(private tournamentsService: TournamentsService) {
     this.tournaments = [];
@@ -25,8 +25,18 @@ export class TournamentLandingPage {
   
   refreshTournamentList() {
     this.tournamentsService.getTournaments().subscribe((tournaments) => {
-      this.tournaments = tournaments;
+      this.tournaments = tournaments.reverse();
     });
+  }
+
+  getTourneyTeamSize(tourney: Tournament) {
+    if (!tourney.enableTeams) return 1;
+    else if (tourney.registrationSettings.minTeamSize === tourney.registrationSettings.maxTeamSize) return tourney.registrationSettings.minTeamSize;
+    else return `${tourney.registrationSettings.minTeamSize} - ${tourney.registrationSettings.maxTeamSize}`;
+  }
+
+  getTourneyRankRestriction(tourney: Tournament) {
+    return `${tourney.registrationSettings.minRank || 1} - ${tourney.registrationSettings.maxRank || '∞'}`;
   }
 }
 

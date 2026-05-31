@@ -34,7 +34,9 @@
       "participant": "参加者",
       "participants": "参加者",
       "staff": "スタッフ",
+      "staffMember": "スタッフメンバー",
       "staffMembers": "スタッフメンバー",
+      "staffRole": "Staff Role",
       "playerFlags": "プレイヤーフラッグ",
       "tableView": "Table view",
       "copyTable": "表をコピー",
@@ -49,7 +51,8 @@
     },
     "home": {
       "currentStatus": "現在の状態:",
-      "links": "リンク"
+      "links": "リンク",
+      "podium": "Podium"
     },
     "registration": {
       "registrationStatus": "登録状況",
@@ -194,10 +197,12 @@
       "mods": "使用Mod"
     },
     "settings": {
+      "noPermissions": "You are not a staff member or you don't have any permissions right now.",
       "playerEditor": "プレイヤー編集",
       "teamEditor": "チーム編集",
       "staffMemberEditor": "Staff Member Editor",
       "staffRoleEditor": "Staff Role Editor",
+      "roundEditor": "Round Editor",
       "matchEditor": "マッチの編集",
       "slotEditor": "Slot Editor",
       "submitMatch": "Submit match",

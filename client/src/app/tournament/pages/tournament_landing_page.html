@@ -1,35 +1,45 @@
 <div class="mat-headline-6">Tournaments</div>
 
 <mat-table [dataSource]="tournaments" class="tournaments-table">
+  <ng-container matColumnDef="icon">
+    <mat-header-cell *matHeaderCellDef class="table-header table-cell-x">
+      <span class="tournaments-table-header-text">Icon</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let tourney" class="table-cell table-cell-x">
+      <img *ngIf="tourney.iconLink" [src]="tourney.iconLink" class="tournament-icon">
+    </mat-cell>
+  </ng-container>
   <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
+    <mat-header-cell *matHeaderCellDef class="table-header table-cell-l">
       <span class="tournaments-table-header-text">Name</span>
     </mat-header-cell>
-    <mat-cell *matCellDef="let element" class="tournaments-table-cell">
-      <a [routerLink]="['/tournament', element.acronym]">{{ element.name }} ({{ element.acronym }})</a>
+    <mat-cell *matCellDef="let tourney" class="table-cell table-cell-l">
+      <a [routerLink]="['/tournament', tourney.acronym]">{{ tourney.name }} ({{ tourney.acronym }})</a>
     </mat-cell>
   </ng-container>
-  <!--
-  <ng-container matColumnDef="banner">
-    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
-      <span class="tournaments-table-header-text">Banner</span>
-    </mat-header-cell>
-    <mat-cell *matCellDef="let element" class="tournaments-table-cell">
-      <img *ngIf="element.bannerLink" [src]="element.bannerLink" class="tournament-banner">
-    </mat-cell>
-  </ng-container>
-  -->
   <ng-container matColumnDef="gameMode">
-    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
+    <mat-header-cell *matHeaderCellDef class="table-header table-cell-s">
       <span class="tournaments-table-header-text">Game Mode</span>
     </mat-header-cell>
-    <mat-cell *matCellDef="let element" class="tournaments-table-cell">{{ element.gameMode }}</mat-cell>
+    <mat-cell *matCellDef="let tourney" class="table-cell table-cell-s">{{ tourney.gameMode }}</mat-cell>
+  </ng-container>
+  <ng-container matColumnDef="teamSize">
+    <mat-header-cell *matHeaderCellDef class="table-header table-cell-s">
+      <span class="tournaments-table-header-text">Team Size</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let tourney" class="table-cell table-cell-s">{{ getTourneyTeamSize(tourney) }}</mat-cell>
+  </ng-container>
+  <ng-container matColumnDef="rankRestriction">
+    <mat-header-cell *matHeaderCellDef class="table-header table-cell-s">
+      <span class="tournaments-table-header-text">Rank Restriction</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let tourney" class="table-cell table-cell-s">{{ getTourneyRankRestriction(tourney) }}</mat-cell>
   </ng-container>
   <ng-container matColumnDef="progress">
-    <mat-header-cell *matHeaderCellDef class="tournaments-table-header">
+    <mat-header-cell *matHeaderCellDef class="table-header table-cell-s">
       <span class="tournaments-table-header-text">Progress</span>
     </mat-header-cell>
-    <mat-cell *matCellDef="let element" class="tournaments-table-cell">{{ element.progress }}</mat-cell>
+    <mat-cell *matCellDef="let tourney" class="table-cell table-cell-s">{{ tourney.progress }}</mat-cell>
   </ng-container>
 
   <mat-header-row *matHeaderRowDef="tournamentsTableColumns"></mat-header-row>

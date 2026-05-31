@@ -51,7 +51,8 @@ export class TournamentController {
   }
 
   @Post(':acronym/banner')
-  @UseGuards(OsuAuthenticatedGuard)
+  @UseGuards(TournamentStaffRolesGuard)
+  @Permissions(TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS)
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 1024 * 1024 * 8 } }))
   async uploadTourneyBanner(
       @Param('acronym') acronym: string,
@@ -65,11 +66,31 @@ export class TournamentController {
       )
       file: Express.Multer.File,
       @Request() req): Promise<Tournament> {
-    return await this.tournamentService.uploadTourneyBanner(acronym, req.user.osuId, file);
+    return await this.tournamentService.uploadTourneyBanner(acronym, file);
+  }
+
+  @Post(':acronym/icon')
+  @UseGuards(TournamentStaffRolesGuard)
+  @Permissions(TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS)
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 1024 * 1024 * 8 } }))
+  async uploadTourneyIcon(
+      @Param('acronym') acronym: string,
+      @UploadedFile(
+        new ParseFilePipe({
+          validators: [
+            new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 8 }),
+            new FileTypeValidator({ fileType: /^(image\/jpeg|image\/png|image\/gif)$/ }),
+          ],
+        }),
+      )
+      file: Express.Multer.File,
+      @Request() req): Promise<Tournament> {
+    return await this.tournamentService.uploadTourneyIcon(acronym, file);
   }
 
   @Post(':acronym/categoryIcon/:categoryName')
-  @UseGuards(OsuAuthenticatedGuard)
+  @UseGuards(TournamentStaffRolesGuard)
+  @Permissions(TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS)
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 1024 * 1024 * 8 } }))
   async uploadCategoryIcon(
       @Param('acronym') acronym: string,
@@ -84,7 +105,7 @@ export class TournamentController {
       )
       file: Express.Multer.File,
       @Request() req): Promise<Tournament> {
-    return await this.tournamentService.uploadCategoryIcon(acronym, categoryName, req.user.osuId, file);
+    return await this.tournamentService.uploadCategoryIcon(acronym, categoryName, file);
   }
 
   @Post(':acronym/register')

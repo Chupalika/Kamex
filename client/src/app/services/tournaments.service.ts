@@ -59,6 +59,15 @@ export class TournamentsService {
       }));
   }
 
+  uploadTourneyIcon(acronym: string, file: File): Observable<Tournament> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/${acronym}/icon`, formData, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as Tournament;
+      }));
+  }
+
   uploadTourneyCategoryIcon(acronym: string, categoryName: string, file: File): Observable<Tournament> {
     const formData = new FormData();
     formData.append('file', file);

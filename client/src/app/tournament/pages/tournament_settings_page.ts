@@ -415,10 +415,26 @@ export class TournamentSettingsPage implements OnInit {
         this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
         return throwError(error);
       }))
-      .subscribe((updatedTeam) => {
+      .subscribe(() => {
         this.refreshTournament().add(() => {
           this.requestInProgress = false;
           this.snackBar.open("Successfully updated tournament banner", "", { duration: 10000 });
+        });
+      });
+  }
+
+  uploadTourneyIcon(event: any) {
+    this.requestInProgress = true;
+    this.tournamentsService.uploadTourneyIcon(this.tournament!.acronym, event)
+      .pipe(catchError((error) => {
+        this.requestInProgress = false;
+        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        return throwError(error);
+      }))
+      .subscribe(() => {
+        this.refreshTournament().add(() => {
+          this.requestInProgress = false;
+          this.snackBar.open("Successfully updated tournament icon", "", { duration: 10000 });
         });
       });
   }
@@ -431,7 +447,7 @@ export class TournamentSettingsPage implements OnInit {
         this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
         return throwError(error);
       }))
-      .subscribe((updatedTourney) => {
+      .subscribe(() => {
         this.refreshTournament().add(() => {
           this.requestInProgress = false;
           this.snackBar.open("Successfully updated tournament category icon", "", { duration: 10000 });

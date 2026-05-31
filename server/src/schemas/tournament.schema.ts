@@ -6,7 +6,7 @@ import { TournamentStaffMember } from './tournament-staff-member.schema';
 import { TournamentStaffRole } from './tournament-staff-role.schema';
 import { TournamentTeam } from './tournament-team.schema';
 import { GameMode, TournamentProgress } from 'src/models/enums';
-import { SlotCategory, RegistrationSettings, TournamentLink, TournamentTheme, DiscordSettings } from 'src/models/models';
+import { SlotCategory, RegistrationSettings, TournamentLink, TournamentTheme, DiscordSettings, PlayerOrTeam } from 'src/models/models';
 import * as mongoose from 'mongoose';
 
 export type TournamentDocument = HydratedDocument<Tournament>;
@@ -67,6 +67,9 @@ export class Tournament {
   @Prop({ required: true, default: "" })
   bannerLink: string;
 
+  @Prop({ required: true, default: "" })
+  iconLink: string;
+
   @Prop({ required: true, default: { primaryColor: "", accentColor: "" } })
   theme: TournamentTheme;
 
@@ -78,6 +81,9 @@ export class Tournament {
 
   @Prop({ required: true, default: [] })
   slotCategories: SlotCategory[];
+
+  @Prop({ required: true, default: [] })
+  podium: PlayerOrTeam[];
 }
 
 export const TournamentSchema = SchemaFactory.createForClass(Tournament);

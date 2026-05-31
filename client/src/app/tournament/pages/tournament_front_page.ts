@@ -2,16 +2,18 @@ import { CommonModule } from '@angular/common';
 import { Component, NgModule, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTableModule } from '@angular/material/table';
+import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
-import { TournamentsService } from 'src/app/services/tournaments.service';
 import { finalize, switchMap, take } from 'rxjs/operators';
 import { MarkdownModule } from 'ngx-markdown';
 
-import { AppUser, Tournament } from 'src/app/models/models';
-import { TournamentProgress } from 'src/app/models/models';
+import { AppUser, Tournament, TournamentProgress } from 'src/app/models/models';
 import { AuthService } from 'src/app/services/auth.service';
-import { Title } from '@angular/platform-browser';
+import { TournamentsService } from 'src/app/services/tournaments.service';
+import { TournamentPlayerLabelModule } from '../components/tournament_player_label';
+import { TournamentTeamLabelModule } from '../components/tournament_team_label';
 
 @Component({
   selector: 'tournament_front_page',
@@ -53,9 +55,12 @@ export class TournamentFrontPage implements OnInit {
 @NgModule({
     imports: [
         CommonModule,
+        MarkdownModule,
         MatButtonModule,
         MatMenuModule,
-        MarkdownModule,
+        MatTableModule,
+        TournamentPlayerLabelModule,
+        TournamentTeamLabelModule,
         TranslocoModule,
     ],
   declarations: [ TournamentFrontPage ],

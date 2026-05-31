@@ -13,8 +13,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import * as countries from 'i18n-iso-countries';
 
 import { environment } from 'src/environments/environment';
-import { GameMode, Tournament, TournamentProgress } from '../../models/models';
-import { convertDatetimeLocalToDate, convertDateToDatetimeLocal, getCountryName } from '../utils';
+import { GameMode, Tournament, TournamentPlayer, TournamentProgress, TournamentTeam } from '../../models/models';
+import { convertDatetimeLocalToDate, convertDateToDatetimeLocal, getCountryName, playerNameCompare, teamNameCompare } from '../utils';
 
 @Component({
   selector: 'tournament-settings-editor',
@@ -26,6 +26,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
   @Input() requestInProgress: boolean = false
   @Output() submit: EventEmitter<any> = new EventEmitter();
   @Output() uploadBanner: EventEmitter<any> = new EventEmitter();
+  @Output() uploadIcon: EventEmitter<any> = new EventEmitter();
   @Output() uploadCategoryIcon: EventEmitter<any> = new EventEmitter();
 
   tournamentForm: FormGroup;
@@ -36,6 +37,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
   enableTeamsFormControl: FormControl;
   allowTeamEditsFormControl: FormControl;
   bannerLinkFormControl: FormControl;
+  iconLinkFormControl: FormControl;
   descriptionFormControl: FormControl;
   linksFormControl: FormArray;
   minTeamSizeFormControl: FormControl;
@@ -55,13 +57,12 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
   accentColorFormControl: FormControl;
   fontNameFormControl: FormControl;
   slotCategoriesFormControl: FormArray;
+  podiumFormControl: FormArray;
+
   countries: { code: string; name: string }[] = [];
-
-  TournamentProgress = TournamentProgress;
-
-  readonly dialogService = inject(MatDialog);
-
   discordClientId = environment.discordClientId;
+  TournamentProgress = TournamentProgress;
+  readonly dialogService = inject(MatDialog);
 
   constructor() {
     this.nameFormControl = new FormControl("", [Validators.required]);
@@ -71,6 +72,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
     this.enableTeamsFormControl = new FormControl(false, [Validators.required]);
     this.allowTeamEditsFormControl = new FormControl(false, [Validators.required]);
     this.bannerLinkFormControl = new FormControl("");
+    this.iconLinkFormControl = new FormControl("");
     this.descriptionFormControl = new FormControl("");
     this.linksFormControl = new FormArray<FormControl>([]);
     this.minTeamSizeFormControl = new FormControl(1, [Validators.required, Validators.min(1)]);
@@ -90,12 +92,14 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
     this.accentColorFormControl = new FormControl("");
     this.fontNameFormControl = new FormControl("");
     this.slotCategoriesFormControl = new FormArray<FormControl>([]);
+    this.podiumFormControl = new FormArray<FormControl>([]);
     this.tournamentForm = new FormGroup({
       name: this.nameFormControl,
       acronym: this.acronymFormControl,
       unlisted: this.unlistedFormControl,
       gameMode: this.gameModeFormControl,
       bannerLink: this.bannerLinkFormControl,
+      iconLink: this.iconLinkFormControl,
       description: this.descriptionFormControl,
       links: this.linksFormControl,
       enableTeams: this.enableTeamsFormControl,
@@ -117,6 +121,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       accentColor: this.accentColorFormControl,
       fontName: this.fontNameFormControl,
       slotCategories: this.slotCategoriesFormControl,
+      podium: this.podiumFormControl,
     });
   }
 
@@ -140,6 +145,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       this.unlistedFormControl.setValue(this.initialTournament.unlisted);
       this.gameModeFormControl.setValue(this.initialTournament.gameMode);
       this.bannerLinkFormControl.setValue(this.initialTournament.bannerLink);
+      this.iconLinkFormControl.setValue(this.initialTournament.iconLink);
       this.descriptionFormControl.setValue(this.initialTournament.description);
       this.enableTeamsFormControl.setValue(this.initialTournament.enableTeams);
       this.allowTeamEditsFormControl.setValue(this.initialTournament.allowTeamEdits);
@@ -170,6 +176,11 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
         this.addSlotCategory(slotCategory.name, slotCategory.color, slotCategory.iconLink);
       }
 
+      this.getPodiumFormArray().clear();
+      for (let podiumParticipant of (this.initialTournament.podium || [])) {
+        this.addPodiumParticipant(this.simplifyParticipant(podiumParticipant));
+      }
+
       this.acronymFormControl.disable();
       if ([TournamentProgress.REGISTRATION, TournamentProgress.ONGOING, TournamentProgress.CONCLUDED].includes(this.initialTournament.progress)) {
         this.nameFormControl.disable();
@@ -194,15 +205,19 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
         this.discordMatchReminderChannelIdFormControl.disable();
         this.discordMatchReminderMinutesFormControl.disable();
         this.bannerLinkFormControl.disable();
+        this.iconLinkFormControl.disable();
         this.descriptionFormControl.disable();
         this.primaryColorFormControl.disable();
         this.accentColorFormControl.disable();
         this.fontNameFormControl.disable();
+        for (let linkFormGroup of this.getLinksFormGroups()) {
+          linkFormGroup.disable();
+        }
         for (let slotCategoryFormGroup of this.getSlotCategoriesFormGroups()) {
           slotCategoryFormGroup.disable();
         }
-        for (let linkFormGroup of this.getLinksFormGroups()) {
-          linkFormGroup.disable();
+        for (let podiumFormGroup of this.getPodiumFormGroups()) {
+          podiumFormGroup.disable();
         }
       }
     }
@@ -229,6 +244,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       unlisted: formValues.unlisted,
       gameMode: formValues.gameMode,
       bannerLink: formValues.bannerLink,
+      iconLink: formValues.iconLink,
       description: formValues.description,
       links: formValues.links,
       enableTeams: formValues.enableTeams,
@@ -256,6 +272,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
         fontName: formValues.fontName,
       },
       slotCategories: formValues.slotCategories,
+      podium: formValues.podium.map(this.simplifyParticipantFormValue),
     };
     this.submit.emit(updatedTournament);
   }
@@ -266,6 +283,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       this.initialTournament.unlisted !== this.unlistedFormControl.value ||
       this.initialTournament.gameMode !== this.gameModeFormControl.value ||
       this.initialTournament.bannerLink !== this.bannerLinkFormControl.value ||
+      this.initialTournament.iconLink !== this.iconLinkFormControl.value ||
       this.initialTournament.description !== this.descriptionFormControl.value ||
       JSON.stringify(this.initialTournament.links ?? []) !== JSON.stringify(this.linksFormControl.value) ||
       this.initialTournament.enableTeams !== this.enableTeamsFormControl.value ||
@@ -286,7 +304,24 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
       this.initialTournament.theme.primaryColor !== this.primaryColorFormControl.value ||
       this.initialTournament.theme.accentColor !== this.accentColorFormControl.value ||
       this.initialTournament.theme.fontName !== this.fontNameFormControl.value ||
-      JSON.stringify(this.initialTournament.slotCategories ?? []) !== JSON.stringify(this.slotCategoriesFormControl.value);
+      JSON.stringify(this.initialTournament.slotCategories ?? []) !== JSON.stringify(this.slotCategoriesFormControl.value) ||
+      JSON.stringify((this.initialTournament.podium ?? []).map(this.simplifyParticipant)) !== JSON.stringify(this.podiumFormControl.value.map(this.simplifyParticipantFormValue));
+  }
+
+  simplifyParticipant(participant: TournamentPlayer|TournamentTeam) {
+    return participant._id ?? participant;
+  }
+
+  simplifyParticipantFormValue(participant: any) {
+    return participant.id;
+  }
+
+  getLinksFormArray(): FormArray {
+    return this.tournamentForm.controls["links"] as FormArray;
+  }
+
+  getLinksFormGroups(): FormGroup[] {
+    return this.getLinksFormArray().controls as FormGroup[];
   }
 
   getSlotCategoriesFormArray(): FormArray {
@@ -295,6 +330,28 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
 
   getSlotCategoriesFormGroups(): FormGroup[] {
     return this.getSlotCategoriesFormArray().controls as FormGroup[];
+  }
+
+  getPodiumFormArray(): FormArray {
+    return this.tournamentForm.controls["podium"] as FormArray;
+  }
+
+  getPodiumFormGroups(): FormGroup[] {
+    return this.getPodiumFormArray().controls as FormGroup[];
+  }
+
+  addLink(label = "", link = "") {
+    const linkLabelFormControl = new FormControl(label, [Validators.required]);
+    const linkLinkFormControl = new FormControl(link, [Validators.required]);
+    const linkForm = new FormGroup({
+      label: linkLabelFormControl,
+      link: linkLinkFormControl,
+    });
+    this.getLinksFormArray().push(linkForm);
+  }
+
+  deleteLink(index: number) {
+    this.getLinksFormArray().removeAt(index);
   }
 
   addSlotCategory(name = "", color = "", iconLink = "") {
@@ -324,30 +381,31 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
     theArray.insert(event.currentIndex, theControl);
   }
 
-  getLinksFormArray(): FormArray {
-    return this.tournamentForm.controls["links"] as FormArray;
-  }
-
-  getLinksFormGroups(): FormGroup[] {
-    return this.getLinksFormArray().controls as FormGroup[];
-  }
-
-  addLink(label = "", link = "") {
-    const linkLabelFormControl = new FormControl(label, [Validators.required]);
-    const linkLinkFormControl = new FormControl(link, [Validators.required]);
-    const linkForm = new FormGroup({
-      label: linkLabelFormControl,
-      link: linkLinkFormControl,
+  addPodiumParticipant(id = "") {
+    const podiumParticipantIdFormControl = new FormControl(id, [Validators.required]);
+    const podiumParticipantForm = new FormGroup({
+      id: podiumParticipantIdFormControl,
     });
-    this.getLinksFormArray().push(linkForm);
+    this.getPodiumFormArray().push(podiumParticipantForm);
   }
 
-  deleteLink(index: number) {
-    this.getLinksFormArray().removeAt(index);
+  deletePodiumParticipant(index: number) {
+    this.getPodiumFormArray().removeAt(index);
+  }
+
+  rearrangePodiumParticipant(event: CdkDragDrop<string[]>) {
+    const theArray = this.getPodiumFormArray();
+    const theControl = theArray.at(event.previousIndex);
+    theArray.removeAt(event.previousIndex);
+    theArray.insert(event.currentIndex, theControl);
   }
 
   onFileSelectedBanner(event: any) {
     this.uploadBanner.emit(event.target.files[0]);
+  }
+
+  onFileSelectedIcon(event: any) {
+    this.uploadIcon.emit(event.target.files[0]);
   }
 
   onFileSelectedCategoryIcon(name: string, event: any) {
@@ -356,6 +414,14 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
 
   get isTourneyConcluded(): boolean {
     return this.initialTournament?.progress === TournamentProgress.CONCLUDED;
+  }
+
+  get sortedPlayers() {
+    return (this.initialTournament?.players || []).sort(playerNameCompare);
+  }
+
+  get sortedTeams() {
+    return (this.initialTournament?.teams || []).sort(teamNameCompare);
   }
 }
 

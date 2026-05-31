@@ -209,7 +209,7 @@ export class TournamentParticipantsPage implements OnInit {
   }
 
   getPlayerTimezone(player: TournamentPlayer) {
-    return player.appUser?.timezone ? (player.appUser?.timezone >= 0 ? `+${player.appUser?.timezone}` : `${player.appUser?.timezone}`) : "";
+    return player.appUser?.timezone !== undefined ? (player.appUser?.timezone >= 0 ? `+${player.appUser?.timezone}` : `${player.appUser?.timezone}`) : "";
   }
 
   getTeamCaptain(team: TournamentTeam) {

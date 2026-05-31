@@ -1,5 +1,5 @@
 import { GameMode, TournamentProgress } from './enums';
-import { RegistrationSettings, TournamentMatchParticipant, SlotCategory, TournamentTheme, TournamentLink, DiscordSettings, TournamentMatchConditional, TournamentMatchEvent } from './models';
+import { RegistrationSettings, TournamentMatchParticipant, SlotCategory, TournamentTheme, TournamentLink, DiscordSettings, TournamentMatchConditional, TournamentMatchEvent, PlayerOrTeam } from './models';
 
 // Nested DTOs should not be edited. There should be separate methods for that.
 // For example, to make changes to tournament.rounds, use createTournamentRound or editTournamentRound, not editTournament.
@@ -33,10 +33,12 @@ export class TournamentDto {
   readonly registrationSettings?: RegistrationSettings;
   readonly discordSettings?: DiscordSettings;
   readonly bannerLink?: string;
+  readonly iconLink?: string;
   readonly theme?: TournamentTheme;
   readonly description?: string;
   readonly links?: TournamentLink[];
   readonly slotCategories?: SlotCategory[];
+  readonly podium?: PlayerOrTeam[];
 }
 
 export class TournamentRoundDto {

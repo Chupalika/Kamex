@@ -98,6 +98,7 @@ export interface Tournament {
   progress: TournamentProgress;
   gameMode: GameMode;
   bannerLink: string;
+  iconLink: string;
   description: string;
   links: TournamentLink[];
   enableTeams: boolean;
@@ -112,6 +113,7 @@ export interface Tournament {
   discordSettings: DiscordSettings;
   theme: TournamentTheme;
   slotCategories: TournamentSlotCategory[];
+  podium: (TournamentPlayer|TournamentTeam)[];
 }
 
 export interface RegistrationSettings {

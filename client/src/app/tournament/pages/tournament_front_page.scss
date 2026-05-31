@@ -29,6 +29,30 @@
   .links-button {
     margin-top: 40px;
   }
+
+  mat-table {
+    border: lightgray 2px solid;
+
+    .table-cell {
+      font-weight: bold;
+    }
+
+    .table-cell-x {
+      flex-grow: 0;
+    }
+
+    .placement-1 {
+      color: gold;
+    }
+
+    .placement-2 {
+      color: silver;
+    }
+
+    .placement-3 {
+      color: peru;
+    }
+  }
 }
 
 .front-page-body {
@@ -41,54 +65,4 @@
     height: auto;
     display: block;
   }
-}
-
-.scoresheet-title {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.settings-row {
-  padding-bottom: 10px;
-}
-
-.scoresheet-test {
-  min-width: unset;
-}
-
-.scoresheet-header-beatmap {
-  text-align: center;
-  width: 500px;
-}
-
-.scoresheet-header-player {
-  text-align: center;
-  width: 200px;
-}
-
-.scoresheet-table {
-  display: flex;
-  flex-direction: column;
-}
-
-.scoresheet-row {
-  display: flex;
-}
-
-.scoresheet-beatmap-item {
-  display: flex;
-  justify-content: center;
-  align-self: center;
-  padding: 10px;
-  min-width: 500px;
-  max-width: 500px;
-}
-
-.scoresheet-player-item {
-  display: flex;
-  justify-content: center;
-  align-self: center;
-  padding: 10px;
-  min-width: 200px;
-  max-width: 200px;
 }

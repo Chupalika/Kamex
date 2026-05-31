@@ -10,7 +10,7 @@
                        !hasPermission(TournamentStaffPermission.MANAGE_SLOTS) &&
                        !hasPermission(TournamentStaffPermission.MANAGE_MATCHES) &&
                        !hasPermission(TournamentStaffPermission.SUBMIT_MATCHES)">
-    <div class="mat-headline-5">You are not a staff member or you don't have any permissions right now.</div>
+    <div class="mat-headline-5">{{ "tournament.settings.noPermissions" | transloco }}</div>
   </ng-container>
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS)">
@@ -20,15 +20,16 @@
       [requestInProgress]="requestInProgress"
       (submit)="submitEditTournamentForm($event)"
       (uploadBanner)="uploadTourneyBanner($event)"
+      (uploadIcon)="uploadTourneyIcon($event)"
       (uploadCategoryIcon)="uploadCategoryIcon($event)">
     </tournament-settings-editor>
   </ng-container>
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_PLAYERS)">
-    <div class="mat-headline-5 section-label">Player Editor</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.playerEditor" | transloco }}</div>
     <form [formGroup]="playerEditorForm" class="tourney-form">
       <mat-form-field>
-        <mat-label>Player</mat-label>
+        <mat-label>{{ "tournament.common.player" | transloco }}</mat-label>
         <mat-select formControlName="selectedPlayer" (selectionChange)="switchSelectedPlayer($event.value)">
           <mat-option value="-1">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let player of players" [value]="player.playerId">{{ player.username }}</mat-option>
@@ -55,15 +56,15 @@
       [disabled]="isTourneyConcluded || requestInProgress"
       (click)="refreshAllPlayerData()"
     >
-      Refresh all player data
+      {{ "tournament.participants.refreshAllPlayerData" | transloco }}
     </button>
   </ng-container>
 
   <ng-container *ngIf="isTeamsEnabled && hasPermission(TournamentStaffPermission.MANAGE_TEAMS)">
-    <div class="mat-headline-5 section-label">Team Editor</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.teamEditor" | transloco }}</div>
     <form [formGroup]="teamEditorForm" class="tourney-form">
       <mat-form-field>
-        <mat-label>Team</mat-label>
+        <mat-label>{{ "tournament.common.team" | transloco }}</mat-label>
         <mat-select formControlName="selectedTeam" (selectionChange)="switchSelectedTeam($event.value)">
           <mat-option value="">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let team of teams" [value]="team._id">{{ team.name }}</mat-option>
@@ -82,10 +83,10 @@
   </ng-container>
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_STAFF_MEMBERS)">
-    <div class="mat-headline-5 section-label">Staff Member Editor</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.staffMemberEditor" | transloco }}</div>
     <form [formGroup]="staffMemberEditorForm" class="tourney-form">
       <mat-form-field>
-        <mat-label>Staff Member</mat-label>
+        <mat-label>{{ "tournament.common.staffMember" | transloco }}</mat-label>
         <mat-select formControlName="selectedStaffMember" (selectionChange)="switchSelectedStaffMember($event.value)">
           <mat-option value="-1">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let staffMember of staffMembers" [value]="staffMember.playerId">{{ staffMember.username }}</mat-option>
@@ -103,10 +104,10 @@
   </ng-container>
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_STAFF_ROLES)">
-    <div class="mat-headline-5 section-label">Staff Role Editor</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.staffRoleEditor" | transloco }}</div>
     <form [formGroup]="staffRoleEditorForm" class="tourney-form">
       <mat-form-field>
-        <mat-label>Staff Role</mat-label>
+        <mat-label>{{ "tournament.common.staffRole" | transloco }}</mat-label>
         <mat-select formControlName="selectedStaffRole" (selectionChange)="switchSelectedStaffRole($event.value)">
           <mat-option value="">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let staffRole of staffRoles" [value]="staffRole._id">{{ staffRole.name }}</mat-option>
@@ -136,9 +137,9 @@
   </div>
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_ROUNDS)">
-    <div class="mat-headline-5 section-label">Round Editor</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.roundEditor" | transloco }}</div>
     <ng-container *ngIf="isLoadingTourneyRound">
-      <div class="mat-headline-6 section-label">Loading Tourney Round...</div>
+      <div class="mat-headline-6 section-label">{{ "common.loading" | transloco }}</div>
     </ng-container>
     <tournament-round-editor
       [round]="selectedRound"
@@ -150,7 +151,7 @@
   </ng-container>
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_SLOTS) && selectedRound">
-    <div class="mat-headline-5 section-label">Slot Editor</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.slotEditor" | transloco }}</div>
     <item-selector
       class="selector"
       [labels]="slotLabels"
@@ -169,7 +170,7 @@
   </ng-container>
 
   <ng-container *ngIf="selectedRound && (hasPermission(TournamentStaffPermission.MANAGE_MATCHES))">
-    <div class="mat-headline-5 section-label">Match Editor</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.matchEditor" | transloco }}</div>
     <item-selector
       class="selector"
       [labels]="matchLabels"
@@ -192,24 +193,11 @@
   </ng-container>
 
   <ng-container *ngIf="!isTourneyConcluded && selectedRound && hasPermission(TournamentStaffPermission.SUBMIT_MATCHES)">
-    <div class="mat-headline-5 section-label">Submit Match</div>
+    <div class="mat-headline-5 section-label">{{ "tournament.settings.submitMatch" | transloco }}</div>
     <tournament-submit-match-editor
       [matches]="matches"
       [requestInProgress]="requestInProgress"
       (submit)="submitMatch($event)">
     </tournament-submit-match-editor>
-    <!--
-    <form [formGroup]="submitMatchForm" (ngSubmit)="submitMatch()" class="tourney-form">
-      <mat-form-field>
-        <mat-label>Match ID</mat-label>
-        <input matInput type="number" formControlName="matchId">
-      </mat-form-field>
-      <button
-        mat-raised-button
-        type="submit"
-        color="primary"
-        [disabled]="!submitMatchForm.valid || requestInProgress">Submit</button>
-    </form>
-    -->
   </ng-container>
 </div>

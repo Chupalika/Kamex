@@ -6,6 +6,29 @@
     <div class="front-page-header">
       <div class="mat-headline-4">{{ tournament.name }}</div>
       <div class="mat-body-1">{{ "tournament.home.currentStatus" | transloco }} <span class="tournament-progress">{{ "tournament.common." + tournament.progress | transloco }}</span></div>
+      <ng-container *ngIf="tournament.progress === TournamentProgress.CONCLUDED && tournament.podium && tournament.podium.length > 0">
+        <div class="mat-headline-6">{{ "tournament.home.podium" | transloco }}</div>
+        <mat-table [dataSource]="tournament.podium" class="mat-elevation-z8 podium-table">
+          <ng-container matColumnDef="placement" class="table-cell">
+            <mat-cell *matCellDef="let participant; let i = index" class="table-cell table-cell-x" [ngClass]="'placement-' + (i + 1)">{{ i + 1 }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="participant" class="table-cell">
+            <mat-cell *matCellDef="let participant; let i = index" class="table-cell" [ngClass]="'placement-' + (i + 1)">
+              <tournament-player-label
+                *ngIf="participant.username"
+                [player]="participant"
+                [gameMode]="tournament.gameMode"
+              ></tournament-player-label>
+              <tournament-team-label
+                *ngIf="participant.name"
+                [team]="participant"
+                [gameMode]="tournament.gameMode"
+              ></tournament-team-label>
+            </mat-cell>
+          </ng-container>
+          <mat-row *matRowDef="let row; columns: ['placement', 'participant'];"></mat-row>
+        </mat-table>
+      </ng-container>
       <div class="links-button" *ngIf="tournament.links.length > 0">
         <button mat-raised-button color="primary" [matMenuTriggerFor]="linksMenu">{{ "tournament.home.links" | transloco }}</button>
         <mat-menu #linksMenu="matMenu">

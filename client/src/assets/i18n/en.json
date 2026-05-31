@@ -34,7 +34,9 @@
       "participant": "Participant",
       "participants": "Participants",
       "staff": "Staff",
+      "staffMember": "Staff Member",
       "staffMembers": "Staff Members",
+      "staffRole": "Staff Role",
       "playerFlags": "Player flags",
       "tableView": "Table view",
       "copyTable": "Copy Table",
@@ -49,7 +51,8 @@
     },
     "home": {
       "currentStatus": "Current status:",
-      "links": "Links"
+      "links": "Links",
+      "podium": "Podium"
     },
     "registration": {
       "registrationStatus": "registration status",
@@ -195,10 +198,12 @@
       "mods": "Mods"
     },
     "settings": {
+      "noPermissions": "You are not a staff member or you don't have any permissions right now.",
       "playerEditor": "Player Editor",
       "teamEditor": "Team Editor",
       "staffMemberEditor": "Staff Member Editor",
       "staffRoleEditor": "Staff Role Editor",
+      "roundEditor": "Round Editor",
       "matchEditor": "Match Editor",
       "slotEditor": "Slot Editor",
       "submitMatch": "Submit match",

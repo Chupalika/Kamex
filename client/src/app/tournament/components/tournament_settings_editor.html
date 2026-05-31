@@ -22,6 +22,7 @@
       <span [ngClass]="{'active': initialTournament.progress === 'concluded'}">Concluded</span>
       <mat-icon class="info-icon" matTooltip="Everything is locked in place">info</mat-icon>
     </div>
+    <div *ngIf="initialTournament.progress === 'concluded'" class="mat-body-1">If you would like to make changes to a concluded tournament, please contact Chupalika on osu! or ryko_ on discord.</div>
     <button
         mat-raised-button
         class="advance-stage-button"
@@ -59,6 +60,29 @@
         type="button"
         color="primary"
         (click)="fileUploadBanner.click()"
+        [disabled]="isTourneyConcluded || requestInProgress || hasChanges()"
+      >
+        <mat-icon>attach_file</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="banner-link-wrapper">
+    <mat-form-field>
+      <mat-label>Icon</mat-label>
+      <input matInput type="text" formControlName="iconLink">
+    </mat-form-field>
+    <input type="file" style="display: none;" (change)="onFileSelectedIcon($event)" #fileUploadIcon>
+    <div
+      class="button-wrapper"
+      [matTooltip]="hasChanges() ? 'Please save pending changes first.' : 'Upload an image for the tournament icon. Saves immediately.'"
+      matTooltipPosition="right"
+    >
+      <button
+        mat-mini-fab
+        type="button"
+        color="primary"
+        (click)="fileUploadIcon.click()"
         [disabled]="isTourneyConcluded || requestInProgress || hasChanges()"
       >
         <mat-icon>attach_file</mat-icon>
@@ -220,6 +244,31 @@
             </button>
           </div>
           <button mat-icon-button type="button" (click)="deleteSlotCategory(i)" [disabled]="isTourneyConcluded"><mat-icon>delete</mat-icon></button>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <ng-container formArrayName="podium">
+    <div class="mat-body-1 slot-categories-header">
+      Podium
+      <button mat-icon-button type="button" color="primary" (click)="addPodiumParticipant()" [disabled]="isTourneyConcluded"><mat-icon>add</mat-icon></button>
+    </div>
+    <div *ngIf="getPodiumFormGroups().length == 0" class="mat-body-1">None</div>
+    <div *ngIf="getPodiumFormGroups().length > 0" cdkDropList (cdkDropListDropped)="rearrangePodiumParticipant($event)">
+      <ng-container *ngFor="let podiumParticipantForm of getPodiumFormGroups(); let i = index">
+        <div class="slot-category-form-row" [formGroup]="podiumParticipantForm" cdkDrag>
+          <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+          <mat-form-field>
+            <mat-label>Participant</mat-label>
+            <mat-select formControlName="id">
+              <ng-container *ngIf="enableTeamsFormControl.value">
+                <mat-option *ngFor="let team of sortedTeams" [value]="team._id">{{ team.name }}</mat-option>
+              </ng-container>
+              <mat-option *ngFor="let player of sortedPlayers" [value]="player._id">{{ player.username }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button mat-icon-button type="button" (click)="deletePodiumParticipant(i)" [disabled]="isTourneyConcluded"><mat-icon>delete</mat-icon></button>
         </div>
       </ng-container>
     </div>

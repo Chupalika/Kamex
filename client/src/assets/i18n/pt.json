@@ -34,7 +34,9 @@
       "participant": "Participante",
       "participants": "Participantes",
       "staff": "Equipe",
+      "staffMember": "Membro da Equipe",
       "staffMembers": "Membros da Equipe",
+      "staffRole": "Staff Role",
       "playerFlags": "Bandeira do jogador",
       "tableView": "Table view",
       "copyTable": "Copiar Tabela",
@@ -49,7 +51,8 @@
     },
     "home": {
       "currentStatus": "Situação atual:",
-      "links": "Links"
+      "links": "Links",
+      "podium": "Podium"
     },
     "registration": {
       "registrationStatus": "Status da inscrição",
@@ -195,10 +198,12 @@
       "mods": "Mods"
     },
     "settings": {
+      "noPermissions": "You are not a staff member or you don't have any permissions right now.",
       "playerEditor": "Editor de Jogador",
       "teamEditor": "Editor de Time",
       "staffMemberEditor": "Staff Member Editor",
       "staffRoleEditor": "Staff Role Editor",
+      "roundEditor": "Round Editor",
       "matchEditor": "Editor de Partida",
       "slotEditor": "Slot Editor",
       "submitMatch": "Submit match",
