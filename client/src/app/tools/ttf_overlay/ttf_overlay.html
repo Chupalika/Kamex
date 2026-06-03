@@ -1,0 +1,124 @@
+<div class="stream-area">
+  <div class="teamred-points-overlay" [class.hide]="!enablePointsOverlay">
+    <ng-container *ngFor="let player of redTeamPlayers">
+      <div class="player-name redteam" [class.player-name-active]="player.isActive">{{ player.username }}</div>
+      <div class="player-points redteam">
+        <ng-container *ngIf="player.points <= 5">
+          <img *ngFor="let point of pointsArray; index as i" class="player-point" [src]="pointIcon" [class.hide]="shouldHideRedPoint(player, i)">
+        </ng-container>
+        <ng-container *ngIf="player.points > 5">
+          <img class="player-point" [src]="pointIcon"> x{{ player.points }}
+        </ng-container>
+      </div>
+    </ng-container>
+    <div class="trap-cards">
+      <img *ngFor="let card of redTeamCards" class="trap-card" [src]="card.isActive ? card.activeIcon() : card.inactiveIcon()">
+    </div>
+  </div>
+  <div class="teamblue-points-overlay" [class.hide]="!enablePointsOverlay">
+    <ng-container *ngFor="let player of blueTeamPlayers">
+      <div class="player-name blueteam" [class.player-name-active]="player.isActive">{{ player.username }}</div>
+      <div class="player-points blueteam">
+        <ng-container *ngIf="player.points <= 5">
+          <img *ngFor="let point of pointsArray; index as i" class="player-point" [src]="pointIcon" [class.hide]="shouldHideBluePoint(player, i)">
+        </ng-container>
+        <ng-container *ngIf="player.points > 5">
+          <img class="player-point" [src]="pointIcon"> x{{ player.points }}
+        </ng-container>
+      </div>
+    </ng-container>
+    <div class="trap-cards">
+      <img *ngFor="let card of blueTeamCards" class="trap-card" [src]="card.isActive ? card.activeIcon() : card.inactiveIcon()">
+    </div>
+  </div>
+  <div *ngFor="let client of tourneyClients; let i = index" [ngClass]="getHitOverlayClass(i)" [class.hide]="!enableHitsOverlay">
+    <div class="hits">
+      <div class="hit ok">
+        <p class="counter-count">{{ client.count100 }}</p><p class="counter-label">OK</p>
+      </div>
+      <div class="hit miss">
+        <p class="counter-count">{{ client.countMiss }}</p><p class="counter-label">MISS</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="control-area">
+  <div class="player-control">
+    <div class="control-title">Team Red</div>
+    <div *ngFor="let player of redTeamPlayers">
+      <span class="player-control-label">Name</span><input class="player-control-input player-name-input" (input)="changeName(player, $event)">
+      <span class="player-control-label">Points</span>
+      <span class="player-control-points">{{ player.points }}</span>
+      <button class="control-point-button" (click)="addPoint(player)">+1</button>
+      <button class="control-point-button" (click)="subtractPoint(player)">-1</button>
+    </div>
+  </div>
+  <div class="player-control">
+    <div class="control-title">Team Blue</div>
+    <div *ngFor="let player of blueTeamPlayers">
+      <span class="player-control-label">Name</span><input class="player-control-input player-name-input" (input)="changeName(player, $event)">
+      <span class="player-control-label">Points</span>
+      <span class="player-control-points">{{ player.points }}</span>
+      <button class="control-point-button" (click)="addPoint(player)">+1</button>
+      <button class="control-point-button" (click)="subtractPoint(player)">-1</button>
+    </div>
+  </div>
+  <div class="toggle-controls">
+    <div class="control-title">Toggles</div>
+    <div class="toggle-row">
+      <div class="toggle-column">
+        <button *ngFor="let card of redTeamCards; index as i" class="toggle-button" (click)="card.isActive = !card.isActive">
+          {{ card.isActive ? 'Disable' : 'Enable' }} red card {{ card.name }}
+        </button>
+        <button *ngFor="let card of blueTeamCards; index as i" class="toggle-button" (click)="card.isActive = !card.isActive">
+          {{ card.isActive ? 'Disable' : 'Enable' }} blue card {{ card.name }}
+        </button>
+      </div>
+      <div class="toggle-column">
+        <button class="toggle-button" (click)="enablePointsOverlay = !enablePointsOverlay">{{ enablePointsOverlay ? 'Disable' : 'Enable' }} points overlays</button>
+        <button class="toggle-button" (click)="enableHitsOverlay = !enableHitsOverlay">{{ enableHitsOverlay ? 'Disable' : 'Enable' }} hits overlays</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="settings-area">
+  <form [formGroup]="settingsForm" (ngSubmit)="updateSettings()" class="settings-form" autocomplete="off">
+    <mat-form-field appearance="outline">
+      <mat-label>Card 1 Red Active Icon URL</mat-label>
+      <input matInput type="text" formControlName="card1RedActiveIcon">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Card 2 Red Active Icon URL</mat-label>
+      <input matInput type="text" formControlName="card2RedActiveIcon">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Card 1 Blue Active Icon URL</mat-label>
+      <input matInput type="text" formControlName="card1BlueActiveIcon">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Card 2 Blue Active Icon URL</mat-label>
+      <input matInput type="text" formControlName="card2BlueActiveIcon">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Card 1 Inactive Icon URL</mat-label>
+      <input matInput type="text" formControlName="card1InactiveIcon">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Card 2 Inactive Icon URL</mat-label>
+      <input matInput type="text" formControlName="card2InactiveIcon">
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Point Icon URL</mat-label>
+      <input matInput type="text" formControlName="pointIcon">
+    </mat-form-field>
+    <button
+      mat-raised-button
+      class="update-button"
+      type="submit"
+      color="primary"
+      [disabled]="!settingsForm.valid || !settingsHasChanges()"
+    >
+      Update
+    </button>
+  </form>
+</div>

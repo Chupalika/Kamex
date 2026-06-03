@@ -15,6 +15,7 @@ import { TeamReveal } from './tools/team_reveal/team_reveal';
 import { StatsReveal } from './tools/stats_reveal/stats_reveal';
 import { LMSOverlay } from './tools/lms_overlay/lms_overlay';
 import { SuijiTeamPairer } from './tools/suiji_team_pairer/suiji_team_pairer';
+import { TTFOverlay } from './tools/ttf_overlay/ttf_overlay';
 
 const routes: Routes = [
   { path: '', component: FrontPage, title: "Kamex" },
@@ -32,6 +33,7 @@ const routes: Routes = [
   { path: 'tools/stats-reveal/:acronym/:roundId', component: StatsReveal },
   { path: 'tools/suiji-team-pairer', component: SuijiTeamPairer },
   { path: 'tools/lms-overlay', component: LMSOverlay },
+  { path: 'tools/ttf-overlay', component: TTFOverlay },
 ];
 
 @NgModule({

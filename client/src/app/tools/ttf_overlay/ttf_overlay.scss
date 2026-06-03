@@ -1,0 +1,215 @@
+* {
+  padding: 0px;
+  margin: 0px;
+  font-family: Helvetica;
+  transition: opacity 1s;
+}
+
+.stream-area {
+  width: 1600px;
+  height: 900px;
+  position: relative;
+
+  .teamred-points-overlay {
+    position: absolute;
+    top: 130px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    width: 230px;
+    overflow: hidden;
+  }
+
+  .teamblue-points-overlay {
+    position: absolute;
+    top: 130px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    width: 230px;
+    overflow: hidden;
+    align-items: end;
+  }
+
+  .player-name {
+    display: flex;
+    font-size: 24px;
+    font-weight: bold;
+    height: 35px;
+
+    &.player-name-active {
+      color: rgb(225,204,0);
+    }
+  }
+
+  .player-points {
+    display: flex;
+    height: 40px;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: bold;
+
+    .player-point {
+      width: 40px;
+      padding: 4px;
+    }
+  }
+  
+  .trap-cards {
+    display: flex;
+    gap: 20px;
+
+    .trap-card {
+      display: flex;
+      width: 100px;
+    }
+  }
+
+  .redteam {
+    align-self: start;
+  }
+
+  .blueteam {
+    align-self: end;
+  }
+
+  .client0-hits-overlay {
+    position: absolute;
+    top: 150px;
+    left: 480px;
+  }
+
+  .client1-hits-overlay {
+    position: absolute;
+    top: 450px;
+    left: 480px;
+  }
+
+  .client2-hits-overlay {
+    position: absolute;
+    top: 150px;
+    left: 1010px;
+  }
+
+  .client3-hits-overlay {
+    position: absolute;
+    top: 450px;
+    left: 1010px;
+  }
+
+  .hits {
+    display: flex;
+
+    .hit {
+      display: flex;
+      align-items: end;
+      padding: 7px 5px;
+      align-self: center;
+      text-align: center;
+      min-width: 45px;
+      -webkit-text-stroke-width: 0.5px;
+      -webkit-text-stroke-color: black;
+
+      &.ok {
+        color: rgb(135, 178, 0);
+      }
+
+      &.miss {
+        color: rgb(233, 20, 33);
+      }
+
+      .counter-count {
+        font-size: 20px;
+      }
+
+      .counter-label {
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+.control-area {
+  display: flex;
+  background-color: white;
+  margin-top: 10px;
+  font-size: 24px;
+
+  .control-title {
+    padding-bottom: 10px;
+    font-weight: bold;
+  }
+
+  .player-control {
+    padding: 10px;
+    margin-right: 100px;
+
+    .player-control-label {
+      margin-right: 10px;
+    }
+
+    .player-control-points {
+      margin-right: 10px;
+    }
+
+    .player-control-input {
+      font-size: 24px;
+      margin-right: 10px;
+      width: 120px;
+    }
+
+    .player-name-input {
+      width: 200px;
+    }
+
+    .control-point-button {
+      vertical-align: middle;
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .toggle-controls {
+    display: flex;
+    flex-direction: column;
+
+    .toggle-row {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .toggle-column {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-button {
+      margin-top: 10px;
+      width: 180px;
+      height: 40px;
+    }
+  }
+}
+
+.settings-area {
+  margin-top: 20px;
+  
+  .settings-form {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 1600px;
+    background-color: green;
+    align-items: center;
+
+    mat-form-field {
+      margin-top: 20px;
+      margin-right: 20px;
+      min-width: 250px;
+    }
+  }
+}
+
+.hide {
+  opacity: 0;
+}

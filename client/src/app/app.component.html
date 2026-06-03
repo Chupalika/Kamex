@@ -1,5 +1,5 @@
-<body class="mat-app-background">
-  <div class="app-wrapper">
+<body [ngClass]="overlayMode ? 'transparent-background' : 'mat-app-background'">
+  <div [class]="overlayMode ? '' : 'app-wrapper'">
     <nav-bar *ngIf="showNavbar"></nav-bar>
     <router-outlet></router-outlet>
   </div>
