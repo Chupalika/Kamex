@@ -156,11 +156,11 @@ export class TournamentMappoolPage implements OnInit {
 
   copyTable() {
     const slots = this.sortedSlots;
-    const header = ['Label', 'Artist', 'Title', 'Difficulty', 'Mapper', 'ID', 'CS', 'AR', 'OD', 'HP' ,'SR' ,'Length' ,'BPM'];
+    const header = ['Label', 'Artist', 'Title', 'Difficulty', 'Mapper', 'ID', 'CS', 'AR', 'OD', 'HP' ,'SR' ,'Length' ,'BPM', 'Custom Map', 'Custom Track'];
     const rows = slots.map(slot => {
       const bm = slot.beatmap;
       return [slot.label, bm.artist, bm.title, bm.difficultyName, bm.mapper, bm.beatmapId,
-              slotCs(slot), slotAr(slot), slotOd(slot), slotHp(slot), slotStarRating(slot), slotDisplayLength(slot), slotBpm(slot)].join('\t');
+              slotCs(slot), slotAr(slot), slotOd(slot), slotHp(slot), slotStarRating(slot), slotDisplayLength(slot), slotBpm(slot), slot.isCustomMap, slot.isCustomTrack].join('\t');
     });
     const theText = [header.join('\t'), ...rows].join('\n');
     navigator.clipboard.writeText(theText);
@@ -169,9 +169,9 @@ export class TournamentMappoolPage implements OnInit {
 
   get mappoolColumns() {
     if ([GameMode.TAIKO, GameMode.MANIA].includes(this.tournament!.gameMode)) {
-      return ["label", "artist", "title", "difficulty", "mapper", "id", "sr", "length" ,"bpm", "od", "hp"];
+      return ["label", "artist", "title", "difficulty", "mapper", "id", "sr", "length" ,"bpm", "od", "hp", "isCustomMap", "isCustomTrack"];
     } else {
-      return ["label", "artist", "title", "difficulty", "mapper", "id", "sr", "length" ,"bpm", "cs", "ar", "od", "hp"];
+      return ["label", "artist", "title", "difficulty", "mapper", "id", "sr", "length" ,"bpm", "cs", "ar", "od", "hp", "isCustomMap", "isCustomTrack"];
     }
   }
 
@@ -210,6 +210,7 @@ export class TournamentMappoolPage implements OnInit {
         [requestInProgress]="requestInProgress"
         (submit)="submitUpdateSlotForm($event)"
         (remove)="removeSlot($event)"
+        (refresh)="refreshBeatmapData($event)"
       >
       </tournament-slot-editor>
     </mat-dialog-content>
@@ -304,6 +305,23 @@ export class SlotEditorDialog {
         this.snackBar.open(this.translocoService.translate("tournament.settings.removedSlot"), "", { duration: 10000 });
       });
   }
+
+  refreshBeatmapData(slot: MappoolSlot) {
+      this.requestInProgress = true;
+      this.tournamentsService.refreshTournamentSlot(this.data.acronym, this.data.roundId, slot._id)
+        .pipe(catchError((error) => {
+          this.requestInProgress = false;
+          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
+          return throwError(error);
+        }))
+        .subscribe((refreshedSlot) => {
+          this.requestInProgress = false;
+          const index = this.workingSlots.findIndex((s) => s._id === refreshedSlot._id);
+          this.workingSlots[index] = refreshedSlot;
+          this.selectedSlot = refreshedSlot;
+          this.snackBar.open(this.translocoService.translate("tournament.settings.beatmapDataRefreshed"), "", { duration: 10000 });
+        });
+    }
 }
 
 @NgModule({

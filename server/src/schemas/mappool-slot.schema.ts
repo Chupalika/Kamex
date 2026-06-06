@@ -23,6 +23,12 @@ export class MappoolSlot {
   
     @Prop({ required: true, default: [] })
     validModCombinations: ScoreMod[][];
+
+    @Prop({ required: true, default: false })
+    isCustomMap: boolean;
+
+    @Prop({ required: true, default: false })
+    isCustomTrack: boolean;
   
     @Prop()
     gameMode: GameMode;

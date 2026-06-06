@@ -10,7 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { TranslocoModule } from '@jsverse/transloco';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { catchError, finalize, map, switchMap, take } from 'rxjs/operators';
 import { Observable, Subscription, of, throwError } from "rxjs";
 
@@ -90,7 +90,8 @@ export class TournamentSettingsPage implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private titleService: Title) {
+    private titleService: Title,
+    private translocoService: TranslocoService) {
       this.selectedPlayerFormControl = new FormControl("-1");
       this.playerEditorForm = new FormGroup({
         selectedPlayer: this.selectedPlayerFormControl,
@@ -153,34 +154,15 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.editTournament(partialTournament)
         .pipe(catchError((error) => {
           this.requestInProgress = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
           return throwError(error);
         }))
         .subscribe((updatedTournament) => {
           this.tournament = updatedTournament;
           this.requestInProgress = false;
-          this.snackBar.open("Successfully edited settings.", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.settings.tourneySettingsEdited"), "", { duration: 10000 });
         });
   }
-
-  /*
-  addPlayer() {
-    this.requestInProgress = true;
-    const formData = this.addPlayerForm?.getRawValue();
-    if (formData && this.tournament) {
-      this.tournamentsService.addTournamentPlayer(this.tournament?.acronym, formData.playerId)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
-          return throwError(error);
-        })).subscribe((player) => {
-          this.tournament?.players.push(player);
-          this.requestInProgress = false;
-          this.snackBar.open("Successfully added player to tournament.", "", { duration: 10000 });
-        });
-    }
-  }
-  */
 
   refreshAllPlayerData() {
     const dialogRef = this.dialogService.open(RefreshPlayerDataDialog);
@@ -190,14 +172,14 @@ export class TournamentSettingsPage implements OnInit {
         this.tournamentsService.refreshPlayers(this.acronym)
           .pipe(catchError((error) => {
             this.requestInProgress = false;
-            this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+            this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
             return throwError(error);
           })).subscribe((result: any) => {
             this.requestInProgress = false;
             if (result.statusCode === 207 && result.message) {
-              this.snackBar.open("Player data refreshed. " + result.message, "", { duration: 20000 });
+              this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshedWithMessage", { message: result.message }), "", { duration: 20000 });
             } else {
-              this.snackBar.open("Player data refreshed.", "", { duration: 10000 });
+              this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
             }
           });
       }
@@ -210,7 +192,7 @@ export class TournamentSettingsPage implements OnInit {
         this.tournamentsService.refreshPlayer(this.acronym, player.playerId)
           .pipe(catchError((error) => {
             this.requestInProgress = false;
-            this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+            this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
             return throwError(error);
           }))
           .subscribe((refreshedPlayer) => {
@@ -218,7 +200,7 @@ export class TournamentSettingsPage implements OnInit {
             const index = this.players.findIndex((p) => p.playerId === refreshedPlayer.playerId);
             this.players[index] = refreshedPlayer;
             this.selectedPlayer = refreshedPlayer;
-            this.snackBar.open("Player data refreshed.", "", { duration: 10000 });
+            this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
           });
   }
 
@@ -227,7 +209,7 @@ export class TournamentSettingsPage implements OnInit {
     return this.tournamentsService.getTournament(this.acronym)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       }))
       .subscribe((tourney) => {
@@ -266,7 +248,7 @@ export class TournamentSettingsPage implements OnInit {
       catchError((error) => {
         this.requestInProgress = false;
         this.isLoadingTourneyRound = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       }))
       .subscribe(({ tourneyRound, mappool }) => {
@@ -298,21 +280,21 @@ export class TournamentSettingsPage implements OnInit {
     let successMessage = "";
     if (!this.selectedPlayer) {
       request = this.tournamentsService.addTournamentPlayer(this.acronym, partialPlayer.playerId, partialPlayer);
-      successMessage = "Successfully added {} as tournament player.";
+      successMessage = "tournament.settings.addedPlayer";
     } else {
       request = this.tournamentsService.editTournamentPlayer(this.acronym, this.selectedPlayer.playerId, partialPlayer);
-      successMessage = "Successfully edited tournament player.";
+      successMessage = "tournament.settings.editedPlayer";
     }
 
     request.pipe(catchError((error) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedTournamentPlayer) => {
       this.refreshTournament().add(() => {
         this.requestInProgress = false;
         this.selectedPlayer = this.players[this.selectedPlayerIndex];
-        this.snackBar.open(successMessage.replace("{}", updatedTournamentPlayer.username), "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate(successMessage, { username: updatedTournamentPlayer.username }), "", { duration: 10000 });
       });
     });
   }
@@ -322,14 +304,14 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.removeTournamentPlayer(this.acronym, player.playerId)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe(() => {
         this.requestInProgress = false;
         const index = this.players.findIndex((player2) => player2.playerId === player.playerId);
         if (index !== undefined) this.players.splice(index, 1);
         this.switchSelectedPlayer(-1);
-        this.snackBar.open("Successfully removed tournament player.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedPlayer", { username: player.username }), "", { duration: 10000 });
       });
   }
 
@@ -352,15 +334,15 @@ export class TournamentSettingsPage implements OnInit {
     let successMessage = "";
     if (!this.selectedTeam) {
       request = this.tournamentsService.addTournamentTeam(this.acronym, partialTeam);
-      successMessage = "Successfully added tournament team.";
+      successMessage = "tournament.settings.addedTeam";
     } else {
       request = this.tournamentsService.editTournamentTeam(this.acronym, this.selectedTeam._id, partialTeam);
-      successMessage = "Successfully edited tournament team.";
+      successMessage = "tournament.settings.editedTeam";
     }
 
     request.pipe(catchError((error) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedTournamentTeam) => {
       this.refreshTournament().add(() => {
@@ -368,7 +350,7 @@ export class TournamentSettingsPage implements OnInit {
         const newIndex = this.teams.findIndex((team) => team._id === updatedTournamentTeam._id);
         this.selectedTeamIndex = newIndex;
         this.selectedTeam = this.teams[this.selectedTeamIndex];
-        this.snackBar.open(successMessage, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate(successMessage, { teamName: updatedTournamentTeam.name }), "", { duration: 10000 });
       });
     });
   }
@@ -378,14 +360,14 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.removeTournamentTeam(this.acronym, team._id)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe(() => {
         this.requestInProgress = false;
         const index = this.teams.findIndex((team2) => team2._id === team._id);
         if (index !== undefined) this.teams.splice(index, 1);
         this.switchSelectedTeam("");
-        this.snackBar.open("Successfully removed tournament team.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedTeam", { teamName: team.name }), "", { duration: 10000 });
       });
   }
 
@@ -395,14 +377,14 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.uploadTeamImage(this.tournament!.acronym, teamId, event)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       }))
       .subscribe((updatedTeam) => {
         this.refreshTournament().add(() => {
           this.requestInProgress = false;
           this.selectedTeam = this.teams[this.selectedTeamIndex];
-          this.snackBar.open("Successfully updated team image", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.registration.teamImageUpdated"), "", { duration: 10000 });
         });
       });
   }
@@ -412,13 +394,13 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.uploadTourneyBanner(this.tournament!.acronym, event)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       }))
       .subscribe(() => {
         this.refreshTournament().add(() => {
           this.requestInProgress = false;
-          this.snackBar.open("Successfully updated tournament banner", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.settings.tourneyBannerUpdated"), "", { duration: 10000 });
         });
       });
   }
@@ -428,13 +410,13 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.uploadTourneyIcon(this.tournament!.acronym, event)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       }))
       .subscribe(() => {
         this.refreshTournament().add(() => {
           this.requestInProgress = false;
-          this.snackBar.open("Successfully updated tournament icon", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.settings.tourneyIconUpdated"), "", { duration: 10000 });
         });
       });
   }
@@ -444,13 +426,13 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.uploadTourneyCategoryIcon(this.tournament!.acronym, event.name, event.file)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       }))
       .subscribe(() => {
         this.refreshTournament().add(() => {
           this.requestInProgress = false;
-          this.snackBar.open("Successfully updated tournament category icon", "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.settings.categoryIconUpdated"), "", { duration: 10000 });
         });
       });
   }
@@ -474,21 +456,21 @@ export class TournamentSettingsPage implements OnInit {
     let successMessage = "";
     if (!this.selectedStaffMember) {
       request = this.tournamentsService.addTournamentStaffMember(this.acronym, formData.playerId, formData.roles);
-      successMessage = "Successfully added {} as staff member.";
+      successMessage = "tournament.settings.addedStaffMember";
     } else {
       request = this.tournamentsService.editTournamentStaffMember(this.acronym, formData.playerId, formData.roles);
-      successMessage = "Successfully edited staff member.";
+      successMessage = "tournament.settings.editedStaffMember";
     }
 
     request.pipe(catchError((error) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedStaffMember) => {
       this.refreshTournament().add(() => {
         this.requestInProgress = false;
         this.selectedStaffMember = this.staffMembers[this.selectedStaffMemberIndex];
-        this.snackBar.open(successMessage.replace("{}", updatedStaffMember.username), "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate(successMessage, { username: updatedStaffMember.username }), "", { duration: 10000 });
       });
     });
   }
@@ -498,14 +480,14 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.removeTournamentStaffMember(this.acronym, staffMember.playerId)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe(() => {
         this.requestInProgress = false;
         const index = this.staffMembers.findIndex((member) => member.playerId === staffMember.playerId);
         if (index !== undefined) this.staffMembers.splice(index, 1);
         this.switchSelectedStaffMember(-1);
-        this.snackBar.open("Successfully removed staff member.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffMember", { username: staffMember.username }), "", { duration: 10000 });
       });
   }
 
@@ -528,23 +510,23 @@ export class TournamentSettingsPage implements OnInit {
     let successMessage = "";
     if (!this.selectedStaffRole) {
       request = this.tournamentsService.addTournamentStaffRole(this.acronym, formData.name, formData.permissions);
-      successMessage = "Successfully added staff role.";
+      successMessage = "tournament.settings.addedStaffRole";
     } else {
       request = this.tournamentsService.editTournamentStaffRole(
         this.acronym, this.selectedStaffRole._id, formData.name, formData.permissions);
-      successMessage = "Successfully edited staff role.";
+      successMessage = "tournament.settings.editedStaffRole";
     }
 
     request.pipe(catchError((error) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedStaffRole) => {
       this.refreshTournament().add(() => {
         this.requestInProgress = false;
         this.selectedStaffRoleIndex = this.staffRoles.findIndex((role) => role._id === updatedStaffRole._id);
         this.selectedStaffRole = this.staffRoles[this.selectedStaffRoleIndex];
-        this.snackBar.open(successMessage, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate(successMessage, { roleName: updatedStaffRole.name }), "", { duration: 10000 });
       });
     });
   }
@@ -554,14 +536,14 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.removeTournamentStaffRole(this.acronym, staffRole._id)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe(() => {
         this.requestInProgress = false;
         const index = this.staffRoles.findIndex((role) => role._id === staffRole._id);
         if (index !== undefined) this.staffRoles.splice(index, 1);
         this.switchSelectedStaffRole("");
-        this.snackBar.open("Successfully removed staff role.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffRole", { roleName: staffRole.name }), "", { duration: 10000 });
       });
   }
 
@@ -601,23 +583,23 @@ export class TournamentSettingsPage implements OnInit {
     if (!this.selectedRound) {
       request = this.tournamentsService.createTournamentRound(
         this.acronym, partialRound);
-      successMessage = "Successfully created tournament round.";
+      successMessage = "tournament.settings.createdTournamentRound";
     } else {
       request = this.tournamentsService.editTournamentRound(
         this.acronym, this.selectedRound._id, partialRound);
-      successMessage = "Successfully edited tournament round.";
+      successMessage = "tournament.settings.editedTournamentRound";
     }
 
     request.pipe(catchError((error) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedTournamentRound) => {
       this.refreshTournament().add(() => {
         this.refreshRound(updatedTournamentRound._id).add(() => {
           this.requestInProgress = false;
           this.selectedRoundIndex = this.rounds.findIndex((round) => round._id === updatedTournamentRound._id);
-          this.snackBar.open(successMessage, "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
         });
       });
     });
@@ -628,14 +610,14 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.removeTournamentRound(this.acronym, round._id)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe(() => {
         this.requestInProgress = false;
         const index = this.rounds.findIndex((r) => r._id === round._id);
         if (index !== undefined) this.rounds.splice(index, 1);
         this.switchSelectedTournamentRound(-1);
-        this.snackBar.open("Successfully removed tournament round.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedTournamentRound"), "", { duration: 10000 });
       });
   }
 
@@ -657,15 +639,15 @@ export class TournamentSettingsPage implements OnInit {
     let successMessage = "";
     if (!this.selectedSlot) {
       request = this.tournamentsService.addTournamentSlot(this.acronym, this.selectedRound!._id, formData.beatmapId, formData);
-      successMessage = "Successfully added tournament slot.";
+      successMessage = "tournament.settings.addedSlot";
     } else {
       request = this.tournamentsService.editTournamentSlot(this.acronym, this.selectedRound!._id, this.selectedSlot._id, formData.beatmapId, formData);
-      successMessage = "Successfully edited tournament slot.";
+      successMessage = "tournament.settings.editedSlot";
     }
 
     request.pipe(catchError((error) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedTournamentSlot) => {
       this.refreshRound(this.selectedRound!._id).add(() => {
@@ -673,7 +655,7 @@ export class TournamentSettingsPage implements OnInit {
         const newIndex = this.slots.findIndex((slot) => slot._id === updatedTournamentSlot._id);
         this.selectedSlotIndex = newIndex;
         this.selectedSlot = this.slots[newIndex];
-        this.snackBar.open(successMessage, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
       });
     });
   }
@@ -683,53 +665,33 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.removeTournamentSlot(this.acronym, this.selectedRound!._id, slot._id)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe(() => {
         this.requestInProgress = false;
         const index = this.slots.findIndex((s) => s._id === slot._id);
         if (index !== undefined) this.slots.splice(index, 1);
         this.switchSelectedTournamentSlot(-1);
-        this.snackBar.open("Successfully removed tournament slot.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedSlot"), "", { duration: 10000 });
       });
   }
 
-  /*
-  switchSelectedTournamentLobby(index: number) {
-    this.selectedLobbyIndex = index;
-    if (index < 0) this.selectedLobby = undefined;
-    this.selectedLobby = this.selectedRound!.lobbies[index];
-  }
-
-  submitUpdateLobbyForm(formData: any) {
-    if (!formData.id) return;
+  refreshBeatmapData(slot: MappoolSlot) {
     this.requestInProgress = true;
-
-    let request: Observable<TournamentLobby>;
-    let successMessage = "";
-    if (!this.selectedLobby) {
-      request = this.tournamentsService.addTournamentLobby(
-        this.acronym, this.selectedRound!._id, formData.id, formData.time, formData.players, [], formData.matchIds);
-      successMessage = "Successfully added tournament lobby.";
-    } else {
-      request = this.tournamentsService.editTournamentLobby(
-        this.acronym, this.selectedRound!._id, this.selectedLobby._id, formData.id, formData.time, formData.players, [], formData.matchIds);
-      successMessage = "Successfully edited tournament lobby.";
-    }
-
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentLobby) => {
-      this.refreshRound(this.selectedRound!._id).add(() => {
-        this.requestInProgress = false;
-        this.selectedLobby = this.selectedRound!.lobbies[this.selectedLobbyIndex];
-        this.snackBar.open(successMessage, "", { duration: 10000 });
-      });
-    });
+        this.tournamentsService.refreshTournamentSlot(this.acronym, this.selectedRound!._id, slot._id)
+          .pipe(catchError((error) => {
+            this.requestInProgress = false;
+            this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
+            return throwError(error);
+          }))
+          .subscribe((refreshedSlot) => {
+            this.requestInProgress = false;
+            const index = this.slots.findIndex((s) => s._id === refreshedSlot._id);
+            this.slots[index] = refreshedSlot;
+            this.selectedSlot = refreshedSlot;
+            this.snackBar.open(this.translocoService.translate("tournament.settings.beatmapDataRefreshed"), "", { duration: 10000 });
+          });
   }
-  */
 
   get matchLabels() {
     return this.matches.map((match) => match.id);
@@ -750,22 +712,22 @@ export class TournamentSettingsPage implements OnInit {
 
     if (!this.selectedMatch) {
       request = this.tournamentsService.addTournamentMatch(this.acronym, this.selectedRound!._id, partialMatch);
-      successMessage = "Successfully added tournament match.";
+      successMessage = "tournament.settings.addedMatch";
     } else {
       request = this.tournamentsService.editTournamentMatch(this.acronym, this.selectedRound!._id, this.selectedMatch._id, partialMatch);
-      successMessage = "Successfully edited tournament match.";
+      successMessage = "tournament.settings.editedMatch";
     }
 
     request.pipe(catchError((error) => {
       this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
       return throwError(error);
     })).subscribe((updatedTournamentMatch) => {
       this.refreshRound(this.selectedRound!._id).add(() => {
         this.requestInProgress = false;
         this.selectedMatchIndex = this.matches.findIndex((match) => match._id === updatedTournamentMatch._id);
         this.selectedMatch = this.matches[this.selectedMatchIndex];
-        this.snackBar.open(successMessage, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
       });
     });
   }
@@ -775,14 +737,14 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.removeTournamentMatch(this.acronym, this.selectedRound!._id, match._id)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe(() => {
         this.requestInProgress = false;
         const index = this.matches.findIndex((match2) => match2._id === match._id);
         if (index !== undefined) this.matches.splice(index, 1);
         this.switchSelectedTournamentMatch(-1);
-        this.snackBar.open("Successfully removed tournament match.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.removedMatch"), "", { duration: 10000 });
       });
   }
 
@@ -792,11 +754,11 @@ export class TournamentSettingsPage implements OnInit {
     this.tournamentsService.submitMatch(this.acronym, this.selectedRound!._id, formData)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe((updatedTournamentMatch) => {
         this.requestInProgress = false;
-        this.snackBar.open("Successfully submitted match to round.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.submittedMatch"), "", { duration: 10000 });
         const index = this.matches.findIndex((match) => match._id === updatedTournamentMatch._id);
         if (index >= 0) {
           this.matches.splice(index, 1, updatedTournamentMatch);

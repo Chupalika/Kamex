@@ -118,7 +118,6 @@
       "playerId": "Player ID",
       "avgRank": "Avg Rank",
       "copyCsv": "CSVをコピーする",
-      "refreshAllPlayerData": "全プレイヤーデータを更新する",
       "assignSeedsByRank": "順位に基づいてシードを割り当てる",
       "filter": "フィルター",
       "all": "全ての役職",
@@ -126,7 +125,9 @@
       "teamPlayerSort": "チームメンバーの並び替え",
       "noPlayers": "まだ登録されているプレイヤーはいません！",
       "noTeams": "まだ登録されているチームはありません！",
-      "noStaff": "まだスタッフメンバーは登録されていません！"
+      "noStaff": "まだスタッフメンバーは登録されていません！",
+      "playerCsvCopied": "Copied player data csv to clipboard.",
+      "playerSeedsAssigned": "Player seeds assigned."
     },
     "mappools": {
       "mappoolNotPublic": "マッププールはまだ公開されていません！",
@@ -199,16 +200,28 @@
     "settings": {
       "noPermissions": "You are not a staff member or you don't have any permissions right now.",
       "playerEditor": "プレイヤー編集",
+      "refreshPlayerData": "プレイヤーデータを更新する",
+      "refreshAllPlayerData": "全プレイヤーデータを更新する",
       "teamEditor": "チーム編集",
       "staffMemberEditor": "Staff Member Editor",
       "staffRoleEditor": "Staff Role Editor",
       "roundEditor": "Round Editor",
       "matchEditor": "マッチの編集",
       "slotEditor": "Slot Editor",
+      "removeSlot": "Remove slot",
+      "refreshBeatmapData": "Refresh beatmap data",
       "submitMatch": "Submit match",
+      "removeSlotConfirm": "Remove {{ slotLabel }} from the mappool? This will also remove it from stats.",
+      "refreshBeatmapDataConfirm": "Refresh the beatmap data for this slot?",
+      "tourneySettingsEdited": "Successfully edited tourney settings.",
+      "tourneyBannerUpdated": "Updated tournament banner.",
+      "tourneyIconUpdated": "Updated tournament icon.",
+      "catgegoryIconUpdated": "Updated category icon.",
       "addedPlayer": "Successfully added {{username}} as a tournament player.",
       "editedPlayer": "Successfully edited tournament player {{username}}.",
       "removedPlayer": "Successfully removed tournament player {{username}}.",
+      "playerDataRefreshed": "Player data refreshed.",
+      "playerDataRefreshedWithMessage": "Player data refreshed. {{message}}",
       "addedTeam": "Successfully added {{teamName}} as a tournament team.",
       "editedTeam": "Successfully edited tournament team {{teamName}}.",
       "removedTeam": "Successfully removed tournament team {{teamName}}.",
@@ -218,15 +231,17 @@
       "addedStaffRole": "Successfully added staff role {{roleName}}.",
       "editedStaffRole": "Successfully edited staff role {{roleName}}.",
       "removedStaffRole": "Successfully removed staff role {{roleName}}.",
+      "createdTournamentRound": "Successfully created tournament round.",
+      "editedTournamentRound": "Successfully edited tournament round.",
+      "removedTournamentRound": "Successfully removed tournament round.",
       "addedMatch": "Successfully added tournament match.",
       "editedMatch": "Successfully edited tournament match.",
       "removedMatch": "Successfully removed tournament match.",
       "addedSlot": "Successfully added tournament slot.",
       "editedSlot": "Successfully edited tournament slot.",
       "removedSlot": "Successfully removed tournament slot.",
-      "playerDataRefreshed": "Player data refreshed.",
-      "playerSeedsAssigned": "Player seeds assigned.",
-      "playerCsvCopied": "Copied player data csv to clipboard."
+      "beatmapDataRefreshed": "Beatmap data refreshed.",
+      "submittedMatch": "Successfully submitted match results."
     }
   }
 }

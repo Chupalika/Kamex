@@ -111,6 +111,8 @@ export class MappoolSlotDto {
   readonly validModCombinations?: OsuModDto[][];
   readonly gameMode?: GameMode;
   readonly adjustedStarRating?: number;
+  readonly isCustomMap?: boolean;
+  readonly isCustomTrack?: boolean;
 }
 
 export class ScoresheetDto {

@@ -23,11 +23,16 @@
       <mat-option *ngFor="let gameMode of ['osu', 'taiko', 'catch', 'mania']" [value]="gameMode">{{ gameMode }}</mat-option>
     </mat-select>
   </mat-form-field>
+  <mat-checkbox formControlName="isCustomMap">Custom Map</mat-checkbox>
+  <mat-checkbox formControlName="isCustomTrack">Custom Track</mat-checkbox>
+  
   <button
-      mat-raised-button
-      type="submit"
-      color="primary"
-      [disabled]="disabled || !editSlotForm.valid || requestInProgress || !hasChanges()">
+    mat-raised-button
+    class="add-button"
+    type="submit"
+    color="primary"
+    [disabled]="disabled || !editSlotForm.valid || requestInProgress || !hasChanges()"
+  >
     {{ slot ? "Update" : "Add" }}
   </button>
   <button
@@ -39,5 +44,15 @@
     [disabled]="disabled || !slot || requestInProgress"
   >
     Remove
+  </button>
+  <button
+    mat-raised-button
+    class="add-button"
+    type="button"
+    color="warn"
+    (click)="refreshSlot()"
+    [disabled]="disabled || !slot || requestInProgress"
+  >
+    Refresh beatmap data
   </button>
 </form>

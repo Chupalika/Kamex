@@ -11,7 +11,7 @@
           [selectedIndex]="selectedRoundIndex"
           (selectedIndexChange)="switchSelectedRoundIndex($event)"
       ></item-selector>
-      <div class="display-settings" [class.mobile-mode]="mobileMode">
+      <div *ngIf="selectedRoundId && !loadingRound" class="display-settings" [class.mobile-mode]="mobileMode">
         <a
           *ngIf="mappool.downloadUrl"
           mat-raised-button
@@ -115,6 +115,14 @@
             <ng-container matColumnDef="hp" class="table-cell">
               <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">HP</mat-header-cell>
               <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.beatmap.hp }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="isCustomMap" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">Custom Map</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.isCustomMap ? '✅' : '' }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="isCustomTrack" class="table-cell">
+              <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">Custom Track</mat-header-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-s">{{ slot.isCustomTrack ? '✅' : '' }}</mat-cell>
             </ng-container>
             <mat-header-row *matHeaderRowDef="mappoolColumns"></mat-header-row>
             <mat-row *matRowDef="let row; columns: mappoolColumns;"></mat-row>

@@ -87,7 +87,7 @@
         {{ "tournament.participants.copyCsv" | transloco }}
       </button>
       <button mat-menu-item *ngIf="displayFormControl.value === 'players'" (click)="refreshAllPlayerData()">
-        {{ "tournament.participants.refreshAllPlayerData" | transloco }}
+        {{ "tournament.settings.refreshAllPlayerData" | transloco }}
       </button>
       <button mat-menu-item *ngIf="displayFormControl.value === 'players' && sortMethodFormControl.value === 'rank' && tournament.gameMode !== GameMode.ALL" (click)="assignSeeds()">
         {{ "tournament.participants.assignSeedsByRank" | transloco }}

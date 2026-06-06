@@ -314,6 +314,13 @@ export class TournamentsService {
     return this.http.delete(`${this.apiUrl}/${acronym}/round/${roundId}/slot/${slotId}`, { withCredentials: true });
   }
 
+  refreshTournamentSlot(acronym: string, roundId: string, slotId: string): Observable<MappoolSlot> {
+    return this.http.post(`${this.apiUrl}/${acronym}/round/${roundId}/refreshSlot/${slotId}`, { withCredentials: true })
+      .pipe(map((data) => {
+        return processApiResponse(data) as MappoolSlot;
+      }));
+  }
+
   addTournamentMatch(acronym: string, roundId: string, partialMatch: Partial<TournamentMatch>): Observable<TournamentMatch> {
     return this.http.post(`${this.apiUrl}/${acronym}/round/${roundId}/match`, partialMatch, { withCredentials: true })
       .pipe(map((data) => {

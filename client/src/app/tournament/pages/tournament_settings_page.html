@@ -56,7 +56,7 @@
       [disabled]="isTourneyConcluded || requestInProgress"
       (click)="refreshAllPlayerData()"
     >
-      {{ "tournament.participants.refreshAllPlayerData" | transloco }}
+      {{ "tournament.settings.refreshAllPlayerData" | transloco }}
     </button>
   </ng-container>
 
@@ -165,7 +165,8 @@
       [isMultiMode]="isMultiMode()"
       [disabled]="isTourneyConcluded"
       (submit)="submitUpdateSlotForm($event)"
-      (remove)="removeSlot($event)">
+      (remove)="removeSlot($event)"
+      (refresh)="refreshBeatmapData($event)">
     </tournament-slot-editor>
   </ng-container>
 

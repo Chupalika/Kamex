@@ -350,7 +350,7 @@ export class TournamentParticipantsPage implements OnInit {
       });
     }
     navigator.clipboard.writeText(csv);
-    this.snackBar.open(this.translocoService.translate("tournament.settings.playerCsvCopied"), "", { duration: 10000 });
+    this.snackBar.open(this.translocoService.translate("tournament.participants.playerCsvCopied"), "", { duration: 10000 });
   }
 
   refreshAllPlayerData() {
@@ -381,7 +381,7 @@ export class TournamentParticipantsPage implements OnInit {
       if (result) {
         const seedsToAssign = this.players.map((player, index) => ({ playerId: player.playerId, seed: (index + 1).toString() })).filter((entry) => entry.seed <= result);
         this.tournamentsService.batchAssignPlayerSeeds(this.tournament!.acronym, { playerSeeds: seedsToAssign }).subscribe(() => {
-          this.snackBar.open(this.translocoService.translate("tournament.settings.playerSeedsAssigned"), "", { duration: 10000 });
+          this.snackBar.open(this.translocoService.translate("tournament.participants.playerSeedsAssigned"), "", { duration: 10000 });
         });
       }
     });

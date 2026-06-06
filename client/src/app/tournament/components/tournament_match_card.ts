@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TranslocoModule } from '@jsverse/transloco';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { HovercardModule } from 'src/app/components/hovercard';
 import { TournamentPlayerCard } from '../components/tournament_player_card';
 import { TournamentTeamCard } from '../components/tournament_team_card';
@@ -227,6 +227,7 @@ export class SubmitMatchEditorDialog {
     private dialogRef: MatDialogRef<SubmitMatchEditorDialog>,
     private tournamentsService: TournamentsService,
     private snackBar: MatSnackBar,
+    private translocoService: TranslocoService,
   ) {}
 
   async submitMatch(submitMatchDto: SubmitMatchDto) {
@@ -235,11 +236,11 @@ export class SubmitMatchEditorDialog {
     this.tournamentsService.submitMatch(this.data.acronym, this.data.roundId, submitMatchDto)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
         return throwError(error);
       })).subscribe((updatedTournamentMatch) => {
         this.requestInProgress = false;
-        this.snackBar.open("Successfully submitted match to round.", "", { duration: 10000 });
+        this.snackBar.open(this.translocoService.translate("tournament.settings.submittedMatch"), "", { duration: 10000 });
         this.dialogRef.close(updatedTournamentMatch);
       });
   }

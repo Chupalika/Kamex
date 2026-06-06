@@ -1195,18 +1195,16 @@ export class TournamentService {
 
     if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
-    // Assert that the round is associated with the tourney
-    const round = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`);
-    if (round === undefined) throw new TournamentRoundNotFoundError();
-
-    const tourneyRound = await this.tournamentRoundModel.findOne({ _id: roundId }).orFail().populate({ path: "mappool", populate: { path: "slots" } });
+    const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
+    if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots" } });
 
     // Don't allow duplicate slot label
     if (tourneyRound.mappool.slots.find((x: MappoolSlot) => x.label === mappoolSlotDto.label)) {
       throw new MappoolSlotExistsError();
     }
 
-    const createdBeatmap = await this.createTournamentBeatmap(mappoolSlotDto.beatmap.beatmapId);
+    const createdBeatmap = await this.createOrUpdateTournamentBeatmap(mappoolSlotDto.beatmap.beatmapId);
 
     const filledSlotDto = {
       ...mappoolSlotDto,
@@ -1234,12 +1232,12 @@ export class TournamentService {
 
     if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
-    // Assert that the round is associated with the tourney
-    const round = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`);
-    if (round === undefined) throw new TournamentRoundNotFoundError();
+    const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
+    if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
 
-    const tourneyRound = await this.tournamentRoundModel.findOne({ _id: roundId }).orFail().populate({ path: "mappool", populate: { path: "slots" } });
-    const mappoolSlot = await this.mappoolSlotModel.findOne({ _id: slotId }).orFail().populate("beatmap");
+    const mappoolSlot = tourneyRound.mappool.slots.find((x: HydratedDocument<MappoolSlot>) => x._id.equals(slotId)) as HydratedDocument<MappoolSlot>;
+    if (mappoolSlot === undefined) throw new MappoolSlotNotFoundError();
 
     // Don't allow duplicate slot label
     if (tourneyRound.mappool.slots.find((x: HydratedDocument<MappoolSlot>) => x.label === mappoolSlotDto.label && !x._id.equals(slotId))) {
@@ -1247,7 +1245,7 @@ export class TournamentService {
     }
 
     if (mappoolSlotDto.beatmap.beatmapId !== mappoolSlot.beatmap.beatmapId) {
-      const createdBeatmap = await this.createTournamentBeatmap(mappoolSlotDto.beatmap.beatmapId);
+      const createdBeatmap = await this.createOrUpdateTournamentBeatmap(mappoolSlotDto.beatmap.beatmapId);
       mappoolSlot.beatmap = createdBeatmap;
     }
 
@@ -1265,6 +1263,8 @@ export class TournamentService {
     mappoolSlot.category = mappoolSlotDto.category || "";
     mappoolSlot.requiredMods = (mappoolSlotDto.requiredMods as ScoreMod[]) || [];
     mappoolSlot.gameMode = mappoolSlotDto.gameMode || undefined;
+    mappoolSlot.isCustomMap = mappoolSlotDto.isCustomMap || false;
+    mappoolSlot.isCustomTrack = mappoolSlotDto.isCustomTrack || false;
     await mappoolSlot.save();
     return mappoolSlot;
   }
@@ -1275,12 +1275,11 @@ export class TournamentService {
     if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
     // Assert that the round is associated with the tourney
-    const round = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`);
-    if (round === undefined) throw new TournamentRoundNotFoundError();
+    const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
+    if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots" } });
+    await tourneyRound.populate({ path: "scoresheet", populate: { path: "slotScoresheets", populate: { path: "slot" } } });
 
-    const tourneyRound = await this.tournamentRoundModel.findOne({ _id: roundId }).orFail()
-        .populate({ path: "mappool", populate: { path: "slots" } })
-        .populate({ path: "scoresheet", populate: { path: "slotScoresheets", populate: { path: "slot" } } });
     const slotIndex = tourneyRound.mappool.slots.findIndex((x: HydratedDocument<MappoolSlot>) => x._id.equals(slotId));
     if (slotIndex === -1) throw new MappoolSlotNotFoundError();
     tourneyRound.mappool.slots.splice(slotIndex, 1);
@@ -1295,7 +1294,32 @@ export class TournamentService {
     }
   }
 
-  async createTournamentBeatmap(beatmapId: number): Promise<Beatmap> {
+  async refreshSlot(acronym: string, roundId: Types.ObjectId, slotId: Types.ObjectId): Promise<MappoolSlot> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds");
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+
+    const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
+    if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
+
+    const mappoolSlot = tourneyRound.mappool.slots.find((x: HydratedDocument<MappoolSlot>) => x._id.equals(slotId)) as HydratedDocument<MappoolSlot>;
+    if (mappoolSlot === undefined) throw new MappoolSlotNotFoundError();
+
+    mappoolSlot.beatmap = await this.createOrUpdateTournamentBeatmap(mappoolSlot.beatmap.beatmapId, (mappoolSlot.beatmap as HydratedDocument<Beatmap>)._id);
+
+    if (mappoolSlot.requiredMods.length > 0) {
+      const gameMode = mappoolSlot.gameMode ?? tourney.gameMode;
+      const mods = mappoolSlot.requiredMods.map(mod => mod.acronym); // todo: figure out lazer mods
+      const difficultyAttributes = await this.osuApiService.getBeatmapDifficultyAttributes(mappoolSlot.beatmap.beatmapId, mods, gameMode);
+      mappoolSlot.adjustedStarRating = difficultyAttributes["starRating"];
+    }
+
+    await mappoolSlot.save();
+    return mappoolSlot;
+  }
+
+  async createOrUpdateTournamentBeatmap(beatmapId: number, existingBeatmapId: Types.ObjectId = undefined): Promise<Beatmap> {
     const osuBeatmap = await this.osuApiService.getBeatmap(beatmapId);
     const tournamentBeatmap: Beatmap = {
       beatmapId: osuBeatmap.id,
@@ -1317,9 +1341,13 @@ export class TournamentService {
       lastUpdated: osuBeatmap.lastUpdated,
     };
 
-    const createdBeatmap = new this.tournamentBeatmapModel(tournamentBeatmap);
-    await createdBeatmap.save();
-    return createdBeatmap;
+    if (existingBeatmapId) {
+      return await this.tournamentBeatmapModel.findByIdAndUpdate(existingBeatmapId, tournamentBeatmap, { upsert: true, new: true }).orFail();
+    } else {
+      const createdBeatmap = new this.tournamentBeatmapModel(tournamentBeatmap);
+      await createdBeatmap.save();
+      return createdBeatmap;
+    }
   }
 
   async addTournamentMatch(acronym: string, roundId: Types.ObjectId, tournamentMatchDto: TournamentMatchDto): Promise<TournamentMatch> {

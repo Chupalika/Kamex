@@ -11,7 +11,7 @@
           [selectedIndex]="selectedRoundIndex"
           (selectedIndexChange)="switchSelectedRoundIndex($event)"
       ></item-selector>
-      <div class="display-settings">
+      <div *ngIf="selectedRoundId && !loadingRound" class="display-settings">
         <mat-form-field appearance="outline">
           <mat-label>{{ "tournament.common.sortBy" | transloco }}</mat-label>
           <mat-select [formControl]="sortMethodFormControl" (selectionChange)="switchSortMethod($event)">

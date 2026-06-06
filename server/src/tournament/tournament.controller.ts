@@ -20,6 +20,7 @@ import { TournamentService } from './tournament.service';
 import { Mappool } from 'src/schemas/mappool.schema';
 import { Scoresheet } from 'src/schemas/scoresheet.schema';
 import { Score } from 'src/schemas/score.schema';
+import { MappoolSlot } from 'src/schemas/mappool-slot.schema';
 
 @Controller('tournament')
 export class TournamentController {
@@ -447,7 +448,7 @@ export class TournamentController {
   async addTournamentSlot(
       @Param('acronym') acronym: string,
       @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
-      @Body() mappoolSlotDto: MappoolSlotDto) {
+      @Body() mappoolSlotDto: MappoolSlotDto): Promise<MappoolSlot> {
     return await this.tournamentService.addMappoolSlot(acronym, roundId, mappoolSlotDto);
   }
 
@@ -458,7 +459,7 @@ export class TournamentController {
       @Param('acronym') acronym: string,
       @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
       @Param('slotId', new ParseObjectIdPipe()) slotId: Types.ObjectId,
-      @Body() mappoolSlotDto: MappoolSlotDto) {
+      @Body() mappoolSlotDto: MappoolSlotDto): Promise<MappoolSlot> {
     return await this.tournamentService.editMappoolSlot(acronym, roundId, slotId, mappoolSlotDto);
   }
 
@@ -470,6 +471,16 @@ export class TournamentController {
       @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
       @Param('slotId', new ParseObjectIdPipe()) slotId: Types.ObjectId) {
     return await this.tournamentService.removeMappoolSlot(acronym, roundId, slotId);
+  }
+
+  @Post(':acronym/round/:roundId/refreshSlot/:slotId')
+  @UseGuards(TournamentStaffRolesGuard)
+  @Permissions(TournamentStaffPermission.MANAGE_SLOTS)
+  async refreshSlot(
+      @Param('acronym') acronym: string,
+      @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
+      @Param('slotId', new ParseObjectIdPipe()) slotId: Types.ObjectId): Promise<MappoolSlot> {
+    return await this.tournamentService.refreshSlot(acronym, roundId, slotId);
   }
 
   @Post(':acronym/round/:roundId/match')

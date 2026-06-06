@@ -44,6 +44,8 @@ export interface MappoolSlot {
   beatmap: Beatmap;
   requiredMods: ScoreMod[];
   validModCombinations: ScoreMod[][];
+  isCustomMap: boolean;
+  isCustomTrack: boolean;
   gameMode?: GameMode;
   adjustedStarRating?: number;
 }
@@ -56,6 +58,7 @@ export interface Beatmap {
   artist: string;
   difficultyName: string;
   mapper: string;
+  mappers: string[];
   gameMode: GameMode;
   starRating: number;
   length: number;
