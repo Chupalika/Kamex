@@ -1,7 +1,7 @@
 <div class="custom-theme">
-  <div *ngIf="loading" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+  <div *ngIf="loading && !tournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
   <div *ngIf="!loading && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
-  <div *ngIf="!loading && tournament" class="front-page-container">
+  <div *ngIf="tournament" class="front-page-container">
     <img *ngIf="tournament.bannerLink" class="tourney-banner" [src]="tournament.bannerLink" />
     <div class="front-page-header">
       <div class="mat-headline-4">{{ tournament.name }}</div>

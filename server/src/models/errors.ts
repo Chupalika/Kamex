@@ -12,6 +12,12 @@ export class ChallongeApiError extends HttpException {
   }
 }
 
+export class TournamentNotFound extends HttpException {
+  constructor(acronym: string) {
+    super(`Tournament ${acronym} not found.`, HttpStatus.NOT_FOUND);
+  }
+}
+
 export class ProgressChangeConflictError extends HttpException {
   constructor() {
     super("Progress can only be changed by itself and cannot have other settings be changed at the same time.", HttpStatus.BAD_REQUEST);

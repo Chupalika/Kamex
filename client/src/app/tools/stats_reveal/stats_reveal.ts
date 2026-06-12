@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, NgModule } from '@angular/core';
+import { Component, DestroyRef, inject, NgModule } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatButtonModule } from "@angular/material/button";
@@ -32,7 +33,8 @@ export class StatsReveal {
   tournamentRound?: TournamentRound;
   mappool?: Mappool;
   scoresheet?: Scoresheet;
-  loading = true;
+  loadingTournament = true;
+  loadingRound = true;
   requestInProgress = false;
   stats?: TournamentStatsPlayers;
   highScorePerMap: Map<string, number> = new Map();
@@ -45,6 +47,8 @@ export class StatsReveal {
 
   settingsForm: FormGroup;
   backgroundFormControl: FormControl;
+
+  readonly destroyRef = inject(DestroyRef);
   
   constructor(private tournamentsService: TournamentsService, private route: ActivatedRoute) {
     this.backgroundFormControl =  new FormControl("");
@@ -54,42 +58,16 @@ export class StatsReveal {
   }
   
   ngOnInit() {
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => {
-        this.acronym = params.get("acronym") || "";
-        this.roundId = params.get("roundId") || "";
-        return zip([
-          this.tournamentsService.getTournament(this.acronym),
-          this.tournamentsService.getTournamentRound(this.acronym, this.roundId),
-        ]);
-      }),
-      switchMap(([tournament, tournamentRound]) => {
-        this.tournament = tournament;
-        this.tournamentRound = tournamentRound;
-        // Fetch mappool if it's a string (ID)
-        let mappoolFetch$ = null;
-        if (typeof tournamentRound.mappool === "string") {
-          mappoolFetch$ = this.tournamentsService.getTournamentMappool(this.acronym, tournamentRound.mappool);
-        }
-        // Fetch scoresheet if it's a string (ID)
-        let scoresheetFetch$ = null;
-        if (typeof tournamentRound.scoresheet === "string") {
-          scoresheetFetch$ = this.tournamentsService.getTournamentScoresheet(this.acronym, tournamentRound.scoresheet);
-        }
-        // If neither need fetching, just return
-        if (!mappoolFetch$ && !scoresheetFetch$) {
-          return zip([Promise.resolve(tournamentRound.mappool), Promise.resolve(tournamentRound.scoresheet)]);
-        }
-        // If one or both need fetching
-        const mappoolObs = mappoolFetch$ ? mappoolFetch$ : Promise.resolve(tournamentRound.mappool);
-        const scoresheetObs = scoresheetFetch$ ? scoresheetFetch$ : Promise.resolve(tournamentRound.scoresheet);
-        return zip([mappoolObs, scoresheetObs]);
-      }),
-      take(1),
-      finalize(() => {this.loading = false;}),
-    ).subscribe(([mappool, scoresheet]) => {
-      if (mappool) this.mappool = mappool;
-      if (scoresheet) this.scoresheet = scoresheet;
+    this.tournamentsService.loadingTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingTournament = loading; });
+    this.tournamentsService.loadingRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingRound = loading; });
+    this.tournamentsService.currentTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((tournament) => {
+      this.tournament = tournament;
+      this.tournamentsService.loadOrRefreshTournamentRound(this.roundId, false, true, true);
+    });
+    this.tournamentsService.currentRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((round) => {
+      this.tournamentRound = round;
+      if (round?.mappool) this.mappool = round.mappool;
+      if (round?.scoresheet) this.scoresheet = round.scoresheet;
       if (this.mappool && this.scoresheet) {
         this.stats = calculateStats(this.mappool, this.scoresheet, this.tournament!.players);
         console.log(this.stats);
@@ -99,8 +77,16 @@ export class StatsReveal {
           this.lowScorePerMap.set(slot.label, scores[scores.length-1].score);
         }
       }
-
     });
+
+    this.route.paramMap.pipe(
+      switchMap((params: ParamMap) => {
+        this.acronym = params.get("acronym") || "";
+        this.roundId = params.get("roundId") || "";
+        this.tournamentsService.loadOrRefreshTournament(this.acronym);
+        return "";
+      }),
+    ).subscribe();
     this.refreshSettings();
   }
 

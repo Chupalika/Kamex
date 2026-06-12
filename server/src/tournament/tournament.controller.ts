@@ -613,38 +613,38 @@ export class TournamentController {
     return await this.tournamentService.matchStaffUnregister(acronym, roundId, matchId, "commentator", req.user.osuId);
   }
 
-  @Post(':acronym/round/:roundId/stats/:slotScoresheetId/:playerOrTeamId')
+  @Post(':acronym/round/:roundId/stats/:slotId/:playerOrTeamId')
   @UseGuards(TournamentStaffRolesGuard)
   @Permissions(TournamentStaffPermission.MANAGE_STATS)
   async createScore(
       @Param('acronym') acronym: string,
       @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
-      @Param('slotScoresheetId', new ParseObjectIdPipe()) slotScoresheetId: Types.ObjectId,
+      @Param('slotId', new ParseObjectIdPipe()) slotId: Types.ObjectId,
       @Param('playerOrTeamId') playerOrTeamId: string,
       @Body() scoreDto: ScoreDto): Promise<Score> {
-    return await this.tournamentService.createScore(acronym, roundId, slotScoresheetId, playerOrTeamId, scoreDto);
+    return await this.tournamentService.createScore(acronym, roundId, slotId, playerOrTeamId, scoreDto);
   }
 
-  @Patch(':acronym/round/:roundId/stats/:slotScoresheetId/:scoreId')
+  @Patch(':acronym/round/:roundId/stats/:slotId/:scoreId')
   @UseGuards(TournamentStaffRolesGuard)
   @Permissions(TournamentStaffPermission.MANAGE_STATS)
   async editScore(
       @Param('acronym') acronym: string,
       @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
-      @Param('slotScoresheetId', new ParseObjectIdPipe()) slotScoresheetId: Types.ObjectId,
+      @Param('slotId', new ParseObjectIdPipe()) slotId: Types.ObjectId,
       @Param('scoreId', new ParseObjectIdPipe()) scoreId: Types.ObjectId,
       @Body() editScoreDto: ScoreDto): Promise<Score> {
-    return await this.tournamentService.editScore(acronym, roundId, slotScoresheetId, scoreId, editScoreDto);
+    return await this.tournamentService.editScore(acronym, roundId, slotId, scoreId, editScoreDto);
   }
 
-  @Delete(':acronym/round/:roundId/stats/:slotScoresheetId/:scoreId')
+  @Delete(':acronym/round/:roundId/stats/:slotId/:scoreId')
   @UseGuards(TournamentStaffRolesGuard)
   @Permissions(TournamentStaffPermission.MANAGE_STATS)
   async deleteScore(
       @Param('acronym') acronym: string,
       @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
-      @Param('slotScoresheetId', new ParseObjectIdPipe()) slotScoresheetId: Types.ObjectId,
+      @Param('slotId', new ParseObjectIdPipe()) slotId: Types.ObjectId,
       @Param('scoreId', new ParseObjectIdPipe()) scoreId: Types.ObjectId) {
-    return await this.tournamentService.deleteScore(acronym, roundId, slotScoresheetId, scoreId);
+    return await this.tournamentService.deleteScore(acronym, roundId, slotId, scoreId);
   }
 }

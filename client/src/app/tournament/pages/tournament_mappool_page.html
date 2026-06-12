@@ -1,7 +1,7 @@
-<div *ngIf="loadingTournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="loadingTournament && !tournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
 <div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 
-<div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+<div *ngIf="tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.mappools" | transloco }}</div>
   
   <div class="mappool-page-container">
@@ -46,11 +46,12 @@
     </div>
 
     <div class="mappool-container" [ngClass]="{'mobile-mode': mobileMode}">
-      <div *ngIf="loadingRound" class="mat-headline-6">{{ "common.loading" | transloco }}</div>
-      <ng-container *ngIf="tournamentRounds.has(selectedRoundId)">
-        <div *ngIf="mappool.slots.length === 0" class="mat-headline-6">
-          <ng-container *ngIf="tourneyRound!.mappoolWip">{{ "tournament.mappools.mappoolNotPublic" | transloco }}</ng-container>
-          <ng-container *ngIf="!tourneyRound!.mappoolWip">{{ "tournament.mappools.noSlots" | transloco }}</ng-container>
+      <div *ngIf="loadingRound" class="mat-headline-6 loading-message">{{ "common.loading" | transloco }}</div>
+      <div *ngIf="!loadingRound && !round" class="mat-headline-6 loading-message">{{ "tournament.common.noRound" | transloco }}</div>
+      <ng-container *ngIf="round">
+        <div *ngIf="mappool.slots.length === 0" class="mat-headline-6 loading-message">
+          <ng-container *ngIf="round!.mappoolWip">{{ "tournament.mappools.mappoolNotPublic" | transloco }}</ng-container>
+          <ng-container *ngIf="!round!.mappoolWip">{{ "tournament.mappools.noSlots" | transloco }}</ng-container>
         </div>
         <ng-container *ngIf="mappool.slots.length > 0 && !tableViewFormControl.value">
           <div *ngFor="let slot of sortedSlots" class="tournament-slot-card" [ngClass]="{'mobile-mode': mobileMode}">

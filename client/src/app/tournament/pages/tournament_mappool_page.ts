@@ -1,8 +1,8 @@
 import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { Component, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { Component, DestroyRef, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,9 +13,9 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Title } from '@angular/platform-browser';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
-import { catchError, finalize, switchMap, take } from 'rxjs/operators';
-import { map, Observable, of, throwError } from "rxjs";
+import { Observable } from "rxjs";
 
 import { AppUser, GameMode, Mappool, MappoolSlot, Tournament, TournamentProgress, TournamentRound, TournamentStaffPermission } from 'src/app/models/models';
 import { ItemSelectorModule } from 'src/app/components/item_selector';
@@ -25,7 +25,6 @@ import { TournamentSlotEditorModule } from '../components/tournament_slot_editor
 import { TournamentRoundNavBarModule } from 'src/app/tournament/components/tournament_round_nav_bar';
 import { getLatestRoundIndex, getSortedMappool, hasPermission, slotStarRating, slotDisplayLength, slotBpm, slotCs, slotHp, slotOd, slotAr } from '../utils';
 import { AuthService } from 'src/app/services/auth.service';
-import { Title } from '@angular/platform-browser';
 
 const EMPTY_MAPPOOL: Mappool = { _id: "", slots: [] };
 
@@ -37,12 +36,12 @@ const EMPTY_MAPPOOL: Mappool = { _id: "", slots: [] };
 export class TournamentMappoolPage implements OnInit {
   acronym = "";
   tournament?: Tournament;
+  round?: TournamentRound;
   loadingTournament = true;
   loadingRound = false;
   sortedRounds: TournamentRound[] = [];
-  selectedRoundIndex: number = 0;
+  selectedRoundIndex: number = -1;
   selectedRoundId: string = "";
-  tournamentRounds: Map<string, TournamentRound> = new Map(); // keyed by _id
   appUser?: AppUser;
   mobileMode = false;
   tableViewFormControl: FormControl;
@@ -50,11 +49,11 @@ export class TournamentMappoolPage implements OnInit {
   TournamentStaffPermission = TournamentStaffPermission;
 
   readonly dialogService = inject(MatDialog);
+  readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private tournamentsService: TournamentsService,
     private authService: AuthService,
-    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private breakpointObserver: BreakpointObserver,
     private titleService: Title,
@@ -63,21 +62,23 @@ export class TournamentMappoolPage implements OnInit {
     }
 
   ngOnInit() {
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => {
-        this.acronym = params.get("acronym") || "";
-        return this.tournamentsService.getTournament(this.acronym);
-      }),
-      take(1),
-      finalize(() => {this.loadingTournament = false;}),
-    ).subscribe((tournament) => {
+    this.tournamentsService.loadingTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingTournament = loading; });
+    this.tournamentsService.loadingRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingRound = loading; });
+    this.tournamentsService.currentTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((tournament) => {
       this.tournament = tournament;
-      this.sortedRounds = [...tournament!.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
-      this.titleService.setTitle(`${tournament.name} Mappools`);
-      const latestRoundIndex = getLatestRoundIndex(this.sortedRounds);
-      this.switchSelectedRoundIndex(latestRoundIndex);
+      this.titleService.setTitle(tournament ? `${tournament.name} Mappools` : 'Kamex');
+
+      if (tournament && this.selectedRoundIndex < 0) {
+        this.sortedRounds = [...tournament.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
+        const latestRoundIndex = getLatestRoundIndex(this.sortedRounds);
+        this.switchSelectedRoundIndex(latestRoundIndex);
+      }
     });
-    this.authService.appUser$.subscribe((user) => this.appUser = user);
+    this.tournamentsService.currentRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((round) => {
+      this.round = round;
+      this.selectedRoundIndex = this.sortedRounds.findIndex((r) => r._id === round?._id);
+    });
+    this.authService.appUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => this.appUser = user);
     this.breakpointObserver.observe([Breakpoints.Small, Breakpoints.XSmall])
         .subscribe((result: BreakpointState) => {
       if (result.matches) {
@@ -88,16 +89,15 @@ export class TournamentMappoolPage implements OnInit {
     });
   }
 
-  get tourneyRound() {
-    return this.tournamentRounds.get(this.selectedRoundId);
+  switchSelectedRoundIndex(index: number) {
+    if (this.loadingRound) return;
+    this.selectedRoundId = this.sortedRounds[index]?._id ?? "";
+    if (this.selectedRoundId) this.tournamentsService.loadOrRefreshTournamentRound(this.selectedRoundId, false, true);
   }
 
   get mappool() {
-    return this.tourneyRound?.mappool || EMPTY_MAPPOOL;
-  }
-
-  get canViewWipMappool() {
-    return hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.VIEW_WIP_MAPPOOLS);
+    if (!this.round || typeof this.round.mappool === "string") return EMPTY_MAPPOOL;
+    return this.round.mappool;
   }
 
   get isTourneyConcluded(): boolean {
@@ -106,40 +106,6 @@ export class TournamentMappoolPage implements OnInit {
 
   hasPermission(permission: TournamentStaffPermission): boolean {
     return hasPermission(this.tournament!, this.appUser?.osuId, permission);
-  }
-
-  switchSelectedRoundIndex(index: number) {
-    if (this.loadingRound) return;
-    this.selectedRoundIndex = index;
-    this.selectedRoundId = this.sortedRounds[index]?._id ?? "";
-    if (this.selectedRoundId && !this.tournamentRounds.has(this.selectedRoundId)) {
-      this.loadingRound = true;
-      this.tournamentsService.getTournamentRound(this.tournament!.acronym, this.selectedRoundId).pipe(
-        switchMap((tourneyRound) => {
-          // fetch mappool if it's wip but user has permission to view wip pool
-          let theMappool = tourneyRound.mappool;
-          if (typeof theMappool === "string") {
-            if (this.canViewWipMappool) {
-              return this.tournamentsService.getTournamentMappool(this.tournament!.acronym, theMappool).pipe(map((mappool) => ({ tourneyRound, mappool })));
-            } else {
-              tourneyRound.mappool = EMPTY_MAPPOOL;
-              return of({ tourneyRound, mappool: null });
-            }
-          } else {
-            return of({ tourneyRound, mappool: theMappool });
-          }
-        }),
-        catchError((error) => {
-          this.loadingRound = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        })
-      ).subscribe(({ tourneyRound, mappool }) => {
-          if (mappool) tourneyRound.mappool = mappool;
-          this.loadingRound = false;
-          this.tournamentRounds.set(this.selectedRoundId!, tourneyRound);
-        });
-    }
   }
 
   get roundLabels() {
@@ -183,11 +149,6 @@ export class TournamentMappoolPage implements OnInit {
     const dialogRef = this.dialogService.open(
       SlotEditorDialog, { data: { acronym: this.acronym, roundId: this.selectedRoundId, tournament: this.tournament, slots: this.mappool.slots } }
     );
-    dialogRef.afterClosed().subscribe((updatedSlots: MappoolSlot[]) => {
-      if (updatedSlots) {
-        this.mappool.slots = updatedSlots;
-      }
-    });
   }
 }
 
@@ -227,6 +188,8 @@ export class SlotEditorDialog {
   selectedSlotFormControl: FormControl;
   workingSlots: MappoolSlot[] = [];
 
+  readonly destroyRef = inject(DestroyRef);
+
   constructor(
       @Inject(MAT_DIALOG_DATA) public data: { acronym: string, roundId: string, tournament: Tournament, slots: MappoolSlot[] },
       private tournamentsService: TournamentsService,
@@ -245,6 +208,7 @@ export class SlotEditorDialog {
   }
 
   ngOnInit() {
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
     this.workingSlots = [...this.data.slots];
   }
 
@@ -261,24 +225,18 @@ export class SlotEditorDialog {
 
   submitUpdateSlotForm(formData: any) {
     if (!formData.label) return;
-    this.requestInProgress = true;
 
     let request: Observable<MappoolSlot>;
     let successMessage = "";
     if (!this.selectedSlot) {
-      request = this.tournamentsService.addTournamentSlot(this.data.acronym, this.data.roundId, formData.beatmapId, formData);
+      request = this.tournamentsService.addTournamentSlot(formData.beatmapId, formData);
       successMessage = "tournament.settings.addedSlot";
     } else {
-      request = this.tournamentsService.editTournamentSlot(this.data.acronym, this.data.roundId, this.selectedSlot._id, formData.beatmapId, formData);
+      request = this.tournamentsService.editTournamentSlot(this.selectedSlot._id, formData.beatmapId, formData);
       successMessage = "tournament.settings.editedSlot";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentSlot) => {
-      this.requestInProgress = false;
+    request.subscribe((updatedTournamentSlot) => {
       if (!this.selectedSlot) {
         this.workingSlots.push(updatedTournamentSlot);
       } else {
@@ -290,38 +248,23 @@ export class SlotEditorDialog {
   }
 
   removeSlot(slot: MappoolSlot) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentSlot(this.data.acronym, this.data.roundId, slot._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.workingSlots.findIndex((slot2) => slot2._id === slot._id);
-        if (index !== undefined) this.workingSlots.splice(index, 1);
-        this.selectedSlotFormControl.setValue("-1");
-        this.switchSelectedSlot("-1");
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedSlot"), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentSlot(slot._id).subscribe(() => {
+      const index = this.workingSlots.findIndex((slot2) => slot2._id === slot._id);
+      if (index !== undefined) this.workingSlots.splice(index, 1);
+      this.selectedSlotFormControl.setValue("-1");
+      this.switchSelectedSlot("-1");
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedSlot"), "", { duration: 10000 });
+    });
   }
 
   refreshBeatmapData(slot: MappoolSlot) {
-      this.requestInProgress = true;
-      this.tournamentsService.refreshTournamentSlot(this.data.acronym, this.data.roundId, slot._id)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((refreshedSlot) => {
-          this.requestInProgress = false;
-          const index = this.workingSlots.findIndex((s) => s._id === refreshedSlot._id);
-          this.workingSlots[index] = refreshedSlot;
-          this.selectedSlot = refreshedSlot;
-          this.snackBar.open(this.translocoService.translate("tournament.settings.beatmapDataRefreshed"), "", { duration: 10000 });
-        });
-    }
+    this.tournamentsService.refreshTournamentSlot(slot._id).subscribe((refreshedSlot) => {
+      const index = this.workingSlots.findIndex((s) => s._id === refreshedSlot._id);
+      this.workingSlots[index] = refreshedSlot;
+      this.selectedSlot = refreshedSlot;
+      this.snackBar.open(this.translocoService.translate("tournament.settings.beatmapDataRefreshed"), "", { duration: 10000 });
+    });
+  }
 }
 
 @NgModule({

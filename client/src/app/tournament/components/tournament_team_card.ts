@@ -19,6 +19,7 @@ export class TournamentTeamCard {
   @Input() team?: TournamentTeam;
   @Input() gameMode?: GameMode;
   @Input() editable: boolean = false;
+  @Input() requestInProgress: boolean = false;
   @Input() mobileMode: boolean = false;
   @Input() playerFlagsToggle: boolean = false;
   @Input() playerSortMethod: string = "";
@@ -29,8 +30,6 @@ export class TournamentTeamCard {
 
   GameMode = GameMode;
   TournamentPlayerCard = TournamentPlayerCard;
-
-  requestInProgress = false;
 
   constructor() {}
 

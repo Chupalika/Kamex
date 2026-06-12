@@ -1,8 +1,8 @@
 import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { Component, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { Component, DestroyRef, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,8 +11,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule, MatSelectChange } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Title } from '@angular/platform-browser';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
-import { catchError, finalize, switchMap, take } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
 
 import { TournamentMatchCardModule } from '../components/tournament_match_card';
@@ -20,7 +21,6 @@ import { TournamentMatchEditorModule } from '../components/tournament_match_edit
 import { AppUser, Tournament, TournamentMatch, TournamentProgress, TournamentRound, TournamentStaffPermission } from 'src/app/models/models';
 import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentsService } from 'src/app/services/tournaments.service';
-import { Title } from '@angular/platform-browser';
 import { getLatestRoundIndex, hasPermission } from '../utils';
 import { AuthService } from 'src/app/services/auth.service';
 
@@ -32,12 +32,12 @@ import { AuthService } from 'src/app/services/auth.service';
 export class TournamentMatchesPage implements OnInit {
   acronym = "";
   tournament?: Tournament;
+  round?: TournamentRound;
   loadingTournament = true;
   loadingRound = false;
   sortedRounds: TournamentRound[] = [];
-  selectedRoundIndex: number = 0;
+  selectedRoundIndex: number = -1;
   selectedRoundId: string = "";
-  populatedTournamentRounds: Map<string, TournamentRound> = new Map(); // keyed by _id
   matches: TournamentMatch[] = [];
   sortedMatches: TournamentMatch[] = [];
   myMatches: TournamentMatch[] = [];
@@ -53,11 +53,11 @@ export class TournamentMatchesPage implements OnInit {
   TournamentStaffPermission = TournamentStaffPermission;
 
   readonly dialogService = inject(MatDialog);
+  readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private tournamentsService: TournamentsService,
     private authService: AuthService,
-    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private breakpointObserver: BreakpointObserver,
     private titleService: Title,
@@ -69,20 +69,26 @@ export class TournamentMatchesPage implements OnInit {
   }
 
   ngOnInit() {
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => {
-        this.acronym = params.get("acronym") || "";
-        return this.tournamentsService.getTournament(this.acronym);
-      }),
-      take(1),
-      finalize(() => {this.loadingTournament = false;}),
-    ).subscribe((tournament) => {
+    this.tournamentsService.loadingTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingTournament = loading; });
+    this.tournamentsService.loadingRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingRound = loading; });
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
+    this.tournamentsService.currentTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((tournament) => {
       this.tournament = tournament;
-      this.sortedRounds = [...tournament!.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
-      const latestRoundIndex = getLatestRoundIndex(this.sortedRounds);
-      this.switchSelectedRoundIndex(latestRoundIndex);
-      this.titleService.setTitle(`${tournament.name} Matches`);
+      this.titleService.setTitle(tournament ? `${tournament.name} Matches` : 'Kamex');
+
+      if (tournament && this.selectedRoundIndex < 0) {
+        this.sortedRounds = [...tournament.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
+        const latestRoundIndex = getLatestRoundIndex(this.sortedRounds);
+        this.switchSelectedRoundIndex(latestRoundIndex);
+      }
     });
+    this.tournamentsService.currentRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((round) => {
+      this.round = round;
+      this.selectedRoundIndex = this.sortedRounds.findIndex((r) => r._id === round?._id);
+      this.populateAppUsers();
+      this.sortMatches();
+    });
+    this.authService.appUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => this.appUser = user);
     this.breakpointObserver.observe([Breakpoints.Small, Breakpoints.XSmall])
         .subscribe((result: BreakpointState) => {
       if (result.matches) {
@@ -91,51 +97,16 @@ export class TournamentMatchesPage implements OnInit {
           this.mobileMode = false;
       }
     });
-    this.authService.appUser$.subscribe((user) => this.appUser = user);
-  }
-
-  get localUTC() {
-    const timezone = this.appUser?.timezone ?? 0;
-    return `UTC${timezone >= 0 ? "+" : ""}${timezone}`;
-  }
-
-  get timezone() {
-    return this.displayTimeFormControl.value === "local" ? (this.appUser?.timezone ?? 0) : 0;
   }
 
   switchSelectedRoundIndex(index: number) {
     if (this.loadingRound) return;
-    this.selectedRoundIndex = index;
     this.selectedRoundId = this.sortedRounds[index]?._id ?? "";
-    if (this.selectedRoundId && !this.populatedTournamentRounds.has(this.selectedRoundId)) {
-      this.loadingRound = true;
-      this.tournamentsService.getTournamentRound(this.tournament!.acronym, this.selectedRoundId)
-        .pipe(catchError((error) => {
-          this.loadingRound = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((tourneyRound) => {
-          this.loadingRound = false;
-          this.populatedTournamentRounds.set(this.selectedRoundId!, tourneyRound);
-          this.populateAppUsers();
-          this.sortMatches();
-        });
-    } else {
-      this.populateAppUsers();
-      this.sortMatches();
-    }
-  }
-
-  get selectedRound() {
-    return this.sortedRounds[this.selectedRoundIndex];
-  }
-
-  get populatedTournamentRound() {
-    return this.populatedTournamentRounds.get(this.selectedRoundId)!;
+    if (this.selectedRoundId) this.tournamentsService.loadOrRefreshTournamentRound(this.selectedRoundId);
   }
 
   populateAppUsers() {
+    if (!this.round) return;
     const appUsers = new Map<number, AppUser>();
     for (let player of this.tournament!.players) {
       if (player.appUser) {
@@ -147,7 +118,7 @@ export class TournamentMatchesPage implements OnInit {
         appUsers.set(staffMember.playerId, staffMember.appUser);
       }
     }
-    this.matches = (this.populatedTournamentRound.matches || []).map((match) => {
+    this.matches = (this.round.matches || []).map((match) => {
       for (let participant of match.participants) {
         if ("username" in participant.playerOrTeam) {
           participant.playerOrTeam.appUser = appUsers.get(participant.playerOrTeam.playerId);
@@ -241,16 +212,13 @@ export class TournamentMatchesPage implements OnInit {
     return theMatches.filter((match) => !filteredOut.has(match.id));
   }
 
-  updateMatch(updatedMatch: TournamentMatch) {
-    this.populatedTournamentRound.matches = this.populatedTournamentRound.matches.map((match) => match.id === updatedMatch.id ? updatedMatch : match);
-    this.populateAppUsers();
-    this.sortMatches();
+  get localUTC() {
+    const timezone = this.appUser?.timezone ?? 0;
+    return `UTC${timezone >= 0 ? "+" : ""}${timezone}`;
   }
 
-  updateMatches(updatedMatches: TournamentMatch[]) {
-    this.populatedTournamentRound.matches = updatedMatches;
-    this.populateAppUsers();
-    this.sortMatches();
+  get timezone() {
+    return this.displayTimeFormControl.value === "local" ? (this.appUser?.timezone ?? 0) : 0;
   }
 
   getRoundlabels() {
@@ -258,12 +226,12 @@ export class TournamentMatchesPage implements OnInit {
   }
 
   get isLobby() {
-    return !this.populatedTournamentRound.matches.every((match) => match.type !== 'lobby') || false;
+    return !this.round?.matches.every((match) => match.type !== 'lobby') || false;
   }
 
   get participantType() {
-    if (this.populatedTournamentRound.matches.every(match => match.isTeamMatch)) return "Team";
-    if (this.populatedTournamentRound.matches.every(match => !match.isTeamMatch)) return "Player";
+    if (this.round?.matches.every(match => match.isTeamMatch)) return "Team";
+    if (this.round?.matches.every(match => !match.isTeamMatch)) return "Player";
     return "Participant";
   }
 
@@ -320,31 +288,13 @@ export class TournamentMatchesPage implements OnInit {
   toggleSignup(match: TournamentMatch) {
     const teamId = match.isTeamMatch ? this.playerTeam?._id : undefined;
     if (this.signupStatus(match) === "can_register") {
-      this.requestInProgress = true;
-      this.tournamentsService.registerMatch(this.tournament!.acronym, this.selectedRoundId, match._id, teamId)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.sortedMatches = this.sortedMatches.map((m) => m.id === updatedMatch.id ? updatedMatch : m);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.matchRegistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.registerMatch(match._id, teamId).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.matchRegistered"), "", { duration: 10000 });
+      });
     } else if (this.signupStatus(match) === "can_unregister") {
-      this.requestInProgress = true;
-      this.tournamentsService.unregisterMatch(this.tournament!.acronym, this.selectedRoundId, match._id, teamId)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.updateMatch(updatedMatch);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.matchUnregistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.unregisterMatch(match._id, teamId).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.matchUnregistered"), "", { duration: 10000 });
+      });
     }
   }
 
@@ -410,91 +360,37 @@ export class TournamentMatchesPage implements OnInit {
 
   toggleReferee(match: TournamentMatch) {
     if (this.refereeStatus(match) === "can_register") {
-      this.requestInProgress = true;
-      this.tournamentsService.registerReferee(this.tournament!.acronym, this.selectedRoundId, match._id)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.updateMatch(updatedMatch);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.refereeRegistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.registerReferee(match._id).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.refereeRegistered"), "", { duration: 10000 });
+      });
     } else if (this.refereeStatus(match) === "can_unregister") {
-      this.requestInProgress = true;
-      this.tournamentsService.unregisterReferee(this.tournament!.acronym, this.selectedRoundId, match._id)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.updateMatch(updatedMatch);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.refereeUnregistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.unregisterReferee(match._id).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.refereeUnregistered"), "", { duration: 10000 });
+      });
     }
   }
 
   toggleStreamer(match: TournamentMatch) {
     if (this.streamerStatus(match) === "can_register") {
-      this.requestInProgress = true;
-      this.tournamentsService.registerStreamer(this.tournament!.acronym, this.selectedRoundId, match._id)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.updateMatch(updatedMatch);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.streamerRegistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.registerStreamer(match._id).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.streamerRegistered"), "", { duration: 10000 });
+      });
     } else if (this.streamerStatus(match) === "can_unregister") {
-      this.requestInProgress = true;
-      this.tournamentsService.unregisterStreamer(this.tournament!.acronym, this.selectedRoundId, match._id)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.updateMatch(updatedMatch);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.streamerUnregistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.unregisterStreamer(match._id).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.streamerUnregistered"), "", { duration: 10000 });
+      });
     }
   }
 
   toggleCommentator(match: TournamentMatch) {
     if (this.commentatorStatus(match) === "can_register") {
-      this.requestInProgress = true;
-      this.tournamentsService.registerCommentator(this.tournament!.acronym, this.selectedRoundId, match._id)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.updateMatch(updatedMatch);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.commentatorRegistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.registerCommentator(match._id).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.commentatorRegistered"), "", { duration: 10000 });
+      });
     } else if (this.commentatorStatus(match) === "can_unregister") {
-      this.requestInProgress = true;
-      this.tournamentsService.unregisterCommentator(this.tournament!.acronym, this.selectedRoundId, match._id)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedMatch) => {
-          this.requestInProgress = false;
-          this.updateMatch(updatedMatch);
-          this.snackBar.open(this.translocoService.translate("tournament.matches.commentatorUnregistered"), "", { duration: 10000 });
-        });
+      this.tournamentsService.unregisterCommentator(match._id).subscribe((updatedMatch) => {
+        this.snackBar.open(this.translocoService.translate("tournament.matches.commentatorUnregistered"), "", { duration: 10000 });
+      });
     }
   }
 
@@ -502,15 +398,6 @@ export class TournamentMatchesPage implements OnInit {
     const dialogRef = this.dialogService.open(
       MatchEditorDialog, { data: { acronym: this.acronym, roundId: this.selectedRoundId, tournament: this.tournament, matches: this.sortedMatches } }
     );
-    dialogRef.afterClosed().subscribe((updatedMatches: TournamentMatch[]) => {
-      if (updatedMatches) {
-        this.updateMatches(updatedMatches);
-      }
-    });
-  }
-
-  onMatchUpdated(updatedMatch: TournamentMatch) {
-    this.updateMatch(updatedMatch);
   }
 }
 
@@ -553,6 +440,8 @@ export class MatchEditorDialog {
   matchEditorForm: FormGroup;
   selectedMatchFormControl: FormControl;
   workingMatches: TournamentMatch[] = [];
+  
+  readonly destroyRef = inject(DestroyRef);
 
   constructor(
       @Inject(MAT_DIALOG_DATA) public data: { acronym: string, roundId: string, tournament: Tournament, matches: TournamentMatch[] },
@@ -572,6 +461,7 @@ export class MatchEditorDialog {
   }
 
   ngOnInit() {
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
     this.workingMatches = [...this.data.matches];
   }
 
@@ -584,24 +474,18 @@ export class MatchEditorDialog {
 
   submitUpdateMatchForm(partialMatch: Partial<TournamentMatch>) {
     if (!partialMatch.id) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentMatch>;
     let successMessage = "";
     if (!this.selectedMatch) {
-      request = this.tournamentsService.addTournamentMatch(this.data.acronym, this.data.roundId, partialMatch);
+      request = this.tournamentsService.addTournamentMatch(partialMatch);
       successMessage = "tournament.settings.addedMatch";
     } else {
-      request = this.tournamentsService.editTournamentMatch(this.data.acronym, this.data.roundId, this.selectedMatch._id, partialMatch);
+      request = this.tournamentsService.editTournamentMatch(this.selectedMatch._id, partialMatch);
       successMessage = "tournament.settings.editedMatch";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentMatch) => {
-      this.requestInProgress = false;
+    request.subscribe((updatedTournamentMatch) => {
       if (!this.selectedMatch) {
         this.workingMatches.push(updatedTournamentMatch);
       } else {
@@ -613,20 +497,13 @@ export class MatchEditorDialog {
   }
 
   removeMatch(match: TournamentMatch) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentMatch(this.data.acronym, this.data.roundId, match._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.workingMatches.findIndex((match2) => match2.id === match.id);
-        if (index !== undefined) this.workingMatches.splice(index, 1);
-        this.selectedMatchFormControl.setValue("-1");
-        this.switchSelectedMatch("-1");
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedMatch"), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentMatch(match._id).subscribe(() => {
+      const index = this.workingMatches.findIndex((match2) => match2.id === match.id);
+      if (index !== undefined) this.workingMatches.splice(index, 1);
+      this.selectedMatchFormControl.setValue("-1");
+      this.switchSelectedMatch("-1");
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedMatch"), "", { duration: 10000 });
+    });
   }
 }
 

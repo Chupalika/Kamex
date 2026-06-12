@@ -1,6 +1,6 @@
-<div *ngIf="loading" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="loading && !tournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
 <div *ngIf="!loading && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
-<div *ngIf="!loading && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+<div *ngIf="tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <div class="mat-headline-6">{{ tournament.name }} {{ "tournament.registration.registrationStatus" | transloco }}</div>
   
   <div class="mat-body-1 registration-info" *ngIf="(countdowns$ | async) as countdowns">
@@ -54,6 +54,7 @@
           [team]="team"
           [gameMode]="tournament.gameMode"
           [editable]="canEditTeam"
+          [requestInProgress]="requestInProgress"
           (removePlayer)="removePlayer(team, $event)"
           (transferCaptain)="transferCaptain(team, $event)"
         ></tournament-team-card>

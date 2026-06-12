@@ -1,7 +1,7 @@
-<div *ngIf="loadingTournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
-<div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
+<div *ngIf="loading && !tournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="!loading && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 
-<div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+<div *ngIf="tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.participants" | transloco }}</div>
 
   <div class="display-settings" [ngClass]="{'mobile-mode': mobileMode}">

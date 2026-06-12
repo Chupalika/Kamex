@@ -1,6 +1,6 @@
-<div *ngIf="loading" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
-<div *ngIf="!loading && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
-<div *ngIf="!loading && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+<div *ngIf="loadingTournament && !tournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
+<div *ngIf="tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <ng-container *ngIf="!hasPermission(TournamentStaffPermission.EDIT_TOURNAMENT_SETTINGS) &&
                        !hasPermission(TournamentStaffPermission.MANAGE_PLAYERS) &&
                        !hasPermission(TournamentStaffPermission.MANAGE_TEAMS) &&
@@ -30,7 +30,7 @@
     <form [formGroup]="playerEditorForm" class="tourney-form">
       <mat-form-field>
         <mat-label>{{ "tournament.common.player" | transloco }}</mat-label>
-        <mat-select formControlName="selectedPlayer" (selectionChange)="switchSelectedPlayer($event.value)">
+        <mat-select formControlName="selectedPlayer">
           <mat-option value="-1">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let player of players" [value]="player.playerId">{{ player.username }}</mat-option>
         </mat-select>
@@ -65,7 +65,7 @@
     <form [formGroup]="teamEditorForm" class="tourney-form">
       <mat-form-field>
         <mat-label>{{ "tournament.common.team" | transloco }}</mat-label>
-        <mat-select formControlName="selectedTeam" (selectionChange)="switchSelectedTeam($event.value)">
+        <mat-select formControlName="selectedTeam">
           <mat-option value="">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let team of teams" [value]="team._id">{{ team.name }}</mat-option>
         </mat-select>
@@ -87,7 +87,7 @@
     <form [formGroup]="staffMemberEditorForm" class="tourney-form">
       <mat-form-field>
         <mat-label>{{ "tournament.common.staffMember" | transloco }}</mat-label>
-        <mat-select formControlName="selectedStaffMember" (selectionChange)="switchSelectedStaffMember($event.value)">
+        <mat-select formControlName="selectedStaffMember">
           <mat-option value="-1">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let staffMember of staffMembers" [value]="staffMember.playerId">{{ staffMember.username }}</mat-option>
         </mat-select>
@@ -108,7 +108,7 @@
     <form [formGroup]="staffRoleEditorForm" class="tourney-form">
       <mat-form-field>
         <mat-label>{{ "tournament.common.staffRole" | transloco }}</mat-label>
-        <mat-select formControlName="selectedStaffRole" (selectionChange)="switchSelectedStaffRole($event.value)">
+        <mat-select formControlName="selectedStaffRole">
           <mat-option value="">{{ "\<New\>" }}</mat-option>
           <mat-option *ngFor="let staffRole of staffRoles" [value]="staffRole._id">{{ staffRole.name }}</mat-option>
         </mat-select>
@@ -138,12 +138,12 @@
 
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_ROUNDS)">
     <div class="mat-headline-5 section-label">{{ "tournament.settings.roundEditor" | transloco }}</div>
-    <ng-container *ngIf="isLoadingTourneyRound">
+    <ng-container *ngIf="loadingRound">
       <div class="mat-headline-6 section-label">{{ "common.loading" | transloco }}</div>
     </ng-container>
     <tournament-round-editor
       [round]="selectedRound"
-      [requestInProgress]="requestInProgress"
+      [requestInProgress]="requestInProgress || loadingRound"
       [disabled]="isTourneyPlanning || isTourneyConcluded"
       (submit)="submitUpdateRoundForm($event)"
       (remove)="removeRound($event)">
@@ -161,7 +161,7 @@
     ></item-selector>
     <tournament-slot-editor
       [slot]="selectedSlot"
-      [requestInProgress]="requestInProgress"
+      [requestInProgress]="requestInProgress || loadingRound"
       [isMultiMode]="isMultiMode()"
       [disabled]="isTourneyConcluded"
       (submit)="submitUpdateSlotForm($event)"
@@ -186,7 +186,7 @@
       [teams]="tournament.teams"
       [staffMembers]="tournament.staffMembers"
       [matches]="selectedRound.matches"
-      [requestInProgress]="requestInProgress"
+      [requestInProgress]="requestInProgress || loadingRound"
       [disabled]="isTourneyConcluded"
       (submit)="submitUpdateMatchForm($event)"
       (remove)="removeMatch($event)">
@@ -197,7 +197,7 @@
     <div class="mat-headline-5 section-label">{{ "tournament.settings.submitMatch" | transloco }}</div>
     <tournament-submit-match-editor
       [matches]="matches"
-      [requestInProgress]="requestInProgress"
+      [requestInProgress]="requestInProgress || loadingRound"
       (submit)="submitMatch($event)">
     </tournament-submit-match-editor>
   </ng-container>

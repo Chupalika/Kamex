@@ -8,6 +8,22 @@
   a {
     margin-right: 10px;
     color: var(--custom-theme-palette-400);
+
+    &.active {
+      color: var(--custom-theme-palette-600);
+    }
+  }
+
+  .left-side {
+    display: flex;
+    align-items: center;
+    line-height: 0px;
+
+    .icon {
+      width: 48px;
+      border-radius: 12px;
+      margin: 10px;
+    }
   }
 
   .right-side {

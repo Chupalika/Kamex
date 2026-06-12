@@ -1,4 +1,5 @@
-import { Component, NgModule, Input, EventEmitter, Output, inject, Inject, OnInit } from '@angular/core';
+import { Component, NgModule, Input, EventEmitter, Output, inject, Inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -20,8 +21,6 @@ import { MatchProgressionModule } from 'src/app/components/match_progression';
 import { TournamentSubmitMatchEditorModule } from './tournament_submit_match_editor';
 import { TournamentPlayerLabelModule } from '../components/tournament_player_label';
 import { TournamentTeamLabelModule } from '../components/tournament_team_label';
-import { catchError } from 'rxjs/internal/operators/catchError';
-import { throwError } from 'rxjs/internal/observable/throwError';
 
 @Component({
   selector: 'tournament-match-card',
@@ -51,7 +50,6 @@ export class TournamentMatchCard {
   @Output() toggleReferee: EventEmitter<any> = new EventEmitter();
   @Output() toggleStreamer: EventEmitter<any> = new EventEmitter();
   @Output() toggleCommentator: EventEmitter<any> = new EventEmitter();
-  @Output() matchUpdated: EventEmitter<TournamentMatch> = new EventEmitter();
 
   TournamentPlayerCard = TournamentPlayerCard;
   TournamentTeamCard = TournamentTeamCard;
@@ -151,12 +149,6 @@ export class TournamentMatchCard {
     const dialogRef = this.dialogService.open(
       SubmitMatchEditorDialog, { data: { match: this.match, acronym: this.tourneyAcronym, roundId: this.tourneyRoundId } }
     );
-    dialogRef.afterClosed().subscribe((updatedMatch: TournamentMatch) => {
-      if (updatedMatch) {
-        this.match = updatedMatch;
-        this.matchUpdated.emit(updatedMatch);
-      }
-    });
   }
 
   openNotes() {
@@ -221,6 +213,8 @@ export class MatchProgressionDialog {
 })
 export class SubmitMatchEditorDialog {
   requestInProgress: boolean = false;
+
+  readonly destroyRef = inject(DestroyRef);
   
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch, acronym: string, roundId: string },
@@ -230,19 +224,16 @@ export class SubmitMatchEditorDialog {
     private translocoService: TranslocoService,
   ) {}
 
+  ngOnInit() {
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
+  }
+
   async submitMatch(submitMatchDto: SubmitMatchDto) {
     if (!submitMatchDto.id) return;
-    this.requestInProgress = true;
-    this.tournamentsService.submitMatch(this.data.acronym, this.data.roundId, submitMatchDto)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe((updatedTournamentMatch) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("tournament.settings.submittedMatch"), "", { duration: 10000 });
-        this.dialogRef.close(updatedTournamentMatch);
-      });
+    this.tournamentsService.submitMatch(submitMatchDto).subscribe((updatedTournamentMatch) => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.submittedMatch"), "", { duration: 10000 });
+      this.dialogRef.close(updatedTournamentMatch);
+    });
   }
 }
 

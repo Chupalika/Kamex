@@ -2,6 +2,10 @@
   display: flex;
   flex-direction: column;
 
+  .loading-message {
+    width: 100%;
+  }
+
   .left-side {
     display: flex;
     flex-direction: column;

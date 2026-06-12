@@ -1,6 +1,7 @@
 import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { Component, inject, Inject, NgModule, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, Inject, NgModule, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { MatButtonModule } from "@angular/material/button";
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -15,10 +16,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, ParamMap } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
-import { catchError, finalize, map, switchMap, take } from 'rxjs/operators';
-import { Observable, of, throwError } from "rxjs";
+import { catchError } from 'rxjs/operators';
+import { Observable, throwError } from "rxjs";
 
 import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentRoundNavBarModule } from '../components/tournament_round_nav_bar';
@@ -26,8 +26,8 @@ import { TournamentPlayerCard } from '../components/tournament_player_card';
 import { TournamentTeamCard } from '../components/tournament_team_card';
 import { TournamentSlotCard } from '../components/tournament_slot_card';
 import { HovercardModule } from 'src/app/components/hovercard';
-import { calculateStats, calculateTeamStats, getLatestRoundIndex, getSortedMappool, hasPermission } from '../utils';
-import { AppUser, Mappool, MappoolSlot, Tournament, TournamentRound, TournamentStaffPermission, TournamentStatsPlayers, TournamentStatsTeams, TournamentScoreWithRank, TournamentRoundPlayerOverallStats, TournamentRoundTeamOverallStats, GameMode, Scoresheet, TournamentPlayer, TournamentTeam, Score, ScoreMod, MappoolSlotScoresheet, MappoolSlotScoresheetEntry, TournamentProgress } from 'src/app/models/models';
+import { calculateStats, calculateTeamStats, getLatestRoundIndex, getSortedMappool, hasPermission, EMPTY_SCORESHEET } from '../utils';
+import { AppUser, MappoolSlot, Tournament, TournamentRound, TournamentStaffPermission, TournamentStatsPlayers, TournamentStatsTeams, TournamentScoreWithRank, TournamentRoundPlayerOverallStats, TournamentRoundTeamOverallStats, GameMode, Scoresheet, TournamentPlayer, TournamentTeam, Score, ScoreMod, MappoolSlotScoresheet, MappoolSlotScoresheetEntry, TournamentProgress } from 'src/app/models/models';
 import { NavBarModule } from "../../nav_bar/nav_bar";
 import { TournamentsService } from '../../services/tournaments.service';
 import { AuthService } from 'src/app/services/auth.service';
@@ -54,9 +54,6 @@ interface MappedMappoolSlotScoresheet extends Omit<MappoolSlotScoresheet, "playe
 
 type TableRow = OverallPlayerStats | OverallTeamStats;
 
-const EMPTY_MAPPOOL: Mappool = { _id: "", slots: [] };
-const EMPTY_SCORESHEET: Scoresheet = { _id: "", isPublic: false, ownerId: 0, admins: [], mappool: EMPTY_MAPPOOL, slotScoresheets: [] };
-
 @Component({
   selector: 'tournament-stats-page',
   templateUrl: './tournament_stats_page.html',
@@ -65,18 +62,17 @@ const EMPTY_SCORESHEET: Scoresheet = { _id: "", isPublic: false, ownerId: 0, adm
 export class TournamentStatsPage implements OnInit {
   acronym = "";
   tournament?: Tournament;
-  sortedTournamentRounds: TournamentRound[] = [];
-  selectedTournamentRound?: TournamentRound;
+  round?: TournamentRound;
   loadingTournament = true;
   loadingRound = false;
   loadingStats = false;
-  selectedRoundIndex: number = 0;
+  sortedRounds: TournamentRound[] = [];
+  selectedRoundIndex: number = -1;
   selectedRoundId: string = "";
   sortedSlots: MappoolSlot[] = [];
   selectedSlot?: MappoolSlot;
   selectedSlotIndex = -1;
   selectedSlotLabel = "";
-  tournamentRounds: Map<string, TournamentRound> = new Map(); // keyed by _id
   playerStats?: TournamentStatsPlayers;
   teamStats?: TournamentStatsTeams;
   mappedScoresheet: MappedScoresheet = { ...EMPTY_SCORESHEET, slotScoresheets: new Map() };
@@ -116,11 +112,11 @@ export class TournamentStatsPage implements OnInit {
   TournamentSlotCard = TournamentSlotCard;
 
   readonly dialogService = inject(MatDialog);
+  readonly destroyRef = inject(DestroyRef);
 
   constructor(
       private tournamentsService: TournamentsService,
       private authService: AuthService,
-      private route: ActivatedRoute,
       private snackBar: MatSnackBar,
       private breakpointObserver: BreakpointObserver,
       private titleService: Title) {
@@ -143,27 +139,32 @@ export class TournamentStatsPage implements OnInit {
   }
 
   ngOnInit() {
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => {
-        this.acronym = params.get("acronym") || "";
-        return this.tournamentsService.getTournament(this.acronym);
-      }),
-      take(1),
-      finalize(() => {this.loadingTournament = false;}),
-    ).subscribe((tournament) => {
+    this.tournamentsService.loadingTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingTournament = loading; });
+    this.tournamentsService.loadingRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingRound = loading; });
+    this.tournamentsService.currentTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((tournament) => {
       this.tournament = tournament;
-      this.titleService.setTitle(`${tournament.name} Stats`);
+      this.titleService.setTitle(tournament ? `${tournament.name} Stats` : "Kamex");
 
-      this.alphaSortedPlayers = [...this.tournament!.players].sort((a, b) => a.username.toLowerCase().localeCompare(b.username.toLowerCase()));
-      this.alphaSortedTeams = [...this.tournament!.teams].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-      this.tournament.players.forEach((player) => this.playerIdToPlayer.set(player.playerId, player));
-      this.tournament.teams.forEach((team) => this.teamIdToTeam.set(team._id, team));
-      this.sortedTournamentRounds = [...tournament.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
-      const latestRoundIndex = getLatestRoundIndex(this.sortedTournamentRounds);
-      this.switchSelectedRoundIndex(latestRoundIndex);
-      this.refreshCanEditStats();
+      if (this.tournament && this.selectedRoundIndex < 0) {
+        this.alphaSortedPlayers = [...this.tournament!.players].sort((a, b) => a.username.toLowerCase().localeCompare(b.username.toLowerCase()));
+        this.alphaSortedTeams = [...this.tournament!.teams].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+        this.tournament.players.forEach((player) => this.playerIdToPlayer.set(player.playerId, player));
+        this.tournament.teams.forEach((team) => this.teamIdToTeam.set(team._id, team));
+        this.sortedRounds = [...this.tournament.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
+        const latestRoundIndex = getLatestRoundIndex(this.sortedRounds);
+        this.switchSelectedRoundIndex(latestRoundIndex);
+        this.refreshCanEditStats();
+      }
     });
-    this.authService.appUser$.subscribe((user) => {
+    this.tournamentsService.currentRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((round) => {
+      this.round = round;
+      this.selectedRoundIndex = this.sortedRounds.findIndex((r) => r._id === round?._id);
+      if (round && !round.mappool.unloaded && !round.scoresheet.unloaded) {
+        this.recalcStats();
+        this.mapScoresheet();
+      }
+    });
+    this.authService.appUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
       this.appUser = user;
       this.refreshCanEditStats();
     });
@@ -177,96 +178,17 @@ export class TournamentStatsPage implements OnInit {
     });
   }
 
-  get isTourneyConcluded(): boolean {
-    return this.tournament?.progress === TournamentProgress.CONCLUDED;
-  }
-  
-  get overallColumnNames() {
-    const ans = ["rank", "playerName"];
-    if (this.ignoreZeroFormControl.value) ans.push("numMaps");
-    switch (this.sortMethodFormControl.value) {
-      case "ranksum":
-        ans.push("rankSum");
-        break;
-      case "zscore":
-        ans.push("zscoreSum");
-        break;
-    }
-    ans.push("scoreSum");
-    return ans;
-  }
-
-  canViewHiddenMappool() {
-    return hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.VIEW_WIP_MAPPOOLS);
-  }
-
-  canViewHiddenScoresheet() {
-    return hasPermission(this.tournament!, this.appUser?.osuId, TournamentStaffPermission.VIEW_WIP_SCORESHEETS);
-  }
-
   switchSelectedRoundIndex(index: number) {
     if (this.loadingRound) return;
-    this.selectedRoundIndex = index;
-    this.selectedRoundId = this.sortedTournamentRounds[index]?._id ?? "";
-    if (this.selectedRoundId && !this.tournamentRounds.has(this.selectedRoundId)) {
-      this.loadingRound = true;
-      this.tournamentsService.getTournamentRound(this.tournament!.acronym, this.selectedRoundId).pipe(
-        switchMap((tourneyRound) => {
-          // fetch mappool if it's wip but user has permission to view wip pool
-          let theMappool = tourneyRound.mappool;
-          if (typeof theMappool === "string") {
-            if (this.canViewHiddenMappool()) {
-              return this.tournamentsService.getTournamentMappool(this.tournament!.acronym, theMappool).pipe(map((mappool) => ({ tourneyRound, mappool })));
-            }
-            else {
-              tourneyRound.mappool = EMPTY_MAPPOOL;
-              return of({ tourneyRound, mappool: null });
-            }
-          } else {
-            return of({ tourneyRound, mappool: theMappool });
-          }
-        }),
-        switchMap(({ tourneyRound, mappool }) => {
-          // fetch scoresheet if it's wip but user has permission to view wip scoresheet
-          let theScoresheet = tourneyRound.scoresheet;
-          if (typeof theScoresheet === "string") {
-            if (this.canViewHiddenScoresheet()) {
-              return this.tournamentsService.getTournamentScoresheet(this.tournament!.acronym, theScoresheet).pipe(map((scoresheet) => ({ tourneyRound, mappool, scoresheet })));
-            }
-            else {
-              tourneyRound.scoresheet = EMPTY_SCORESHEET;
-              return of({ tourneyRound, mappool, scoresheet: null });
-            }
-          } else {
-            return of({ tourneyRound, mappool, scoresheet: theScoresheet });
-          }
-        }),
-        catchError((error) => {
-          this.loadingRound = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
-          return throwError(error);
-        })
-      ).subscribe(({ tourneyRound, mappool, scoresheet }) => {
-          if (mappool) tourneyRound.mappool = mappool;
-          if (scoresheet) tourneyRound.scoresheet = scoresheet;
-          this.tournamentRounds.set(this.selectedRoundId!, tourneyRound);
-          this.selectedTournamentRound = tourneyRound;
-          this.loadingRound = false;
-          this.recalcStats();
-          this.mapScoresheet();
-        });
-    } else if (this.selectedRoundId && this.tournamentRounds.has(this.selectedRoundId)) {
-      this.selectedTournamentRound = this.tournamentRounds.get(this.selectedRoundId)!;
-      this.recalcStats();
-      this.mapScoresheet();
-    }
+    this.selectedRoundId = this.sortedRounds[index]?._id ?? "";
+    if (this.selectedRoundId) this.tournamentsService.loadOrRefreshTournamentRound(this.selectedRoundId, false, true, true);
   }
 
   recalcStats() {
     this.loadingStats = true;
 
     if (this.tournament?.enableTeams) {
-      this.teamStats = calculateTeamStats(this.selectedTournamentRound!.mappool, this.selectedTournamentRound!.scoresheet, this.tournament!.teams, this.sortMethodFormControl.value, this.ignoreZeroFormControl.value);
+      this.teamStats = calculateTeamStats(this.round!.mappool, this.round!.scoresheet, this.tournament!.teams, this.sortMethodFormControl.value, this.ignoreZeroFormControl.value);
       this.overallTeamRanking = this.teamStats.overallRanking.map((x) => {
         const team = this.tournament!.teams.find((y) => y._id === x.teamId);
         return {
@@ -298,7 +220,7 @@ export class TournamentStatsPage implements OnInit {
       }
     }
 
-    this.playerStats = calculateStats(this.selectedTournamentRound!.mappool, this.selectedTournamentRound!.scoresheet, this.tournament!.players, this.sortMethodFormControl.value, this.ignoreZeroFormControl.value);
+    this.playerStats = calculateStats(this.round!.mappool, this.round!.scoresheet, this.tournament!.players, this.sortMethodFormControl.value, this.ignoreZeroFormControl.value);
     this.overallPlayerRanking = this.playerStats.overallRanking.map((x) => {
       const player = this.tournament!.players.find((y) => y.playerId === x.playerId);
       return {
@@ -329,7 +251,7 @@ export class TournamentStatsPage implements OnInit {
       this.slotPlayerRankings.set(label, ranking);
     }
 
-    this.sortedSlots = getSortedMappool(this.tournament!, this.selectedTournamentRound!.mappool.slots);
+    this.sortedSlots = getSortedMappool(this.tournament!, this.round!.mappool.slots);
     // Auto switch to the slot with the same label as currently selected one if it exists
     const correspondingSlotIndex = this.sortedSlots.findIndex((slot) => slot.label === this.selectedSlotLabel);
     if (correspondingSlotIndex >= 0) this.switchSelectedSlotIndex(correspondingSlotIndex);
@@ -339,9 +261,12 @@ export class TournamentStatsPage implements OnInit {
   }
 
   mapScoresheet() {
+    const slotScoresheets = this.sortedSlots.map((slot) => {
+      return this.round!.scoresheet.slotScoresheets.find((slotScoresheet) => slotScoresheet.slot.label === slot.label) ?? { _id: "", slot, playerScores: [], teamScores: [] };
+    });
     this.mappedScoresheet = {
-      ...this.selectedTournamentRound!.scoresheet,
-      slotScoresheets: new Map(this.selectedTournamentRound!.scoresheet.slotScoresheets.map((slotScoresheet) => {
+      ...this.round!.scoresheet,
+      slotScoresheets: new Map(slotScoresheets.map((slotScoresheet) => {
         const mappedSlotScoresheet: MappedMappoolSlotScoresheet = {
           ...slotScoresheet,
           playerScores: new Map(slotScoresheet.playerScores.map((entry) => [entry.player!.playerId, entry])),
@@ -351,6 +276,25 @@ export class TournamentStatsPage implements OnInit {
       })),
     };
     this.refreshMaps();
+  }
+
+  get isTourneyConcluded(): boolean {
+    return this.tournament?.progress === TournamentProgress.CONCLUDED;
+  }
+  
+  get overallColumnNames() {
+    const ans = ["rank", "playerName"];
+    if (this.ignoreZeroFormControl.value) ans.push("numMaps");
+    switch (this.sortMethodFormControl.value) {
+      case "ranksum":
+        ans.push("rankSum");
+        break;
+      case "zscore":
+        ans.push("zscoreSum");
+        break;
+    }
+    ans.push("scoreSum");
+    return ans;
   }
 
   refreshMaps() {
@@ -491,12 +435,12 @@ export class TournamentStatsPage implements OnInit {
       if (result) {
         if (this.playerOrTeamStatsFormControl.value === 'team') {
           const seedsToAssign = this.overallTeamRanking.map((row) => ({ teamId: (row as OverallTeamStats).teamId, seed: row.rank.toString() })).filter((entry) => entry.seed <= result);
-          this.tournamentsService.batchAssignTeamSeeds(this.tournament!.acronym, { teamSeeds: seedsToAssign }).subscribe(() => {
+          this.tournamentsService.batchAssignTeamSeeds({ teamSeeds: seedsToAssign }).subscribe(() => {
             this.snackBar.open("Team seeds assigned.", "", { duration: 10000 });
           });
         } else {
           const seedsToAssign = this.overallPlayerRanking.map((row) => ({ playerId: (row as OverallPlayerStats).playerId, seed: row.rank.toString() })).filter((entry) => entry.seed <= result);
-          this.tournamentsService.batchAssignPlayerSeeds(this.tournament!.acronym, { playerSeeds: seedsToAssign }).subscribe(() => {
+          this.tournamentsService.batchAssignPlayerSeeds({ playerSeeds: seedsToAssign }).subscribe(() => {
             this.snackBar.open("Player seeds assigned.", "", { duration: 10000 });
           });
         }
@@ -520,7 +464,7 @@ export class TournamentStatsPage implements OnInit {
     }
     if (!isNew && !score) return;
     const slotScoresheet = this.mappedScoresheet.slotScoresheets.get(slot.label)!;
-    const dialogRef = this.dialogService.open(ScoreDetailsDialog, { data: { slot, score, playerName, isNew, canEdit: this.canEditStats, acronym: this.acronym, roundId: this.selectedRoundId, slotScoresheetId: slotScoresheet._id, playerOrTeamId: playerId } });
+    const dialogRef = this.dialogService.open(ScoreDetailsDialog, { data: { slot, score, playerName, isNew, canEdit: this.canEditStats, acronym: this.acronym, roundId: this.selectedRoundId, playerOrTeamId: playerId } });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         let theEntry: MappoolSlotScoresheetEntry;
@@ -541,7 +485,10 @@ export class TournamentStatsPage implements OnInit {
           }
         }
         else theEntry.scores.push(result);
-        this.refreshMaps();
+        this.recalcStats();
+        this.mapScoresheet();
+        // since scoresheet is only updated locally here (due to complex code), mark it for refresh so that exiting and re-entering this page will correctly show the new data
+        this.tournamentsService.markRoundForRefresh(this.round!._id);
       }
     });
   }
@@ -794,14 +741,17 @@ export class ScoreDetailsDialog implements OnInit {
   editMode: boolean = false;
   requestInProgress: boolean = false;
 
+  readonly destroyRef = inject(DestroyRef);
+
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { slot: MappoolSlot, score: Score, playerName: string, isNew: boolean, canEdit: boolean, acronym: string, roundId: string, slotScoresheetId: string, playerOrTeamId: string },
+    @Inject(MAT_DIALOG_DATA) public data: { slot: MappoolSlot, score: Score, playerName: string, isNew: boolean, canEdit: boolean, acronym: string, roundId: string, playerOrTeamId: string },
     private dialogRef: MatDialogRef<ScoreDetailsDialog>,
     private tournamentsService: TournamentsService,
     private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit() {
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
     if (this.data.isNew) {
       this.editMode = true;
     }
@@ -817,14 +767,8 @@ export class ScoreDetailsDialog implements OnInit {
   delete() {
     // nahh i ain't makin a dialog within a dialog lol
     if (window.confirm("Delete this score?")) {
-      this.requestInProgress = true;
-      const request = this.tournamentsService.deleteScore(this.data.acronym, this.data.roundId, this.data.slotScoresheetId, this.data.score._id);
-      request.pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
+      const request = this.tournamentsService.deleteScore(this.data.slot._id, this.data.score._id);
+      request.subscribe(() => {
         this.snackBar.open("Successfully deleted score.", "", { duration: 10000 });
         this.dialogRef.close({ delete: true, _id: this.data.score._id });
       });;
@@ -832,24 +776,17 @@ export class ScoreDetailsDialog implements OnInit {
   }
 
   async submitEdit(updatedScore: Score) {
-    this.requestInProgress = true;
-
     let request: Observable<Score>;
     let successMessage = "";
     if (this.data.isNew) {
-      request = this.tournamentsService.createScore(this.data.acronym, this.data.roundId, this.data.slotScoresheetId, this.data.playerOrTeamId, updatedScore);
+      request = this.tournamentsService.createScore(this.data.slot._id, this.data.playerOrTeamId, updatedScore);
       successMessage = "Successfully added score.";
     } else {
-      request = this.tournamentsService.editScore(this.data.acronym, this.data.roundId, this.data.slotScoresheetId, this.data.score._id, updatedScore);
+      request = this.tournamentsService.editScore(this.data.slot._id, this.data.score._id, updatedScore);
       successMessage = "Successfully edited score.";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedScore) => {
-      this.requestInProgress = false;
+    request.subscribe((updatedScore) => {
       this.snackBar.open(successMessage, "", { duration: 10000 });
       this.dialogRef.close(updatedScore);
     });;

@@ -3,6 +3,8 @@ import * as countries from 'i18n-iso-countries';
 
 //const MAP_FIELDS: string[] = [];
 //const NESTED_MAP_FIELDS: string[] = ["playerScores", "teamScores"];
+export const EMPTY_MAPPOOL: Mappool = { _id: "", slots: [] };
+export const EMPTY_SCORESHEET: Scoresheet = { _id: "", isPublic: false, ownerId: 0, admins: [], mappool: EMPTY_MAPPOOL, slotScoresheets: [] };
 
 export function processApiResponse(theObject: any) {
   for (const key in theObject) {

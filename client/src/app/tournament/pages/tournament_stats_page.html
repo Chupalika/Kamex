@@ -1,7 +1,7 @@
-<div *ngIf="loadingTournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="loadingTournament && !tournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
 <div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 
-<div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+<div *ngIf="tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.stats" | transloco }}</div>
 
   <item-selector
@@ -10,17 +10,15 @@
       (selectedIndexChange)="switchSelectedRoundIndex($event)"
   ></item-selector>
 
-  <div *ngIf="loadingRound" class="mat-headline-6">{{ "common.loading" | transloco }}</div>
-  <div *ngIf="loadingStats" class="mat-headline-6">{{ "common.loading" | transloco }}</div>
+  <div *ngIf="loadingRound || loadingStats" class="mat-headline-6 round-container">{{ "common.loading" | transloco }}</div>
 
-  <ng-container *ngIf="!loadingRound && !loadingStats">
-    <div *ngIf="selectedTournamentRound?.mappoolWip && !canViewHiddenMappool()" class="mat-headline-6">{{ "tournament.mappools.mappoolNotPublic" | transloco }}</div>
-    <div *ngIf="selectedTournamentRound?.scoresheetWip && !canViewHiddenScoresheet()" class="mat-headline-6">{{ "tournament.stats.scoresheetNotPublic" | transloco }}</div>
-  </ng-container>
+  <div *ngIf="!loadingRound && !loadingStats" class="round-container">
+    <div *ngIf="!round">{{ "tournament.common.noRound" | transloco }}</div>
+    <div *ngIf="round && round.mappool.unloaded" class="mat-headline-6">{{ "tournament.mappools.mappoolNotPublic" | transloco }}</div>
+    <div *ngIf="round && round.scoresheet.unloaded" class="mat-headline-6">{{ "tournament.stats.scoresheetNotPublic" | transloco }}</div>
+  </div>
 
-  <div *ngIf="selectedTournamentRound && !loadingRound && !loadingStats &&
-              (!selectedTournamentRound.mappoolWip || canViewHiddenMappool()) &&
-              (!selectedTournamentRound.scoresheetWip || canViewHiddenScoresheet())" class="round-container">
+  <div *ngIf="round && !loadingRound && !loadingStats && !round.mappool.unloaded && !round.scoresheet.unloaded" class="round-container">
     <form [formGroup]="settingsForm" class="settings-container">
       <div class="settings-options">
         <mat-form-field appearance="outline">

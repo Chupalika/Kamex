@@ -20,7 +20,7 @@ export class ItemSelector {
   customThemeEnabled = false;
 
   constructor(private tournamentsService: TournamentsService) {
-    this.tournamentsService.currentTournament.subscribe((tourney) => {
+    this.tournamentsService.currentTournament$.subscribe((tourney) => {
       if (tourney?.theme.primaryColor || tourney?.theme.accentColor) {
         this.customThemeEnabled = true;
       } else {

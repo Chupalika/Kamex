@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, NgModule, OnInit } from '@angular/core';
-import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { ActivatedRoute, ParamMap } from '@angular/router';
+import { Component, DestroyRef, inject, NgModule, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { MatButtonModule } from "@angular/material/button";
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -10,9 +10,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { Title } from '@angular/platform-browser';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
-import { catchError, finalize, map, switchMap, take } from 'rxjs/operators';
-import { Observable, Subscription, of, throwError } from "rxjs";
+import { Observable } from "rxjs";
 
 import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentMatchEditorModule } from "../components/tournament_match_editor";
@@ -24,15 +24,11 @@ import { TournamentStaffMemberEditorModule } from "../components/tournament_staf
 import { TournamentStaffRoleEditorModule } from "../components/tournament_staff_role_editor";
 import { TournamentSettingsEditorModule } from "../components/tournament_settings_editor";
 import { TournamentTeamEditorModule } from "../components/tournament_team_editor";
-//import { convertDatetimeLocalToDate } from './utils';
-import { AppUser, GameMode, Mappool, MappoolSlot, Tournament, TournamentMatch, TournamentPlayer, TournamentRound, TournamentStaffMember, TournamentStaffRole, TournamentStaffPermission, TournamentTeam, TournamentProgress } from '../../models/models';
+import { AppUser, GameMode, MappoolSlot, Tournament, TournamentMatch, TournamentPlayer, TournamentRound, TournamentStaffMember, TournamentStaffRole, TournamentStaffPermission, TournamentTeam, TournamentProgress } from '../../models/models';
 import { NavBarModule } from "../../nav_bar/nav_bar";
 import { AuthService } from 'src/app/services/auth.service';
 import { TournamentsService } from '../../services/tournaments.service';
-import { Title } from '@angular/platform-browser';
 import { getSortedMappool } from '../utils';
-
-const EMPTY_MAPPOOL: Mappool = { _id: "", slots: [] };
 
 @Component({
   selector: 'tournament-settings-page',
@@ -42,23 +38,18 @@ const EMPTY_MAPPOOL: Mappool = { _id: "", slots: [] };
 export class TournamentSettingsPage implements OnInit {
   acronym = "";
   tournament?: Tournament;
-  loading = true;
-  appUser?: AppUser;
+  loadingTournament = true;
+  loadingRound = false;
   requestInProgress = false;
-  isLoadingTourneyRound = false;
-  tournamentRounds: Map<string, TournamentRound> = new Map(); // keyed by _id
+  appUser?: AppUser;
   players: TournamentPlayer[] = [];
   selectedPlayer?: TournamentPlayer;
-  selectedPlayerIndex = -1;
   teams: TournamentTeam[] = [];
   selectedTeam?: TournamentTeam;
-  selectedTeamIndex = -1;
   staffMembers: TournamentStaffMember[] = [];
   selectedStaffMember?: TournamentStaffMember;
-  selectedStaffMemberIndex = -1;
   staffRoles: TournamentStaffRole[] = [];
   selectedStaffRole?: TournamentStaffRole;
-  selectedStaffRoleIndex = -1;
   rounds: TournamentRound[] = [];
   selectedRound?: TournamentRound;
   selectedRoundIndex = -1;
@@ -78,61 +69,66 @@ export class TournamentSettingsPage implements OnInit {
   staffRoleEditorForm: FormGroup;
   selectedStaffRoleFormControl: FormControl;
 
-  submitMatchForm: FormGroup;
-  matchIdFormControl: FormControl;
-
   TournamentStaffPermission = TournamentStaffPermission;
 
   readonly dialogService = inject(MatDialog);
+  readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private tournamentsService: TournamentsService,
     private authService: AuthService,
-    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private titleService: Title,
     private translocoService: TranslocoService) {
       this.selectedPlayerFormControl = new FormControl("-1");
-      this.playerEditorForm = new FormGroup({
-        selectedPlayer: this.selectedPlayerFormControl,
+      this.playerEditorForm = new FormGroup({ selectedPlayer: this.selectedPlayerFormControl });
+      this.selectedPlayerFormControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((playerId) => {
+        const index = this.players.findIndex((player) => player.playerId === playerId);
+        if (index < 0) this.selectedPlayer = undefined;
+        this.selectedPlayer = this.players[index];
       });
 
       this.selectedTeamFormControl = new FormControl("");
-      this.teamEditorForm = new FormGroup({
-        selectedTeam: this.selectedTeamFormControl,
+      this.teamEditorForm = new FormGroup({ selectedTeam: this.selectedTeamFormControl });
+      this.selectedTeamFormControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((teamId) => {
+        const index = this.teams.findIndex((team) => team._id === teamId);
+        if (index < 0) this.selectedTeam = undefined;
+        this.selectedTeam = this.teams[index];
       });
 
       this.selectedStaffMemberFormControl = new FormControl("-1");
-      this.staffMemberEditorForm = new FormGroup({
-        selectedStaffMember: this.selectedStaffMemberFormControl,
+      this.staffMemberEditorForm = new FormGroup({ selectedStaffMember: this.selectedStaffMemberFormControl });
+      this.selectedStaffMemberFormControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((staffMemberId) => {
+        const index = this.staffMembers.findIndex((member) => member.playerId === staffMemberId);
+        if (index < 0) this.selectedStaffMember = undefined;
+        this.selectedStaffMember = this.staffMembers[index];
       });
 
       this.selectedStaffRoleFormControl = new FormControl("");
-      this.staffRoleEditorForm = new FormGroup({
-        selectedStaffRole: this.selectedStaffRoleFormControl,
-      });
-
-      this.matchIdFormControl = new FormControl("", [Validators.required, Validators.min(1)]);
-      this.submitMatchForm = new FormGroup({
-        matchId: this.matchIdFormControl,
+      this.staffRoleEditorForm = new FormGroup({ selectedStaffRole: this.selectedStaffRoleFormControl });
+      this.selectedStaffRoleFormControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((staffRoleId) => {
+        const index = this.staffRoles.findIndex((role) => role._id === staffRoleId);
+        if (index < 0) this.selectedStaffRole = undefined;
+        this.selectedStaffRole = this.staffRoles[index];
       });
     }
 
   ngOnInit() {
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => {
-        this.acronym = params.get("acronym") || "";
-        return this.tournamentsService.getTournament(this.acronym);
-      }),
-      take(1),
-      finalize(() => {this.loading = false;}),
-    ).subscribe((tournament) => {
+    this.tournamentsService.loadingTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingTournament = loading; });
+    this.tournamentsService.loadingRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loadingRound = loading; });
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
+    this.tournamentsService.currentTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((tournament) => {
       this.tournament = tournament;
-      this.refreshTournamentHelper(tournament);
-      this.titleService.setTitle(`${tournament.name} Settings`);
+      this.titleService.setTitle(tournament ? `${tournament.name} Settings` : 'Kamex');
+      if (tournament) this.refreshTournamentHelper(tournament);
     });
-
-    this.authService.appUser$.subscribe((user) => this.appUser = user);
+    this.tournamentsService.currentRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((round) => {
+      this.selectedRound = round;
+      this.selectedRoundIndex = this.rounds.findIndex((r) => r._id === round?._id);
+      if (round) this.switchRoundHelper();
+    });
+    this.authService.appUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => this.appUser = user);
+    this.tournamentsService.unselectCurrentRound();
   }
 
   get currentStaffMember() {
@@ -150,73 +146,27 @@ export class TournamentSettingsPage implements OnInit {
 
   submitEditTournamentForm(partialTournament: Partial<Tournament>) {
     if (!partialTournament.acronym) return;
-    this.requestInProgress = true;
-    this.tournamentsService.editTournament(partialTournament)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((updatedTournament) => {
-          this.tournament = updatedTournament;
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("tournament.settings.tourneySettingsEdited"), "", { duration: 10000 });
-        });
+    this.tournamentsService.editTournament(partialTournament).subscribe((updatedTournament) => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.tourneySettingsEdited"), "", { duration: 10000 });
+    });
   }
 
   refreshAllPlayerData() {
     const dialogRef = this.dialogService.open(RefreshPlayerDataDialog);
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.requestInProgress = true;
-        this.tournamentsService.refreshPlayers(this.acronym)
-          .pipe(catchError((error) => {
-            this.requestInProgress = false;
-            this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-            return throwError(error);
-          })).subscribe((result: any) => {
-            this.requestInProgress = false;
-            if (result.statusCode === 207 && result.message) {
-              this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshedWithMessage", { message: result.message }), "", { duration: 20000 });
-            } else {
-              this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
-            }
-          });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.tournamentsService.refreshPlayers(this.tournament!.acronym).subscribe(() => {
+          this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
+          this.tournamentsService.loadOrRefreshTournament(this.tournament!.acronym, true);
+        });
       }
     });
   }
 
   refreshPlayerData(player: TournamentPlayer) {
-    console.log(player);
-    this.requestInProgress = true;
-        this.tournamentsService.refreshPlayer(this.acronym, player.playerId)
-          .pipe(catchError((error) => {
-            this.requestInProgress = false;
-            this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-            return throwError(error);
-          }))
-          .subscribe((refreshedPlayer) => {
-            this.requestInProgress = false;
-            const index = this.players.findIndex((p) => p.playerId === refreshedPlayer.playerId);
-            this.players[index] = refreshedPlayer;
-            this.selectedPlayer = refreshedPlayer;
-            this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
-          });
-  }
-
-  refreshTournament(): Subscription {
-    this.requestInProgress = true;
-    return this.tournamentsService.getTournament(this.acronym)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      }))
-      .subscribe((tourney) => {
-        this.tournament = tourney;
-        this.requestInProgress = false;
-        this.refreshTournamentHelper(tourney);
-      });
+    this.tournamentsService.refreshPlayer(this.tournament!.acronym, player.playerId).subscribe((refreshedPlayer) => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
+    });
   }
 
   refreshTournamentHelper(tourney: Tournament) {
@@ -225,326 +175,162 @@ export class TournamentSettingsPage implements OnInit {
     this.staffMembers = [...tourney.staffMembers].sort((a, b) => a.username.toLowerCase() < b.username.toLowerCase() ? -1 : 1);
     this.staffRoles = [...tourney.staffRoles].sort((a, b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
     this.rounds = [...tourney.rounds].sort((a, b) => a.startDate.getTime() < b.startDate.getTime() ? -1 : 1);
-  }
-
-  refreshRound(roundId: string): Subscription {
-    this.requestInProgress = true;
-    this.isLoadingTourneyRound = true;
-    return this.tournamentsService.getTournamentRound(this.tournament!.acronym, roundId).pipe(
-      switchMap((tourneyRound) => {
-        // fetch mappool if it's wip but user has permission to view wip pool
-        let theMappool = tourneyRound.mappool;
-        if (typeof theMappool === "string") {
-          if (this.hasPermission(TournamentStaffPermission.VIEW_WIP_MAPPOOLS)) {
-            return this.tournamentsService.getTournamentMappool(this.tournament!.acronym, theMappool).pipe(map((mappool) => ({ tourneyRound, mappool })));
-          } else {
-            tourneyRound.mappool = EMPTY_MAPPOOL;
-            return of({ tourneyRound, mappool: null });
-          }
-        } else {
-          return of({ tourneyRound, mappool: theMappool });
-        }
-      }),
-      catchError((error) => {
-        this.requestInProgress = false;
-        this.isLoadingTourneyRound = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      }))
-      .subscribe(({ tourneyRound, mappool }) => {
-        if (mappool) tourneyRound.mappool = mappool;
-        this.requestInProgress = false;
-        this.isLoadingTourneyRound = false;
-        this.tournamentRounds.set(roundId, tourneyRound);
-        this.selectedRound = this.tournamentRounds.get(roundId);
-        this.switchRoundHelper();
-      });
+    // refresh selections or reset them if they don't exist anymore
+    if (!tourney.players.find((p) => p.playerId === this.selectedPlayer?.playerId)) this.selectedPlayerFormControl.patchValue(-1);
+    else this.selectedPlayerFormControl.patchValue(this.selectedPlayer!.playerId);
+    if (!tourney.teams.find((t) => t._id === this.selectedTeam?._id)) this.selectedTeamFormControl.patchValue("");
+    else this.selectedTeamFormControl.patchValue(this.selectedTeam!._id);
+    if (!tourney.staffMembers.find((s) => s.playerId === this.selectedStaffMember?.playerId)) this.selectedStaffMemberFormControl.patchValue(-1);
+    else this.selectedStaffMemberFormControl.patchValue(this.selectedStaffMember!.playerId);
+    if (!tourney.staffRoles.find((r) => r._id === this.selectedStaffRole?._id)) this.selectedStaffRoleFormControl.patchValue(-1);
+    else this.selectedStaffRoleFormControl.patchValue(this.selectedStaffRole!._id);
+    if (!tourney.rounds.find((r) => r._id === this.selectedRound?._id)) this.switchSelectedTournamentRound(-1);
+    else this.switchSelectedTournamentRound(this.selectedRoundIndex);
   }
 
   get playerLabels() {
     return this.players.map((player) => player.username);
   }
 
-  switchSelectedPlayer(playerId: number) {
-    const index = this.players.findIndex((player) => player.playerId === playerId);
-    this.selectedPlayerIndex = index;
-    if (index < 0) this.selectedPlayer = undefined;
-    this.selectedPlayer = this.players[index];
-  }
-
   submitUpdatePlayerForm(partialPlayer: Partial<TournamentPlayer>) {
     if (!partialPlayer.playerId) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentPlayer>;
     let successMessage = "";
     if (!this.selectedPlayer) {
-      request = this.tournamentsService.addTournamentPlayer(this.acronym, partialPlayer.playerId, partialPlayer);
+      request = this.tournamentsService.addTournamentPlayer(partialPlayer.playerId, partialPlayer);
       successMessage = "tournament.settings.addedPlayer";
     } else {
-      request = this.tournamentsService.editTournamentPlayer(this.acronym, this.selectedPlayer.playerId, partialPlayer);
+      request = this.tournamentsService.editTournamentPlayer(this.selectedPlayer.playerId, partialPlayer);
       successMessage = "tournament.settings.editedPlayer";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentPlayer) => {
-      this.refreshTournament().add(() => {
-        this.requestInProgress = false;
-        this.selectedPlayer = this.players[this.selectedPlayerIndex];
-        this.snackBar.open(this.translocoService.translate(successMessage, { username: updatedTournamentPlayer.username }), "", { duration: 10000 });
-      });
+    request.subscribe((updatedTournamentPlayer) => {
+      this.selectedPlayerFormControl.patchValue(updatedTournamentPlayer.playerId);
+      this.snackBar.open(this.translocoService.translate(successMessage, { username: updatedTournamentPlayer.username }), "", { duration: 10000 });
     });
   }
 
   removePlayer(player: TournamentPlayer) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentPlayer(this.acronym, player.playerId)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.players.findIndex((player2) => player2.playerId === player.playerId);
-        if (index !== undefined) this.players.splice(index, 1);
-        this.switchSelectedPlayer(-1);
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedPlayer", { username: player.username }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentPlayer(player.playerId).subscribe(() => {
+      this.selectedPlayerFormControl.patchValue(-1);
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedPlayer", { username: player.username }), "", { duration: 10000 });
+    });
   }
 
   get teamLabels() {
     return this.teams.map((team) => team.name);
   }
 
-  switchSelectedTeam(teamId: string) {
-    const index = this.teams.findIndex((team) => team._id === teamId);
-    this.selectedTeamIndex = index;
-    if (index < 0) this.selectedTeam = undefined;
-    this.selectedTeam = this.teams[index];
-  }
-
   submitUpdateTeamForm(partialTeam: Partial<TournamentTeam>) {
     if (!partialTeam.name) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentTeam>;
     let successMessage = "";
     if (!this.selectedTeam) {
-      request = this.tournamentsService.addTournamentTeam(this.acronym, partialTeam);
+      request = this.tournamentsService.addTournamentTeam(partialTeam);
       successMessage = "tournament.settings.addedTeam";
     } else {
-      request = this.tournamentsService.editTournamentTeam(this.acronym, this.selectedTeam._id, partialTeam);
+      request = this.tournamentsService.editTournamentTeam(this.selectedTeam._id, partialTeam);
       successMessage = "tournament.settings.editedTeam";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentTeam) => {
-      this.refreshTournament().add(() => {
-        this.requestInProgress = false;
-        const newIndex = this.teams.findIndex((team) => team._id === updatedTournamentTeam._id);
-        this.selectedTeamIndex = newIndex;
-        this.selectedTeam = this.teams[this.selectedTeamIndex];
-        this.snackBar.open(this.translocoService.translate(successMessage, { teamName: updatedTournamentTeam.name }), "", { duration: 10000 });
-      });
+    request.subscribe((updatedTournamentTeam) => {
+      this.selectedTeamFormControl.patchValue(updatedTournamentTeam._id);
+      this.snackBar.open(this.translocoService.translate(successMessage, { teamName: updatedTournamentTeam.name }), "", { duration: 10000 });
     });
   }
 
   removeTeam(team: TournamentTeam) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentTeam(this.acronym, team._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.teams.findIndex((team2) => team2._id === team._id);
-        if (index !== undefined) this.teams.splice(index, 1);
-        this.switchSelectedTeam("");
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedTeam", { teamName: team.name }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentTeam(team._id).subscribe(() => {
+      this.selectedTeamFormControl.patchValue("");
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedTeam", { teamName: team.name }), "", { duration: 10000 });
+    });
   }
 
   uploadTeamImage(event: any) {
-    this.requestInProgress = true;
-    const teamId = this.selectedTeam!._id;
-    this.tournamentsService.uploadTeamImage(this.tournament!.acronym, teamId, event)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      }))
-      .subscribe((updatedTeam) => {
-        this.refreshTournament().add(() => {
-          this.requestInProgress = false;
-          this.selectedTeam = this.teams[this.selectedTeamIndex];
-          this.snackBar.open(this.translocoService.translate("tournament.registration.teamImageUpdated"), "", { duration: 10000 });
-        });
-      });
+    this.tournamentsService.uploadTeamImage(this.selectedTeam!._id, event).subscribe((updatedTeam) => {
+      this.selectedTeamFormControl.patchValue(updatedTeam._id);
+      this.snackBar.open(this.translocoService.translate("tournament.registration.teamImageUpdated"), "", { duration: 10000 });
+    });
   }
 
   uploadTourneyBanner(event: any) {
-    this.requestInProgress = true;
-    this.tournamentsService.uploadTourneyBanner(this.tournament!.acronym, event)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      }))
-      .subscribe(() => {
-        this.refreshTournament().add(() => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("tournament.settings.tourneyBannerUpdated"), "", { duration: 10000 });
-        });
-      });
+    this.tournamentsService.uploadTourneyBanner(event).subscribe(() => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.tourneyBannerUpdated"), "", { duration: 10000 });
+    });
   }
 
   uploadTourneyIcon(event: any) {
-    this.requestInProgress = true;
-    this.tournamentsService.uploadTourneyIcon(this.tournament!.acronym, event)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      }))
-      .subscribe(() => {
-        this.refreshTournament().add(() => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("tournament.settings.tourneyIconUpdated"), "", { duration: 10000 });
-        });
-      });
+    this.tournamentsService.uploadTourneyIcon(event).subscribe(() => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.tourneyIconUpdated"), "", { duration: 10000 });
+    });
   }
 
   uploadCategoryIcon(event: any) {
-    this.requestInProgress = true;
-    this.tournamentsService.uploadTourneyCategoryIcon(this.tournament!.acronym, event.name, event.file)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      }))
-      .subscribe(() => {
-        this.refreshTournament().add(() => {
-          this.requestInProgress = false;
-          this.snackBar.open(this.translocoService.translate("tournament.settings.categoryIconUpdated"), "", { duration: 10000 });
-        });
-      });
+    this.tournamentsService.uploadTourneyCategoryIcon(event.name, event.file).subscribe(() => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.categoryIconUpdated"), "", { duration: 10000 });
+    });
   }
 
   get staffMemberLabels() {
     return this.staffMembers.map((member) => member.username) ?? [];
   }
 
-  switchSelectedStaffMember(staffMemberId: number) {
-    const index = this.staffMembers.findIndex((member) => member.playerId === staffMemberId);
-    this.selectedStaffMemberIndex = index;
-    if (index < 0) this.selectedStaffMember = undefined;
-    this.selectedStaffMember = this.staffMembers[index];
-  }
-
   submitUpdateStaffMemberForm(formData: any) {
     if (!formData.playerId) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentStaffMember>;
     let successMessage = "";
     if (!this.selectedStaffMember) {
-      request = this.tournamentsService.addTournamentStaffMember(this.acronym, formData.playerId, formData.roles);
+      request = this.tournamentsService.addTournamentStaffMember(formData.playerId, formData.roles);
       successMessage = "tournament.settings.addedStaffMember";
     } else {
-      request = this.tournamentsService.editTournamentStaffMember(this.acronym, formData.playerId, formData.roles);
+      request = this.tournamentsService.editTournamentStaffMember(formData.playerId, formData.roles);
       successMessage = "tournament.settings.editedStaffMember";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedStaffMember) => {
-      this.refreshTournament().add(() => {
-        this.requestInProgress = false;
-        this.selectedStaffMember = this.staffMembers[this.selectedStaffMemberIndex];
-        this.snackBar.open(this.translocoService.translate(successMessage, { username: updatedStaffMember.username }), "", { duration: 10000 });
-      });
+    request.subscribe((updatedStaffMember) => {
+      this.selectedStaffMemberFormControl.patchValue(updatedStaffMember.playerId);
+      this.snackBar.open(this.translocoService.translate(successMessage, { username: updatedStaffMember.username }), "", { duration: 10000 });
     });
   }
 
   removeStaffMember(staffMember: TournamentStaffMember) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentStaffMember(this.acronym, staffMember.playerId)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.staffMembers.findIndex((member) => member.playerId === staffMember.playerId);
-        if (index !== undefined) this.staffMembers.splice(index, 1);
-        this.switchSelectedStaffMember(-1);
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffMember", { username: staffMember.username }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentStaffMember(staffMember.playerId).subscribe(() => {
+      this.selectedStaffMemberFormControl.patchValue(-1);
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffMember", { username: staffMember.username }), "", { duration: 10000 });
+    });
   }
 
   get staffRoleLabels() {
     return this.staffRoles.map((role) => role.name);
   }
 
-  switchSelectedStaffRole(staffRoleId: string) {
-    const index = this.staffRoles.findIndex((role) => role._id === staffRoleId);
-    this.selectedStaffRoleIndex = index;
-    if (index < 0) this.selectedStaffRole = undefined;
-    this.selectedStaffRole = this.staffRoles[index];
-  }
-
   submitUpdateStaffRoleForm(formData: any) {
     if (!formData.name) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentStaffRole>;
     let successMessage = "";
     if (!this.selectedStaffRole) {
-      request = this.tournamentsService.addTournamentStaffRole(this.acronym, formData.name, formData.permissions);
+      request = this.tournamentsService.addTournamentStaffRole(formData.name, formData.permissions);
       successMessage = "tournament.settings.addedStaffRole";
     } else {
-      request = this.tournamentsService.editTournamentStaffRole(
-        this.acronym, this.selectedStaffRole._id, formData.name, formData.permissions);
+      request = this.tournamentsService.editTournamentStaffRole(this.selectedStaffRole._id, formData.name, formData.permissions);
       successMessage = "tournament.settings.editedStaffRole";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedStaffRole) => {
-      this.refreshTournament().add(() => {
-        this.requestInProgress = false;
-        this.selectedStaffRoleIndex = this.staffRoles.findIndex((role) => role._id === updatedStaffRole._id);
-        this.selectedStaffRole = this.staffRoles[this.selectedStaffRoleIndex];
-        this.snackBar.open(this.translocoService.translate(successMessage, { roleName: updatedStaffRole.name }), "", { duration: 10000 });
-      });
+    request.subscribe((updatedStaffRole) => {
+      this.selectedStaffRoleFormControl.patchValue(updatedStaffRole._id);
+      this.snackBar.open(this.translocoService.translate(successMessage, { roleName: updatedStaffRole.name }), "", { duration: 10000 });
     });
   }
 
   removeStaffRole(staffRole: TournamentStaffRole) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentStaffRole(this.acronym, staffRole._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.staffRoles.findIndex((role) => role._id === staffRole._id);
-        if (index !== undefined) this.staffRoles.splice(index, 1);
-        this.switchSelectedStaffRole("");
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffRole", { roleName: staffRole.name }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentStaffRole(staffRole._id).subscribe(() => {
+      this.selectedStaffRoleFormControl.patchValue("");
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffRole", { roleName: staffRole.name }), "", { duration: 10000 });
+    });
   }
 
   get roundLabels() {
@@ -552,80 +338,60 @@ export class TournamentSettingsPage implements OnInit {
   }
 
   switchSelectedTournamentRound(index: number) {
-    if (this.isLoadingTourneyRound) return;
-    this.selectedRoundIndex = index;
-    if (index < 0) this.selectedRound = undefined;
+    if (this.loadingRound) return;
+    if (index < 0) this.tournamentsService.unselectCurrentRound();
     else {
       const roundId = this.rounds[index]._id;
-      if (!this.tournamentRounds.has(roundId)) {
-        this.refreshRound(roundId).add(() => {
-          this.selectedRound = this.tournamentRounds.get(roundId);
-          this.switchRoundHelper();
-        });
-      } else {
-        this.selectedRound = this.tournamentRounds.get(roundId);
-        this.switchRoundHelper();
-      }
+      this.tournamentsService.loadOrRefreshTournamentRound(roundId, false, true);
     }
   }
   
   switchRoundHelper() {
     this.slots = getSortedMappool(this.tournament!, this.selectedRound!.mappool.slots);
     this.matches = [...this.selectedRound!.matches].sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" }));
+
+    // refresh selections or reset them if they don't exist anymore
+    this.switchSelectedTournamentSlot(this.selectedSlot?._id);
+    this.switchSelectedTournamentMatch(this.selectedMatch?._id);
   }
 
   submitUpdateRoundForm(partialRound: Partial<TournamentRound>) {
     if (!partialRound.name) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentRound>;
     let successMessage = "";
     if (!this.selectedRound) {
-      request = this.tournamentsService.createTournamentRound(
-        this.acronym, partialRound);
+      request = this.tournamentsService.createTournamentRound(partialRound);
       successMessage = "tournament.settings.createdTournamentRound";
     } else {
-      request = this.tournamentsService.editTournamentRound(
-        this.acronym, this.selectedRound._id, partialRound);
+      request = this.tournamentsService.editTournamentRound(partialRound);
       successMessage = "tournament.settings.editedTournamentRound";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentRound) => {
-      this.refreshTournament().add(() => {
-        this.refreshRound(updatedTournamentRound._id).add(() => {
-          this.requestInProgress = false;
-          this.selectedRoundIndex = this.rounds.findIndex((round) => round._id === updatedTournamentRound._id);
-          this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
-        });
-      });
+    request.subscribe((updatedTournamentRound) => {
+      this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
+      // reload mappool
+      if (this.selectedRound) this.tournamentsService.loadOrRefreshTournamentRound(this.selectedRound._id, true, true);
     });
   }
 
   removeRound(round: TournamentRound) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentRound(this.acronym, round._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.rounds.findIndex((r) => r._id === round._id);
-        if (index !== undefined) this.rounds.splice(index, 1);
-        this.switchSelectedTournamentRound(-1);
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedTournamentRound"), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentRound().subscribe(() => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedTournamentRound"), "", { duration: 10000 });
+    });
   }
 
   get slotLabels() {
     return this.slots.map((slot) => slot.label) || [];
   }
 
-  switchSelectedTournamentSlot(index: number) {
+  switchSelectedTournamentSlot(idOrIndex: string|number|undefined) {
+    let index;
+    switch (typeof idOrIndex) {
+      case "string": { index = this.slots.findIndex((s) => s._id === idOrIndex); break; }
+      case "number": { index = idOrIndex; break; }
+      default: index = -1;
+    }
     this.selectedSlotIndex = index;
     if (index < 0) this.selectedSlot = undefined;
     this.selectedSlot = this.slots[index];
@@ -633,71 +399,45 @@ export class TournamentSettingsPage implements OnInit {
 
   submitUpdateSlotForm(formData: any) {
     if (!formData.label) return;
-    this.requestInProgress = true;
 
     let request: Observable<MappoolSlot>;
     let successMessage = "";
     if (!this.selectedSlot) {
-      request = this.tournamentsService.addTournamentSlot(this.acronym, this.selectedRound!._id, formData.beatmapId, formData);
+      request = this.tournamentsService.addTournamentSlot(formData.beatmapId, formData);
       successMessage = "tournament.settings.addedSlot";
     } else {
-      request = this.tournamentsService.editTournamentSlot(this.acronym, this.selectedRound!._id, this.selectedSlot._id, formData.beatmapId, formData);
+      request = this.tournamentsService.editTournamentSlot(this.selectedSlot._id, formData.beatmapId, formData);
       successMessage = "tournament.settings.editedSlot";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentSlot) => {
-      this.refreshRound(this.selectedRound!._id).add(() => {
-        this.requestInProgress = false;
-        const newIndex = this.slots.findIndex((slot) => slot._id === updatedTournamentSlot._id);
-        this.selectedSlotIndex = newIndex;
-        this.selectedSlot = this.slots[newIndex];
-        this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
-      });
+    request.subscribe((updatedTournamentSlot) => {
+      this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
     });
   }
 
   removeSlot(slot: MappoolSlot) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentSlot(this.acronym, this.selectedRound!._id, slot._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.slots.findIndex((s) => s._id === slot._id);
-        if (index !== undefined) this.slots.splice(index, 1);
-        this.switchSelectedTournamentSlot(-1);
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedSlot"), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentSlot(slot._id).subscribe(() => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedSlot"), "", { duration: 10000 });
+    });
   }
 
   refreshBeatmapData(slot: MappoolSlot) {
-    this.requestInProgress = true;
-        this.tournamentsService.refreshTournamentSlot(this.acronym, this.selectedRound!._id, slot._id)
-          .pipe(catchError((error) => {
-            this.requestInProgress = false;
-            this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-            return throwError(error);
-          }))
-          .subscribe((refreshedSlot) => {
-            this.requestInProgress = false;
-            const index = this.slots.findIndex((s) => s._id === refreshedSlot._id);
-            this.slots[index] = refreshedSlot;
-            this.selectedSlot = refreshedSlot;
-            this.snackBar.open(this.translocoService.translate("tournament.settings.beatmapDataRefreshed"), "", { duration: 10000 });
-          });
+    this.tournamentsService.refreshTournamentSlot(slot._id).subscribe((refreshedSlot) => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.beatmapDataRefreshed"), "", { duration: 10000 });
+    });
   }
 
   get matchLabels() {
     return this.matches.map((match) => match.id);
   }
 
-  switchSelectedTournamentMatch(index: number) {
+  switchSelectedTournamentMatch(idOrIndex: string|number|undefined) {
+    let index;
+    switch (typeof idOrIndex) {
+      case "string": { index = this.matches.findIndex((m) => m._id === idOrIndex); break; }
+      case "number": { index = idOrIndex; break; }
+      default: index = -1;
+    }
     this.selectedMatchIndex = index;
     if (index < 0) this.selectedMatch = undefined;
     this.selectedMatch = this.matches[index];
@@ -705,66 +445,34 @@ export class TournamentSettingsPage implements OnInit {
 
   submitUpdateMatchForm(partialMatch: Partial<TournamentMatch>) {
     if (!partialMatch.id) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentMatch>;
     let successMessage = "";
 
     if (!this.selectedMatch) {
-      request = this.tournamentsService.addTournamentMatch(this.acronym, this.selectedRound!._id, partialMatch);
+      request = this.tournamentsService.addTournamentMatch(partialMatch);
       successMessage = "tournament.settings.addedMatch";
     } else {
-      request = this.tournamentsService.editTournamentMatch(this.acronym, this.selectedRound!._id, this.selectedMatch._id, partialMatch);
+      request = this.tournamentsService.editTournamentMatch(this.selectedMatch._id, partialMatch);
       successMessage = "tournament.settings.editedMatch";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentMatch) => {
-      this.refreshRound(this.selectedRound!._id).add(() => {
-        this.requestInProgress = false;
-        this.selectedMatchIndex = this.matches.findIndex((match) => match._id === updatedTournamentMatch._id);
-        this.selectedMatch = this.matches[this.selectedMatchIndex];
-        this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
-      });
+    request.subscribe((updatedTournamentMatch) => {
+      this.snackBar.open(this.translocoService.translate(successMessage), "", { duration: 10000 });
     });
   }
 
   removeMatch(match: TournamentMatch) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentMatch(this.acronym, this.selectedRound!._id, match._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.matches.findIndex((match2) => match2._id === match._id);
-        if (index !== undefined) this.matches.splice(index, 1);
-        this.switchSelectedTournamentMatch(-1);
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedMatch"), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentMatch(match._id).subscribe(() => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedMatch"), "", { duration: 10000 });
+    });
   }
 
   submitMatch(formData: any) {
     if (!formData.id) return;
-    this.requestInProgress = true;
-    this.tournamentsService.submitMatch(this.acronym, this.selectedRound!._id, formData)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe((updatedTournamentMatch) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("tournament.settings.submittedMatch"), "", { duration: 10000 });
-        const index = this.matches.findIndex((match) => match._id === updatedTournamentMatch._id);
-        if (index >= 0) {
-          this.matches.splice(index, 1, updatedTournamentMatch);
-          this.matches = [...this.matches];
-        }
-      });
+    this.tournamentsService.submitMatch(formData).subscribe((updatedTournamentMatch) => {
+      this.snackBar.open(this.translocoService.translate("tournament.settings.submittedMatch"), "", { duration: 10000 });
+    });
   }
 
   get isTeamsEnabled(): boolean {

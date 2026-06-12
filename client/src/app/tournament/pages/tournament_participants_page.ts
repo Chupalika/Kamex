@@ -1,8 +1,8 @@
 import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { Component, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { Component, DestroyRef, Inject, inject, NgModule, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,9 +15,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Title } from '@angular/platform-browser';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
-import { catchError, finalize, switchMap, take } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from "rxjs";
-import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare, getRolesSortedByPermission, getStaffMemberListSortedByRole, getPlayerRank } from '../utils';
 
 import { AppUser, GameMode, Tournament, TournamentPlayer, TournamentProgress, TournamentStaffMember, TournamentStaffPermission, TournamentStaffRole, TournamentTeam } from 'src/app/models/models';
 import { HovercardModule } from 'src/app/components/hovercard';
@@ -35,6 +34,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { AssignSeedsDialog } from './tournament_stats_page';
 import { TournamentPlayerLabelModule } from '../components/tournament_player_label';
 import { TournamentTeamLabelModule } from '../components/tournament_team_label';
+import { hasPermission, playerNameCompare, teamNameCompare, countryCompare, seedCompare, getRankCompare, getRolesSortedByPermission, getStaffMemberListSortedByRole, getPlayerRank } from '../utils';
 
 @Component({
   selector: 'tournament_participants_page',
@@ -44,7 +44,7 @@ import { TournamentTeamLabelModule } from '../components/tournament_team_label';
 export class TournamentParticipantsPage implements OnInit {
   acronym = "";
   tournament?: Tournament;
-  loadingTournament = true;
+  loading = true;
   appUser?: AppUser;
   requestInProgress = false;
   players: TournamentPlayer[] = [];
@@ -67,11 +67,11 @@ export class TournamentParticipantsPage implements OnInit {
   GameMode = GameMode;
 
   readonly dialogService = inject(MatDialog);
+  readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private tournamentsService: TournamentsService,
     private authService: AuthService,
-    private route: ActivatedRoute,
     private breakpointObserver: BreakpointObserver,
     private snackBar: MatSnackBar,
     private titleService: Title,
@@ -87,22 +87,19 @@ export class TournamentParticipantsPage implements OnInit {
   }
 
   ngOnInit() {
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => {
-        this.acronym = params.get("acronym") || "";
-        return this.tournamentsService.getTournament(this.acronym);
-      }),
-      take(1),
-      finalize(() => {this.loadingTournament = false;}),
-    ).subscribe((tournament) => {
+    this.tournamentsService.loadingTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loading = loading; });
+    this.tournamentsService.currentTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((tournament) => {
       this.tournament = tournament;
-      this.titleService.setTitle(`${tournament.name} Participants`);
+      this.titleService.setTitle(tournament ? `${tournament.name} Participants` : 'Kamex');
       
-      this.sortPlayers();
-      this.sortTeams();
-      this.sortStaffMembers();
-      this.filterStaffMembers();
+      if (tournament) {
+        this.sortPlayers();
+        this.sortTeams();
+        this.sortStaffMembers();
+        this.filterStaffMembers();
+      }
     });
+    this.authService.appUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => this.appUser = user);
     this.breakpointObserver.observe([Breakpoints.Small, Breakpoints.XSmall])
         .subscribe((result: BreakpointState) => {
       if (result.matches) {
@@ -111,7 +108,6 @@ export class TournamentParticipantsPage implements OnInit {
           this.mobileMode = false;
       }
     });
-    this.authService.appUser$.subscribe((user) => this.appUser = user);
   }
 
   sortPlayers() {
@@ -380,7 +376,7 @@ export class TournamentParticipantsPage implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         const seedsToAssign = this.players.map((player, index) => ({ playerId: player.playerId, seed: (index + 1).toString() })).filter((entry) => entry.seed <= result);
-        this.tournamentsService.batchAssignPlayerSeeds(this.tournament!.acronym, { playerSeeds: seedsToAssign }).subscribe(() => {
+        this.tournamentsService.batchAssignPlayerSeeds({ playerSeeds: seedsToAssign }).subscribe(() => {
           this.snackBar.open(this.translocoService.translate("tournament.participants.playerSeedsAssigned"), "", { duration: 10000 });
         });
       }
@@ -500,6 +496,8 @@ export class EditorDialog {
   selectedStaffRoleFormControl: FormControl;
   workingStaffRoles: TournamentStaffRole[] = [];
 
+  readonly destroyRef = inject(DestroyRef);
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { type: "Player" | "Team" | "Staff Member" | "Staff Role", acronym: string, gameMode: GameMode, players: TournamentPlayer[], teams: TournamentTeam[], staffMembers: TournamentStaffMember[], staffRoles: TournamentStaffRole[] },
     private tournamentsService: TournamentsService,
@@ -541,6 +539,7 @@ export class EditorDialog {
   }
 
   ngOnInit() {
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
     this.workingPlayers = [...(this.data.players || [])];
     this.workingTeams = [...(this.data.teams || [])];
     this.workingStaffMembers = [...(this.data.staffMembers || [])];
@@ -593,24 +592,18 @@ export class EditorDialog {
 
   submitUpdatePlayerForm(partialPlayer: Partial<TournamentPlayer>) {
     if (!partialPlayer.playerId) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentPlayer>;
     let successMessage = "";
     if (!this.selectedPlayer) {
-      request = this.tournamentsService.addTournamentPlayer(this.data.acronym, partialPlayer.playerId, partialPlayer);
+      request = this.tournamentsService.addTournamentPlayer(partialPlayer.playerId, partialPlayer);
       successMessage = "tournament.settings.addedPlayer";
     } else {
-      request = this.tournamentsService.editTournamentPlayer(this.data.acronym, this.selectedPlayer.playerId, partialPlayer);
+      request = this.tournamentsService.editTournamentPlayer(this.selectedPlayer.playerId, partialPlayer);
       successMessage = "tournament.settings.editedPlayer";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentPlayer) => {
-      this.requestInProgress = false;
+    request.subscribe((updatedTournamentPlayer) => {
       if (!this.selectedPlayer) {
         this.workingPlayers.push(updatedTournamentPlayer);
       } else {
@@ -623,24 +616,18 @@ export class EditorDialog {
 
   submitUpdateTeamForm(partialTeam: Partial<TournamentTeam>) {
     if (!partialTeam.name) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentTeam>;
     let successMessage = "";
     if (!this.selectedTeam) {
-      request = this.tournamentsService.addTournamentTeam(this.data.acronym, partialTeam);
+      request = this.tournamentsService.addTournamentTeam(partialTeam);``
       successMessage = "tournament.settings.addedTeam";
     } else {
-      request = this.tournamentsService.editTournamentTeam(this.data.acronym, this.selectedTeam._id, partialTeam);
+      request = this.tournamentsService.editTournamentTeam(this.selectedTeam._id, partialTeam);
       successMessage = "tournament.settings.editedTeam";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentTeam) => {
-      this.requestInProgress = false;
+    request.subscribe((updatedTournamentTeam) => {
       if (!this.selectedTeam) {
         this.workingTeams.push(updatedTournamentTeam);
       } else {
@@ -653,24 +640,18 @@ export class EditorDialog {
 
   submitUpdateStaffMemberForm(partialStaffMember: Partial<TournamentStaffMember>) {
     if (!partialStaffMember.playerId) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentStaffMember>;
     let successMessage = "";
     if (!this.selectedStaffMember) {
-      request = this.tournamentsService.addTournamentStaffMember(this.data.acronym, partialStaffMember.playerId, partialStaffMember.roles || []);
+      request = this.tournamentsService.addTournamentStaffMember(partialStaffMember.playerId, partialStaffMember.roles || []);
       successMessage = "tournament.settings.addedStaffMember";
     } else {
-      request = this.tournamentsService.editTournamentStaffMember(this.data.acronym, partialStaffMember.playerId, partialStaffMember.roles || []);
+      request = this.tournamentsService.editTournamentStaffMember(partialStaffMember.playerId, partialStaffMember.roles || []);
       successMessage = "tournament.settings.editedStaffMember";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentStaffMember) => {
-      this.requestInProgress = false;
+    request.subscribe((updatedTournamentStaffMember) => {
       if (!this.selectedStaffMember) {
         this.workingStaffMembers.push(updatedTournamentStaffMember);
       } else {
@@ -683,24 +664,18 @@ export class EditorDialog {
 
   submitUpdateStaffRoleForm(partialStaffRole: Partial<TournamentStaffRole>) {
     if (!partialStaffRole.name) return;
-    this.requestInProgress = true;
 
     let request: Observable<TournamentStaffRole>;
     let successMessage = "";
     if (!this.selectedStaffRole) {
-      request = this.tournamentsService.addTournamentStaffRole(this.data.acronym, partialStaffRole.name, partialStaffRole.permissions || []);
+      request = this.tournamentsService.addTournamentStaffRole(partialStaffRole.name, partialStaffRole.permissions || []);
       successMessage = "tournament.settings.addedStaffRole";
     } else {
-      request = this.tournamentsService.editTournamentStaffRole(this.data.acronym, this.selectedStaffRole._id!, partialStaffRole.name, partialStaffRole.permissions || []);
+      request = this.tournamentsService.editTournamentStaffRole(this.selectedStaffRole._id!, partialStaffRole.name, partialStaffRole.permissions || []);
       successMessage = "tournament.settings.editedStaffRole";
     }
 
-    request.pipe(catchError((error) => {
-      this.requestInProgress = false;
-      this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-      return throwError(error);
-    })).subscribe((updatedTournamentStaffRole) => {
-      this.requestInProgress = false;
+    request.subscribe((updatedTournamentStaffRole) => {
       if (!this.selectedStaffRole) {
         this.workingStaffRoles.push(updatedTournamentStaffRole);
       } else {
@@ -712,71 +687,43 @@ export class EditorDialog {
   }
 
   removePlayer(player: TournamentPlayer) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentPlayer(this.data.acronym, player.playerId)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.workingPlayers.findIndex((player2) => player2.playerId === player.playerId);
-        if (index !== undefined) this.workingPlayers.splice(index, 1);
-        this.selectedPlayerFormControl.setValue("-1");
-        this.switchSelectedPlayer(-1);
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedPlayer", { username: player.username }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentPlayer(player.playerId).subscribe(() => {
+      const index = this.workingPlayers.findIndex((player2) => player2.playerId === player.playerId);
+      if (index !== undefined) this.workingPlayers.splice(index, 1);
+      this.selectedPlayerFormControl.setValue("-1");
+      this.switchSelectedPlayer(-1);
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedPlayer", { username: player.username }), "", { duration: 10000 });
+    });
   }
 
   removeTeam(team: TournamentTeam) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentTeam(this.data.acronym, team._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.workingTeams.findIndex((team2) => team2._id === team._id);
-        if (index !== undefined) this.workingTeams.splice(index, 1);
-        this.selectedTeamFormControl.setValue("-1");
-        this.switchSelectedTeam("");
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedTeam", { teamName: team.name }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentTeam(team._id).subscribe(() => {
+      const index = this.workingTeams.findIndex((team2) => team2._id === team._id);
+      if (index !== undefined) this.workingTeams.splice(index, 1);
+      this.selectedTeamFormControl.setValue("-1");
+      this.switchSelectedTeam("");
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedTeam", { teamName: team.name }), "", { duration: 10000 });
+    });
   }
 
   removeStaffMember(staffMember: TournamentStaffMember) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentStaffMember(this.data.acronym, staffMember.playerId)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.workingStaffMembers.findIndex((staffMember2) => staffMember2._id === staffMember._id);
-        if (index !== undefined) this.workingStaffMembers.splice(index, 1);
-        this.selectedStaffMemberFormControl.setValue("-1");
-        this.switchSelectedStaffMember("");
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffMember", { username: staffMember.username }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentStaffMember(staffMember.playerId).subscribe(() => {
+      const index = this.workingStaffMembers.findIndex((staffMember2) => staffMember2._id === staffMember._id);
+      if (index !== undefined) this.workingStaffMembers.splice(index, 1);
+      this.selectedStaffMemberFormControl.setValue("-1");
+      this.switchSelectedStaffMember("");
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffMember", { username: staffMember.username }), "", { duration: 10000 });
+    });
   }
 
   removeStaffRole(staffRole: TournamentStaffRole) {
-    this.requestInProgress = true;
-    this.tournamentsService.removeTournamentStaffRole(this.data.acronym, staffRole._id)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      })).subscribe(() => {
-        this.requestInProgress = false;
-        const index = this.workingStaffRoles.findIndex((staffRole2) => staffRole2._id === staffRole._id);
-        if (index !== undefined) this.workingStaffRoles.splice(index, 1);
-        this.selectedStaffRoleFormControl.setValue("-1");
-        this.switchSelectedStaffRole("");
-        this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffRole", { roleName: staffRole.name }), "", { duration: 10000 });
-      });
+    this.tournamentsService.removeTournamentStaffRole(staffRole._id).subscribe(() => {
+      const index = this.workingStaffRoles.findIndex((staffRole2) => staffRole2._id === staffRole._id);
+      if (index !== undefined) this.workingStaffRoles.splice(index, 1);
+      this.selectedStaffRoleFormControl.setValue("-1");
+      this.switchSelectedStaffRole("");
+      this.snackBar.open(this.translocoService.translate("tournament.settings.removedStaffRole", { roleName: staffRole.name }), "", { duration: 10000 });
+    });
   }
 
   refreshPlayerData(player: TournamentPlayer) {
@@ -797,20 +744,11 @@ export class EditorDialog {
   }
 
   uploadTeamImage(event: any) {
-    this.requestInProgress = true;
-    const teamId = this.selectedTeam!._id;
-    this.tournamentsService.uploadTeamImage(this.data.acronym, teamId, event)
-      .pipe(catchError((error) => {
-        this.requestInProgress = false;
-        this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
-        return throwError(error);
-      }))
-      .subscribe((updatedTournamentTeam) => {
-        this.requestInProgress = false;
-        this.workingTeams[this.selectedTeamIndex] = updatedTournamentTeam;
-        this.selectedTeam = updatedTournamentTeam;
-        this.snackBar.open(this.translocoService.translate("tournament.registration.teamImageUpdated"), "", { duration: 10000 });
-      });
+    this.tournamentsService.uploadTeamImage(this.selectedTeam!._id, event).subscribe((updatedTournamentTeam) => {
+      this.workingTeams[this.selectedTeamIndex] = updatedTournamentTeam;
+      this.selectedTeam = updatedTournamentTeam;
+      this.snackBar.open(this.translocoService.translate("tournament.registration.teamImageUpdated"), "", { duration: 10000 });
+    });
   }
 }
 

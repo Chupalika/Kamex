@@ -5,14 +5,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from "@angular/material/toolbar";
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, ActivatedRoute, Params, RouterModule } from '@angular/router';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
+
+import { UserSettingsDialog } from 'src/app/components/user_settings_dialog';
 import { AppUser, Tournament } from 'src/app/models/models';
 import { AuthService } from 'src/app/services/auth.service';
 import { ThemeService } from 'src/app/services/custom-theme.service';
 import { TournamentsService } from 'src/app/services/tournaments.service';
-import { UserSettingsDialog } from '../components/user_settings_dialog';
-import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
+
+const PAGES_NEEDING_LOADED_ROUND = ["mappools", "matches", "stats", "settings"];
 
 @Component({
   selector: 'nav-bar',
@@ -20,11 +25,14 @@ import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
   styleUrls: ['./nav_bar.scss']
 })
 export class NavBar {
+  loadingTourney = false;
+  loadingRound = false;
   tourney?: Tournament;
   tourneyPath = "";
   appUser?: AppUser;
   mobileMode = false;
   activeLanguage = "en";
+  currentPage = "";
 
   constructor(
       private router: Router,
@@ -43,10 +51,12 @@ export class NavBar {
       r.params.subscribe((params: Params) => {
         if (params["acronym"]) {
           this.tourneyPath = `/tournament/${params["acronym"]}`;
+          this.tournamentService.loadOrRefreshTournament(params["acronym"]);
         } else {
           this.tourneyPath = '';
-          this.tournamentService.resetCurrentTournament();
+          this.tournamentService.clearCurrentTournament();
         }
+        this.currentPage = this.router.url.split('/').at(-1) ?? "";
       });
     });
     this.refreshUser();
@@ -58,7 +68,9 @@ export class NavBar {
           this.mobileMode = false;
       }
     });
-    this.tournamentService.currentTournament.subscribe((tourney) => {
+    this.tournamentService.loadingTournament$.subscribe((loading) => this.loadingTourney = loading);
+    this.tournamentService.loadingRound$.subscribe((loading) => this.loadingRound = loading);
+    this.tournamentService.currentTournament$.subscribe((tourney) => {
       this.tourney = tourney;
       if (tourney?.theme.primaryColor || tourney?.theme.accentColor || tourney?.theme.fontName) {
         this.themeService.updateTheme(tourney.theme.primaryColor, tourney.theme.accentColor, tourney.theme.fontName);
@@ -125,6 +137,20 @@ export class NavBar {
     this.translocoService.setActiveLang(this.activeLanguage);
     localStorage.setItem("language", language);
   }
+
+  get lastUpdatedText(): string {
+    const tourneyDataTimestamp = this.tournamentService.getCurrentTourneyLastUpdated();
+    const roundDataTimestamp = this.tournamentService.getCurrentRoundLastUpdated();
+    let ans = `Tournament data last fetched ${((Date.now() - tourneyDataTimestamp.getTime()) / 60000).toFixed()} minutes ago`;
+    if (PAGES_NEEDING_LOADED_ROUND.includes(this.currentPage) && roundDataTimestamp) {
+      ans += ` | Round data last fetched ${((Date.now() - roundDataTimestamp.getTime()) / 60000).toFixed()} minutes ago`
+    }
+    return ans;
+  }
+
+  triggerRefresh() {
+    this.tournamentService.loadOrRefreshTournament(this.tourney!.acronym, true, true);
+  }
 }
 
 @NgModule({
@@ -133,8 +159,10 @@ export class NavBar {
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    MatProgressSpinnerModule,
     RouterModule,
     MatToolbarModule,
+    MatTooltipModule,
     TranslocoModule,
   ],
   declarations: [ NavBar ],

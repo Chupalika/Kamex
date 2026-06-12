@@ -1,7 +1,7 @@
-<div *ngIf="loading" class="mat-headline-5">Loading...</div>
-<div *ngIf="!loading && !tournamentRound" class="mat-headline-5">Tournament Round "{{ roundId }}" doesn't exist!</div>
+<div *ngIf="loadingTournament || loadingRound" class="mat-headline-5">Loading...</div>
+<div *ngIf="!loadingTournament && !loadingRound && !tournamentRound" class="mat-headline-5">Tournament Round "{{ roundId }}" doesn't exist!</div>
 
-<ng-container *ngIf="!loading && tournamentRound && stats">
+<ng-container *ngIf="!loadingTournament && !loadingRound && tournamentRound && stats">
   <div class="stream-area" [style]="{'background-image': 'url(' + background + ')'}">
     <div class="stats-container">
       <div class="stats-column overall-column">

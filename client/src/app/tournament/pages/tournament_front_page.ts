@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, NgModule, OnInit } from '@angular/core';
+import { Component, DestroyRef, NgModule, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTableModule } from '@angular/material/table';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, ParamMap } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
-import { finalize, switchMap, take } from 'rxjs/operators';
 import { MarkdownModule } from 'ngx-markdown';
 
 import { AppUser, Tournament, TournamentProgress } from 'src/app/models/models';
@@ -25,30 +24,23 @@ export class TournamentFrontPage implements OnInit {
   tournament?: Tournament;
   loading = true;
   appUser?: AppUser;
-  requestInProgress = false;
 
   TournamentProgress = TournamentProgress;
+
+  readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private tournamentsService: TournamentsService,
     private authService: AuthService,
-    private route: ActivatedRoute,
     private titleService: Title) {}
 
   ngOnInit() {
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => {
-        this.acronym = params.get("acronym") || "";
-        return this.tournamentsService.getTournament(this.acronym);
-      }),
-      take(1),
-      finalize(() => {this.loading = false;}),
-    ).subscribe((tournament) => {
+    this.tournamentsService.loadingTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((loading) => { this.loading = loading; });
+    this.tournamentsService.currentTournament$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((tournament) => {
       this.tournament = tournament;
-      this.titleService.setTitle(tournament.name);
+      this.titleService.setTitle(`${tournament?.name ?? 'Kamex'}`);
     });
-
-    this.authService.appUser$.subscribe((user) => this.appUser = user);
+    this.authService.appUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => this.appUser = user);
   }
 }
 

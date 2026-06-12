@@ -35,6 +35,7 @@ export interface Mappool {
   authorId?: number;
   tournamentRound?: TournamentRound;
   downloadUrl?: string;
+  unloaded?: boolean; // client side only
 }
 
 export interface MappoolSlot {
@@ -78,6 +79,7 @@ export interface Scoresheet {
   admins: number[];
   mappool: Mappool;
   slotScoresheets: MappoolSlotScoresheet[];
+  unloaded?: boolean; // client side only
 }
 
 export interface MappoolSlotScoresheet {

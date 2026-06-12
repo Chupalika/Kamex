@@ -2,7 +2,7 @@ import { Model, Types, HydratedDocument, isValidObjectId, Document, ObjectId } f
 import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MappoolSlotDto, TournamentDto, TournamentMatchDto, TournamentRoundDto, TournamentPlayerDto, TournamentStaffMemberDto, TournamentStaffRoleDto, ScoreDto, TournamentTeamDto, SubmitMatchDto, OsuUserDto, EditTeamNameDto } from '../models/dtos';
-import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError } from '../models/errors';
+import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError, TournamentNotFound } from '../models/errors';
 import { GameMode, TournamentProgress } from '../models/enums';
 import { PlayerOrTeam, ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
 import { AppUser } from 'src/schemas/app-user.schema';
@@ -67,12 +67,14 @@ export class TournamentService {
 
   async getTournamentHelper(acronym: string): Promise<HydratedDocument<Tournament>> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() })
-      .orFail()
       .populate("rounds")
       .populate("players")
       .populate({ path: "teams", populate: "players joinRequests" })
       .populate({ path: "staffMembers", populate: "roles" })
       .populate("staffRoles");
+    
+    if (!tourney) throw new TournamentNotFound(acronym);
+    
     // Separate db call to populate appUsers
     const osuPlayerIds = new Set([...tourney.players.map((player: TournamentPlayer) => player.playerId),
                                   ...tourney.staffMembers.map((staffMember: TournamentStaffMember) => staffMember.playerId)]);
@@ -168,7 +170,7 @@ export class TournamentService {
   }
 
   async uploadTourneyBanner(acronym: string, image: Express.Multer.File): Promise<Tournament> {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail();
+    const tourney = await this.getTournamentHelper(acronym)
 
     if ([TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
@@ -180,7 +182,7 @@ export class TournamentService {
   }
 
   async uploadTourneyIcon(acronym: string, image: Express.Multer.File): Promise<Tournament> {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail();
+    const tourney = await this.getTournamentHelper(acronym);
 
     if ([TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
@@ -192,7 +194,7 @@ export class TournamentService {
   }
 
   async uploadCategoryIcon(acronym: string, categoryName: string, image: Express.Multer.File): Promise<Tournament> {
-    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail();
+    const tourney = await this.getTournamentHelper(acronym);
 
     if ([TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
@@ -2182,7 +2184,7 @@ export class TournamentService {
     return tourneyMatch;
   }
 
-  async createScore(acronym: string, roundId: Types.ObjectId, slotScoresheetId: Types.ObjectId, playerOrTeamId: string, scoreDto: ScoreDto): Promise<Score> {
+  async createScore(acronym: string, roundId: Types.ObjectId, slotId: Types.ObjectId, playerOrTeamId: string, scoreDto: ScoreDto): Promise<Score> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds").populate("players").populate("teams");
 
     if (tourney.progress !== TournamentProgress.ONGOING) throw new ProgressLockedError();
@@ -2191,6 +2193,7 @@ export class TournamentService {
     const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
     if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
 
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
     await tourneyRound.populate(
       { path: "scoresheet", populate:
         { path: "slotScoresheets", populate: [
@@ -2199,8 +2202,20 @@ export class TournamentService {
           { path: "teamScores", populate: [{ path: "team" }, { path: "scores" }] }
     ]}});
 
-    const theSlotScoresheet = tourneyRound.scoresheet.slotScoresheets.find((slotScoresheet) => `${(slotScoresheet as HydratedDocument<MappoolSlotScoresheet>)._id}` === `${slotScoresheetId}`) as HydratedDocument<MappoolSlotScoresheet>;
-    if (!theSlotScoresheet) throw new MappoolSlotScoresheetNotFoundError();
+    const slot = tourneyRound.mappool.slots.find((slot) => `${(slot as HydratedDocument<MappoolSlot>)._id}` === `${slotId}`);
+    if (!slot) throw new MappoolSlotNotFoundError();
+
+    const theScoresheet = tourneyRound.scoresheet as HydratedDocument<Scoresheet>;
+    let theSlotScoresheet = theScoresheet.slotScoresheets.find((slotScoresheet) => `${(slotScoresheet.slot as HydratedDocument<MappoolSlot>)._id.toString()}` === `${slotId}`) as HydratedDocument<MappoolSlotScoresheet>;
+
+    // create slotScoresheet if it doesn't exist
+    if (!theSlotScoresheet) {
+      const newSlotScoresheet = new this.mappoolSlotScoresheetModel({slot});
+      await newSlotScoresheet.save();
+      theSlotScoresheet = newSlotScoresheet;
+      theScoresheet.slotScoresheets = [...theScoresheet.slotScoresheets, newSlotScoresheet];
+      await theScoresheet.save();
+    }
 
     // Assert that the player or team is associated with the tourney
     const thePlayer = tourney.players.find((player: HydratedDocument<TournamentPlayer>) => player.playerId.toString() === `${playerOrTeamId}`) as HydratedDocument<TournamentPlayer>;
@@ -2210,7 +2225,7 @@ export class TournamentService {
     const newScore = new this.scoreModel({
       ...scoreDto,
       playerId: thePlayer ? thePlayer.playerId : 0,
-      beatmapId: theSlotScoresheet.slot.beatmap.beatmapId,
+      beatmapId: slot.beatmap.beatmapId,
       isImported: false,
     });
     await newScore.save();
@@ -2241,7 +2256,7 @@ export class TournamentService {
     }
   }
 
-  async editScore(acronym: string, roundId: Types.ObjectId, slotScoresheetId: Types.ObjectId, scoreId: Types.ObjectId, editScoreDto: ScoreDto): Promise<Score> {
+  async editScore(acronym: string, roundId: Types.ObjectId, slotId: Types.ObjectId, scoreId: Types.ObjectId, editScoreDto: ScoreDto): Promise<Score> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds");
 
     if (tourney.progress !== TournamentProgress.ONGOING) throw new ProgressLockedError();
@@ -2250,6 +2265,7 @@ export class TournamentService {
     const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
     if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
 
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
     await tourneyRound.populate(
       { path: "scoresheet", populate:
         { path: "slotScoresheets", populate: [
@@ -2258,7 +2274,11 @@ export class TournamentService {
           { path: "teamScores", populate: [{ path: "team" }, { path: "scores" }] }
     ]}});
 
-    const theSlotScoresheet = tourneyRound.scoresheet.slotScoresheets.find((slotScoresheet) => `${(slotScoresheet as HydratedDocument<MappoolSlotScoresheet>)._id}` === `${slotScoresheetId}`);
+    const slot = tourneyRound.mappool.slots.find((slot) => `${(slot as HydratedDocument<MappoolSlot>)._id}` === `${slotId}`);
+    if (!slot) throw new MappoolSlotNotFoundError();
+
+    const theScoresheet = tourneyRound.scoresheet as HydratedDocument<Scoresheet>;
+    const theSlotScoresheet = theScoresheet.slotScoresheets.find((slotScoresheet) => `${(slotScoresheet.slot as HydratedDocument<MappoolSlot>)._id.toString()}` === `${slotId}`);
     if (!theSlotScoresheet) throw new MappoolSlotScoresheetNotFoundError();
 
     let theScore: HydratedDocument<Score>|undefined;
@@ -2303,7 +2323,7 @@ export class TournamentService {
     return theScore;
   }
 
-  async deleteScore(acronym: string, roundId: Types.ObjectId, slotScoresheetId: Types.ObjectId, scoreId: Types.ObjectId) {
+  async deleteScore(acronym: string, roundId: Types.ObjectId, slotId: Types.ObjectId, scoreId: Types.ObjectId) {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds");
 
     if (tourney.progress !== TournamentProgress.ONGOING) throw new ProgressLockedError();
@@ -2312,6 +2332,7 @@ export class TournamentService {
     const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
     if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
 
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
     await tourneyRound.populate(
       { path: "scoresheet", populate:
         { path: "slotScoresheets", populate: [
@@ -2320,7 +2341,12 @@ export class TournamentService {
           { path: "teamScores", populate: [{ path: "team" }, { path: "scores" }] }
     ]}});
 
-    const theSlotScoresheet = tourneyRound.scoresheet.slotScoresheets.find((slotScoresheet) => `${(slotScoresheet as HydratedDocument<MappoolSlotScoresheet>)._id}` === `${slotScoresheetId}`);
+    const slot = tourneyRound.mappool.slots.find((slot) => `${(slot as HydratedDocument<MappoolSlot>)._id}` === `${slotId}`);
+    if (!slot) throw new MappoolSlotNotFoundError();
+
+    // set up slotScoresheetsById
+    const theScoresheet = tourneyRound.scoresheet as HydratedDocument<Scoresheet>;
+    const theSlotScoresheet = theScoresheet.slotScoresheets.find((slotScoresheet) => `${(slotScoresheet.slot as HydratedDocument<MappoolSlot>)._id.toString()}` === `${slotId}`);
     if (!theSlotScoresheet) throw new MappoolSlotScoresheetNotFoundError();
 
     for (let playerEntry of theSlotScoresheet.playerScores) {

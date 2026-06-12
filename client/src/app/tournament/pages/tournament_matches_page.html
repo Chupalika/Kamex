@@ -1,7 +1,7 @@
-<div *ngIf="loadingTournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
+<div *ngIf="loadingTournament && !tournament" class="mat-headline-5">{{ "common.loading" | transloco }}</div>
 <div *ngIf="!loadingTournament && !tournament" class="mat-headline-5">{{ "tournament.common.noTourney" | transloco: { acronym: acronym } }}</div>
 
-<div *ngIf="!loadingTournament && tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
+<div *ngIf="tournament" [class]="{'custom-theme': tournament.theme?.primaryColor || tournament.theme?.accentColor || tournament.theme?.fontName}">
   <div class="mat-headline-5">{{ tournament.name }} {{ "tournament.pages.matches" | transloco }}</div>
 
   <div class="matches-page-container">
@@ -44,11 +44,10 @@
     </div>
 
     <div class="matches-container" [class.mobile-mode]="mobileMode">
-      <div *ngIf="loadingRound" class="mat-headline-6">{{ "common.loading" | transloco }}</div>
-      <ng-container *ngIf="populatedTournamentRounds.has(selectedRoundId)">
-        <div *ngIf="sortedMatches.length === 0" class="mat-headline-6">
-          {{ "tournament.matches.noMatches" | transloco }}
-        </div>
+      <div *ngIf="loadingRound" class="mat-headline-6 loading-message">{{ "common.loading" | transloco }}</div>
+      <div *ngIf="!loadingRound && !round" class="mat-headline-6 loading-message">{{ "tournament.common.noRound" | transloco }}</div>
+      <ng-container *ngIf="round">
+        <div *ngIf="sortedMatches.length === 0" class="mat-headline-6 loading-message">{{ "tournament.matches.noMatches" | transloco }}</div>
         <tournament-match-card
           *ngIf="sortedMatches.length > 0 && !mobileMode"
           class="match-card"
@@ -68,7 +67,7 @@
             [isLobby]="isLobby"
             [participantType]="participantType"
             [gameMode]="tournament.gameMode"
-            [hideLinks]="selectedRound.scoresheetWip && !canSeeMpLinks()"
+            [hideLinks]="round.scoresheetWip && !canSeeMpLinks()"
             [playerFlagsToggle]="playerFlagsFormControl.value"
             [signupStatus]="signupStatus(match)"
             [refereeStatus]="refereeStatus(match)"
@@ -80,7 +79,6 @@
             (toggleStreamer)="toggleStreamer(match)"
             (toggleCommentator)="toggleCommentator(match)"
             [canSubmitMatch]="canSubmitMatch"
-            (matchUpdated)="onMatchUpdated($event)"
           ></tournament-match-card>
         </ng-container>
       </ng-container>
