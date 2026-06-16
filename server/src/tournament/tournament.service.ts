@@ -1,10 +1,10 @@
 import { Model, Types, HydratedDocument, isValidObjectId, Document, ObjectId } from 'mongoose';
-import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common';
+import { Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MappoolSlotDto, TournamentDto, TournamentMatchDto, TournamentRoundDto, TournamentPlayerDto, TournamentStaffMemberDto, TournamentStaffRoleDto, ScoreDto, TournamentTeamDto, SubmitMatchDto, OsuUserDto, EditTeamNameDto } from '../models/dtos';
-import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamCaptainError, TeamCaptainExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError, TournamentNotFound } from '../models/errors';
-import { GameMode, TournamentProgress } from '../models/enums';
-import { PlayerOrTeam, ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
+import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError, TournamentNotFound, NumPlayersError, NumTeamsError, NumStaffMembersError, NumStaffRolesError, NumRoundsError, NumMappoolSlotsError, NumRoundMatchesError, NumPodiumParticipantsError, NumSlotCategoriesError } from '../models/errors';
+import { GameMode, TournamentProgress, TournamentStaffPermission } from '../models/enums';
+import { ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
 import { AppUser } from 'src/schemas/app-user.schema';
 import { Beatmap } from '../schemas/beatmap.schema';
 import { Mappool } from '../schemas/mappool.schema';
@@ -25,6 +25,17 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { DiscordService } from 'src/discord/discord.service';
 import * as mongoose from 'mongoose';
 import { populateMatch } from 'src/utils';
+
+const MAX_TEAM_NAME_LENGTH = 100;
+const MAX_NUM_SLOTCATEGORIES = 20;
+const MAX_PODIUM_PARTICIPANTS = 10;
+const MAX_NUM_PLAYERS = 1000;
+const MAX_NUM_TEAMS = 100;
+const MAX_NUM_STAFF_MEMBERS = 200;
+const MAX_NUM_STAFF_ROLES = 50;
+const MAX_NUM_ROUNDS = 20;
+const MAX_NUM_MAPPOOL_SLOTS = 100;
+const MAX_NUM_ROUND_MATCHES = 100;
 
 @Injectable()
 export class TournamentService {
@@ -148,6 +159,9 @@ export class TournamentService {
         const exists = await this.tournamentModel.exists({ "discordSettings.serverId": tournamentDto.discordSettings?.serverId });
         if (exists) throw new DiscordServerAlreadyUsedError(tournamentDto.discordSettings?.serverId);
       }
+
+      if (tournamentDto.slotCategories.length > MAX_NUM_SLOTCATEGORIES) throw new NumSlotCategoriesError(MAX_NUM_SLOTCATEGORIES);
+      if (tournamentDto.podium.length > MAX_PODIUM_PARTICIPANTS) throw new NumPodiumParticipantsError(MAX_PODIUM_PARTICIPANTS);
 
       tourney.name = tournamentDto.name;
       tourney.gameMode = tournamentDto.gameMode;
@@ -324,6 +338,8 @@ export class TournamentService {
     else {
       throw new NotImplementedException();
     }
+
+    if (tourney.players.length >= MAX_NUM_PLAYERS) throw new NumPlayersError(MAX_NUM_PLAYERS);
 
     const createdTournamentPlayer = new this.tournamentPlayerModel(tournamentPlayer);
     await createdTournamentPlayer.save();
@@ -525,6 +541,8 @@ export class TournamentService {
     if (tourney.teams.some(team => team.players.find(player => player.playerId === caller.osuId))) throw new PlayerAlreadyOnATeamError();
     if (tourney.teams.some(team => team.joinRequests.find(player => player.playerId === caller.osuId))) throw new PlayerJoinRequestPendingError();
 
+    if (tournamentTeamDto.name.length > MAX_TEAM_NAME_LENGTH || tournamentTeamDto.name.length < 1) throw new TeamNameLengthError(MAX_TEAM_NAME_LENGTH);
+
     // only take these values
     const tournamentTeamDtoClone: Partial<TournamentTeamDto> = {
       name: tournamentTeamDto.name,
@@ -601,6 +619,8 @@ export class TournamentService {
     if (tourney.teams.find((x: TournamentTeam) => x.name === tournamentTeamDto.name)) {
       throw new TeamExistsError();
     }
+
+    if (tourney.teams.length >= MAX_NUM_TEAMS) throw new NumTeamsError(MAX_NUM_TEAMS);
 
     const createdTournamentTeam = new this.tournamentTeamModel(tournamentTeamDto);
     await createdTournamentTeam.save();
@@ -828,7 +848,7 @@ export class TournamentService {
 
     // duplicate team name and length limit check
     if (tourney.teams.find((team: HydratedDocument<TournamentTeam>) => team.name === editTeamNameDto.name && `${team._id}` !== `${teamId}`)) throw new TeamExistsError();
-    if (editTeamNameDto.name.length > 100 || editTeamNameDto.name.length < 1) throw new TeamNameLengthError();
+    if (editTeamNameDto.name.length > MAX_TEAM_NAME_LENGTH || editTeamNameDto.name.length < 1) throw new TeamNameLengthError(MAX_TEAM_NAME_LENGTH);
 
     const previousName = theTeam.name;
     theTeam.name = editTeamNameDto.name;
@@ -946,6 +966,8 @@ export class TournamentService {
       throw new StaffMemberExistsError();
     }
 
+    if (tourney.staffMembers.length >= MAX_NUM_STAFF_MEMBERS) throw new NumStaffMembersError(MAX_NUM_STAFF_MEMBERS);
+
     const createdTournamentStaffMember = new this.tournamentStaffMemberModel(tournamentStaffMember);
     await createdTournamentStaffMember.save();
     tourney.staffMembers.push(createdTournamentStaffMember);
@@ -1017,6 +1039,8 @@ export class TournamentService {
     if (tourney.staffRoles.find((x: TournamentStaffRole) => x.name === tournamentStaffRoleDto.name)) {
       throw new StaffRoleExistsError();
     }
+
+    if (tourney.staffRoles.length >= MAX_NUM_STAFF_ROLES) throw new NumStaffRolesError(MAX_NUM_STAFF_ROLES);
 
     const createdRole = new this.tournamentStaffRoleModel(tournamentStaffRoleDto);
     await createdRole.save();
@@ -1090,6 +1114,8 @@ export class TournamentService {
 
     if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
 
+    if (tourney.rounds.length >= MAX_NUM_ROUNDS) throw new NumRoundsError(MAX_NUM_ROUNDS);
+
     const newRoundId = new mongoose.Types.ObjectId();
     const newMappoolId = new mongoose.Types.ObjectId();
     const newScoresheetId = new mongoose.Types.ObjectId();
@@ -1104,7 +1130,7 @@ export class TournamentService {
     return createdRound;
   }
 
-  async getTournamentRound(acronym: string, roundId: Types.ObjectId, caller: AppUser): Promise<TournamentRound> {
+  async getTournamentRound(acronym: string, roundId: Types.ObjectId, caller: AppUser|undefined): Promise<TournamentRound> {
     const tourneyRound = await this.tournamentRoundModel.findOne({ _id: roundId }).orFail()
       .populate({ path: "matches", populate: [{ path: "referees", populate: "roles" },
                                               { path: "streamers", populate: "roles" },
@@ -1119,14 +1145,15 @@ export class TournamentService {
     const round = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`);
     if (round === undefined) throw new TournamentRoundNotFoundError();
     
-    //const staffMember = tourney.staffMembers.find((staffMember) => staffMember.playerId === caller.osuId);
-    //const canViewWipMappool = staffMember?.roles.some(role => role.permissions.includes(`GET:/api/tournament/:acronym/mappool/:mappoolId`));
+    const staffMember = tourney.staffMembers.find((staffMember) => staffMember.playerId === caller?.osuId);
+    const canViewWipMappool = staffMember?.roles.some(role => role.permissions.includes(TournamentStaffPermission.VIEW_WIP_MAPPOOLS)) ?? false;
+    const canViewWipScoresheet = staffMember?.roles.some(role => role.permissions.includes(TournamentStaffPermission.VIEW_WIP_SCORESHEETS)) ?? false;
 
-    if (!tourneyRound.mappoolWip) {
+    if (!tourneyRound.mappoolWip || canViewWipMappool) {
       await tourneyRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
     }
 
-    if (!tourneyRound.scoresheetWip) {
+    if (!tourneyRound.scoresheetWip || canViewWipScoresheet) {
       await tourneyRound.populate(
         { path: "scoresheet", populate:
           { path: "slotScoresheets", populate: [
@@ -1137,6 +1164,10 @@ export class TournamentService {
     }
 
     await Promise.all(tourneyRound.matches.map(match => populateMatch(match as HydratedDocument<TournamentMatch>, this.tournamentPlayerModel, this.tournamentTeamModel)));
+    // Remove match IDs if scoresheet is wip and user doesn't have permission
+    if (tourneyRound.scoresheetWip && !canViewWipScoresheet) {
+      tourneyRound.matches.forEach((match) => match.matchIds = []);
+    }
 
     return tourneyRound;
   }
@@ -1200,6 +1231,8 @@ export class TournamentService {
     const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
     if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
     await tourneyRound.populate({ path: "mappool", populate: { path: "slots" } });
+
+    if (tourneyRound.mappool.slots.length >= MAX_NUM_MAPPOOL_SLOTS) throw new NumMappoolSlotsError(MAX_NUM_MAPPOOL_SLOTS);
 
     // Don't allow duplicate slot label
     if (tourneyRound.mappool.slots.find((x: MappoolSlot) => x.label === mappoolSlotDto.label)) {
@@ -1360,6 +1393,8 @@ export class TournamentService {
     // Assert that the round is associated with the tourney
     const round = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`);
     if (round === undefined) throw new TournamentRoundNotFoundError();
+
+    if (round.matches.length >= MAX_NUM_ROUND_MATCHES) throw new NumRoundMatchesError(MAX_NUM_ROUND_MATCHES);
 
     if (tournamentMatchDto.type === "showcase") {
       tournamentMatchDto = {

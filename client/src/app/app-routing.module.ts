@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { FrontPage } from './root/front_page';
 import { AboutPage } from './root/about_page';
 import { AdminPage } from './root/admin_page';
+import { PageNotFoundPage } from './root/404';
 import { TournamentLandingPage } from './tournament/pages/tournament_landing_page';
 import { TournamentFrontPage } from './tournament/pages/tournament_front_page';
 import { TournamentRegistrationPage } from './tournament/pages/tournament_registration_page';
@@ -34,6 +35,7 @@ const routes: Routes = [
   { path: 'tools/suiji-team-pairer', component: SuijiTeamPairer },
   { path: 'tools/lms-overlay', component: LMSOverlay },
   { path: 'tools/ttf-overlay', component: TTFOverlay },
+  { path: '**', component: PageNotFoundPage }
 ];
 
 @NgModule({

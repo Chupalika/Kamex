@@ -121,10 +121,8 @@
   <mat-checkbox formControlName="enableTeams">Enable teams</mat-checkbox>
   <mat-checkbox *ngIf="enableTeamsFormControl.value" formControlName="allowTeamEdits">Enable team edits <mat-icon class="info-icon" matTooltip="Allows players to create, join, leave, and edit teams.">info</mat-icon></mat-checkbox>
 
-  <span class="mat-body-1 registration-settings-header">
-    Registration settings
-    <mat-icon class="info-icon" matTooltip="Dates are only for enforcement. Tournament progress stage is not affected and should be advanced separately.">info</mat-icon>
-  </span>
+  <span class="mat-body-1 registration-settings-header">Registration settings</span>
+  <span class="mat-body-2 note">Dates are only for enforcement. Tournament progress stage is not affected and should be advanced separately.</span>
   <mat-form-field>
     <mat-label>Registration Start Date</mat-label>
     <input matInput type="datetime-local" formControlName="registrationStartDate">
@@ -160,7 +158,8 @@
   </mat-form-field>
 
   <span class="mat-body-1 registration-settings-header">Discord settings</span>
-  <span class="mat-body-3 discord-bot-link"><a target="_blank" [href]="'https://discord.com/oauth2/authorize?client_id=' + discordClientId + '&scope=bot'">Bot invite link</a></span>
+  <span class="mat-body-2 note">Invite the discord bot to access features like logging, server member enforcement, and match reminders!</span>
+  <span class="mat-body-3 discord-bot-link note"><a target="_blank" [href]="'https://discord.com/oauth2/authorize?client_id=' + discordClientId + '&scope=bot'">Bot invite link</a></span>
   <mat-form-field>
     <mat-label>Server ID</mat-label>
     <input matInput type="text" formControlName="discordServerId">
@@ -209,6 +208,7 @@
       Slot Categories
       <button mat-icon-button type="button" color="primary" (click)="addSlotCategory()" [disabled]="isTourneyConcluded"><mat-icon>add</mat-icon></button>
     </div>
+    <span class="mat-body-2 note">Slot Categories are basically NM, HD, HR, etc. Mappool slots will be ordered based on the order specified here.</span>
     <div *ngIf="getSlotCategoriesFormGroups().length == 0" class="mat-body-1">None</div>
     <div *ngIf="getSlotCategoriesFormGroups().length > 0" cdkDropList (cdkDropListDropped)="rearrangeSlotCategories($event)">
       <ng-container *ngFor="let slotCategoryForm of getSlotCategoriesFormGroups(); let i = index">
@@ -254,6 +254,7 @@
       Podium
       <button mat-icon-button type="button" color="primary" (click)="addPodiumParticipant()" [disabled]="isTourneyConcluded"><mat-icon>add</mat-icon></button>
     </div>
+    <span class="mat-body-2 note">Note: Podium will not be displayed until the tournament is concluded.</span>
     <div *ngIf="getPodiumFormGroups().length == 0" class="mat-body-1">None</div>
     <div *ngIf="getPodiumFormGroups().length > 0" cdkDropList (cdkDropListDropped)="rearrangePodiumParticipant($event)">
       <ng-container *ngFor="let podiumParticipantForm of getPodiumFormGroups(); let i = index">

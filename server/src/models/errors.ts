@@ -122,12 +122,6 @@ export class NotTeamCaptainError extends HttpException {
   }
 }
 
-export class TeamNameLengthError extends HttpException {
-  constructor() {
-    super("Team name must be between 1 and 100 characters.", HttpStatus.BAD_REQUEST);
-  }
-}
-
 export class TeamAlreadyAcceptedError extends HttpException {
   constructor() {
     super("Player is already confirmed for another team.", HttpStatus.BAD_REQUEST);
@@ -357,5 +351,65 @@ export class MappoolSlotScoresheetNotFoundError extends HttpException {
 export class ScoreNotFoundError extends HttpException {
   constructor() {
     super("Score not found in this scoresheet.", HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class TeamNameLengthError extends HttpException {
+  constructor(max: number) {
+    super(`Team name must be between 1 and ${max} characters.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumSlotCategoriesError extends HttpException {
+  constructor(max: number) {
+    super(`Number of slot categories cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumPodiumParticipantsError extends HttpException {
+  constructor(max: number) {
+    super(`Number of podium participants cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumPlayersError extends HttpException {
+  constructor(max: number) {
+    super(`Number of players cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumTeamsError extends HttpException {
+  constructor(max: number) {
+    super(`Number of teams cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumStaffMembersError extends HttpException {
+  constructor(max: number) {
+    super(`Number of staff members cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumStaffRolesError extends HttpException {
+  constructor(max: number) {
+    super(`Number of staff roles cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumRoundsError extends HttpException {
+  constructor(max: number) {
+    super(`Number of rounds cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumMappoolSlotsError extends HttpException {
+  constructor(max: number) {
+    super(`Number of mappool slots cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class NumRoundMatchesError extends HttpException {
+  constructor(max: number) {
+    super(`Number of matches in a round cannot exceed ${max}.`, HttpStatus.BAD_REQUEST);
   }
 }
