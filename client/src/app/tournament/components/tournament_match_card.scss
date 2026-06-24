@@ -61,6 +61,8 @@
 
       &.score {
         text-align: center;
+        align-items: center;
+        min-width: 24px;
         width: 24px;
         height: 24px;
         margin: 3px 8px;
@@ -83,12 +85,31 @@
         &.mobile-mode {
           min-width: 120px;
           max-width: 120px;
+
+          &.lobby {
+            min-width: unset;
+            max-width: 320px;
+            width: 100%;
+          }
         }
 
         .participant {
           display: flex;
           align-items: flex-start;
           width: 100%;
+
+          tournament-team-label, tournament-player-label {
+            max-width: calc(100% - 44px);
+            overflow: hidden;
+
+            &.mobile-mode {
+              max-width: 100%;
+            }
+          }
+
+          &.lobby {
+            width: calc(100% - 40px);
+          }
 
           .filler {
             flex-grow: 1;
@@ -143,8 +164,9 @@
         }
       }
 
-      .lobby-participant {
+      .match-participant {
         display: flex;
+        width: 100%;
       }
     }
   }

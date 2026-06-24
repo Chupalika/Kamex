@@ -35,7 +35,7 @@ export class TournamentTeamCard {
 
   get isNameOverflowing() {
     const theElement = this.teameNameRef?.nativeElement;
-    return theElement ? theElement.scrollHeight > theElement.clientHeight : false;
+    return theElement ? (theElement.scrollHeight > theElement.clientHeight || theElement.scrollWidth > theElement.clientWidth) : false;
   }
 
   get captain() {

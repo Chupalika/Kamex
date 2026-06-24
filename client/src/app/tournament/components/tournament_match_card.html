@@ -11,9 +11,9 @@
       </div>
       <div class="match-detail name">
         <span *ngIf="isHeader">{{ participantTypeLabel | transloco }} 1</span>
-        <ng-container *ngIf="!isHeader && match!.participants.length > 0">
+        <div *ngIf="!isHeader && match!.participants.length > 0" class="match-participant">
           <ng-container *ngTemplateOutlet="participantInfo; context: { participant: match!.participants[0] }"></ng-container>
-        </ng-container>
+        </div>
         <ng-container *ngIf="!isHeader">
           <ng-container *ngTemplateOutlet="signupButton"></ng-container>
         </ng-container>
@@ -21,9 +21,9 @@
       </div>
       <div class="match-detail name right">
         <span *ngIf="isHeader">{{ participantTypeLabel | transloco }} 2</span>
-        <ng-container *ngIf="!isHeader && match!.participants.length > 1">
+        <div *ngIf="!isHeader && match!.participants.length > 1" class="match-participant">
           <ng-container *ngTemplateOutlet="participantInfo; context: { participant: match!.participants[1], flipped: true }"></ng-container>
-        </ng-container>
+        </div>
       </div>
       <div
         class="match-detail score"
@@ -35,8 +35,8 @@
     <ng-container *ngIf="isLobby">
       <div *ngIf="isHeader" class="match-detail name lobby-mode">{{ 'tournament.common.participants' | transloco }}</div>
       <div *ngIf="!isHeader" class="match-detail name lobby-mode">
-        <div *ngFor="let participant of match!.participants" class="lobby-participant">
-          <ng-container *ngTemplateOutlet="participantInfo; context: { participant: participant }"></ng-container>
+        <div *ngFor="let participant of match!.participants" class="match-participant">
+          <ng-container *ngTemplateOutlet="participantInfo; context: { participant: participant, isLobby: true }"></ng-container>
           <div
             class="match-detail score"
             [ngClass]="{ 'winner': match ? getMatchHighestScore() > 0 && participant.score === getMatchHighestScore() : false }"
@@ -223,7 +223,7 @@
         </div>
       </ng-container>
       <ng-container *ngIf="isLobby">
-        <div class="match-detail name mobile-mode">
+        <div class="match-detail name mobile-mode lobby">
           <div *ngFor="let participant of match!.participants" class="participant-name">
             <ng-container *ngTemplateOutlet="participantInfo; context: { participant: participant, hideExtraInfo: true }"></ng-container>
           </div>
@@ -289,14 +289,15 @@
   </div>
 </div>
 
-<ng-template #participantInfo let-participant="participant" let-flipped="flipped" let-hideExtraInfo="hideExtraInfo" let-hideIcon="hideIcon">
-  <div class="participant">
+<ng-template #participantInfo let-participant="participant" let-flipped="flipped" let-isLobby="isLobby" let-hideExtraInfo="hideExtraInfo" let-hideIcon="hideIcon">
+  <div class="participant" [class.lobby]="isLobby">
     <span *ngIf="!hideExtraInfo && flipped && participant.playerOrTeam.seed" class="seed">
       <span class="material-symbols-outlined icon">potted_plant</span> {{ participant.playerOrTeam.seed }}
     </span>
     <span *ngIf="flipped" class="filler"></span>
     <tournament-player-label
       *ngIf="isPlayer(participant.playerOrTeam)"
+      [class.mobile-mode]="mobileMode"
       [player]="participant.playerOrTeam"
       [gameMode]="gameMode"
       [playerFlagsToggle]="playerFlagsToggle"
@@ -306,6 +307,7 @@
     <tournament-team-label
       *ngIf="!isPlayer(participant.playerOrTeam)"
       [team]="participant.playerOrTeam"
+      [class.mobile-mode]="mobileMode"
       [gameMode]="gameMode"
       [playerFlagsToggle]="playerFlagsToggle"
       [flipped]="flipped"
