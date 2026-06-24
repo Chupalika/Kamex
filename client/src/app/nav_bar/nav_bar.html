@@ -21,6 +21,7 @@
     <div *ngIf="!mobileMode" class="right-side">
       <ng-container *ngIf="!tourneyPath">
         <a mat-button color="primary" [class.active]="currentPage === 'tournament'" [routerLink]="getLink('tournament')">Tournaments</a>
+        <a mat-button color="primary" [class.active]="currentPage === 'tools'" [routerLink]="getLink('tools')">Tools</a>
         <a mat-button color="primary" [class.active]="currentPage === 'about'" [routerLink]="getLink('about')">About</a>
       </ng-container>
       <ng-container *ngIf="tourneyPath">

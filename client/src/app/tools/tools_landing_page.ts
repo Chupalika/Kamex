@@ -6,7 +6,7 @@ import { ContentService } from '../services/content.service';
 import { Page } from '../models/models';
 
 @Component({
-  selector: 'about-page',
+  selector: 'tools-landing-page',
   template:
    `<ng-container *ngFor="let content of page?.contents || []">
       <div class="mat-headline-6">{{ content.key }}</div>
@@ -18,11 +18,11 @@ import { Page } from '../models/models';
       </div>
     </ng-container>`
 })
-export class AboutPage {
+export class ToolsLandingPage {
   page?: Page;
 
   constructor(contentService: ContentService) {
-    contentService.getPage("about").subscribe(page => {
+    contentService.getPage("tools").subscribe(page => {
       this.page = page;
     });
   }
@@ -34,8 +34,8 @@ export class AboutPage {
     MarkdownModule,
     RouterModule,
   ],
-  declarations: [ AboutPage ],
-  exports:      [ AboutPage ],
-  bootstrap:    [ AboutPage ]
+  declarations: [ ToolsLandingPage ],
+  exports:      [ ToolsLandingPage ],
+  bootstrap:    [ ToolsLandingPage ]
 })
-export class AboutPageModule {}
+export class ToolsLandingPageModule {}

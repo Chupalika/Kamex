@@ -15,8 +15,21 @@ import {throwError} from "rxjs";
 
 @Component({
   selector: 'admin-page',
-  templateUrl: './admin_page.html',
-  styleUrls: ['./admin_page.scss']
+  template:
+   `<div class="mat-headline-5">ADMIN PAGE</div>
+
+    <div class="mat-body">
+      Tournaments
+      <ul>
+        <li *ngFor="let tourney of tournaments">{{ tourney.name }}</li>
+      </ul>
+    </div>
+
+    <div class="mat-headline-5">Create a tourney</div>
+    <tournament-settings-editor
+      (submit)="submitNewTournamentForm($event)"
+      [requestInProgress]="requestInProgress">
+    </tournament-settings-editor>`
 })
 export class AdminPage {
   tournaments: Tournament[];

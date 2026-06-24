@@ -4,8 +4,12 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'front-page',
-  templateUrl: './front_page.html',
-  styleUrls: ['./front_page.scss']
+  template:
+   `<div class="mat-headline-6">Welcome to Kamex!</div>
+
+    <div class="mat-body-3">Click here for tournaments 👇</div>
+
+    <div class="mat-body-1"><a routerLink="/tournament">Tournament Landing Page</a></div>`
 })
 export class FrontPage {
 }

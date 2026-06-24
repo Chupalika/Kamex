@@ -12,11 +12,13 @@ import { TournamentMatchesPage } from './tournament/pages/tournament_matches_pag
 import { TournamentParticipantsPage } from './tournament/pages/tournament_participants_page';
 import { TournamentSettingsPage } from './tournament/pages/tournament_settings_page';
 import { TournamentStatsPage } from './tournament/pages/tournament_stats_page';
+import { ToolsLandingPage } from './tools/tools_landing_page';
 import { TeamReveal } from './tools/team_reveal/team_reveal';
 import { StatsReveal } from './tools/stats_reveal/stats_reveal';
 import { LMSOverlay } from './tools/lms_overlay/lms_overlay';
 import { SuijiTeamPairer } from './tools/suiji_team_pairer/suiji_team_pairer';
 import { TTFOverlay } from './tools/ttf_overlay/ttf_overlay';
+import { MappoolShowcase } from './tools/mappool_showcase/mappool_showcase';
 
 const routes: Routes = [
   { path: '', component: FrontPage, title: "Kamex" },
@@ -30,11 +32,13 @@ const routes: Routes = [
   { path: 'tournament/:acronym/participants', component: TournamentParticipantsPage },
   { path: 'tournament/:acronym/settings', component: TournamentSettingsPage },
   { path: 'tournament/:acronym/stats', component: TournamentStatsPage },
+  { path: 'tools', component: ToolsLandingPage, title: "Kamex Tools" },
   { path: 'tools/team-reveal', component: TeamReveal },
   { path: 'tools/stats-reveal/:acronym/:roundId', component: StatsReveal },
   { path: 'tools/suiji-team-pairer', component: SuijiTeamPairer },
   { path: 'tools/lms-overlay', component: LMSOverlay },
   { path: 'tools/ttf-overlay', component: TTFOverlay },
+  { path: 'tools/mappool-showcase', component: MappoolShowcase },
   { path: '**', component: PageNotFoundPage }
 ];
 
