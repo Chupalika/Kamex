@@ -31,8 +31,6 @@ export class TournamentMatchCard {
   @Input() match?: TournamentMatch;
   @Input() timezone: number = 0;
   @Input() gameMode: GameMode = GameMode.OSU;
-  @Input() tourneyAcronym: string = "";
-  @Input() tourneyRoundId: string = "";
   @Input() isHeader: boolean = false;
   @Input() isLobby: boolean = false;
   @Input() participantType: "Player"|"Team"|"Participant" = "Participant";
@@ -141,13 +139,13 @@ export class TournamentMatchCard {
 
   openMatchProgression() {
     const dialogRef = this.dialogService.open(
-      MatchProgressionDialog, { data: { match: this.match, matchProgression: this.match?.matchProgression, canEdit: /*this.refereeStatus !== ""*/ false, acronym: "" } }
+      MatchProgressionDialog, { data: { match: this.match, matchProgression: this.match?.matchProgression, canEdit: /*this.refereeStatus !== ""*/ false } }
     );
   }
 
   openSubmitMatchEditor() {
     const dialogRef = this.dialogService.open(
-      SubmitMatchEditorDialog, { data: { match: this.match, acronym: this.tourneyAcronym, roundId: this.tourneyRoundId } }
+      SubmitMatchEditorDialog, { data: { match: this.match } }
     );
   }
 
@@ -181,7 +179,7 @@ export class MatchProgressionDialog {
   requestInProgress: boolean = false;
   
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch, matchProgression: TournamentMatchEvent[], canEdit: boolean, acronym: string },
+    @Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch, matchProgression: TournamentMatchEvent[], canEdit: boolean },
     private dialogRef: MatDialogRef<MatchProgressionDialog>,
     private tournamentsService: TournamentsService,
     private snackBar: MatSnackBar,
@@ -217,7 +215,7 @@ export class SubmitMatchEditorDialog {
   readonly destroyRef = inject(DestroyRef);
   
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch, acronym: string, roundId: string },
+    @Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch },
     private dialogRef: MatDialogRef<SubmitMatchEditorDialog>,
     private tournamentsService: TournamentsService,
     private snackBar: MatSnackBar,

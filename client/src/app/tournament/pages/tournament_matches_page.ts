@@ -85,6 +85,7 @@ export class TournamentMatchesPage implements OnInit {
     this.tournamentsService.currentRound$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((round) => {
       this.round = round;
       this.selectedRoundIndex = this.sortedRounds.findIndex((r) => r._id === round?._id);
+      this.selectedRoundId = round?._id ?? "";
       this.populateAppUsers();
       this.sortMatches();
     });

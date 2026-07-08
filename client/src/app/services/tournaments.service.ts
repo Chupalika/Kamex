@@ -42,7 +42,6 @@ export class TournamentsService {
     this.loadingTournament.next(true);
     return this.getTournament(acronym).pipe(
       catchError((error) => {
-        this.clearCurrentTournament();
         return throwError(error);
       }),
       finalize(() => this.loadingTournament.next(false)),
@@ -118,7 +117,6 @@ export class TournamentsService {
         }
       }),
       catchError((error) => {
-        this.currentRound.next(undefined);
         return throwError(error);
       }),
       finalize(() => this.loadingRound.next(false)),
@@ -168,7 +166,7 @@ export class TournamentsService {
   }
 
   notifyError(error: any) {
-    this.notifications.next(this.translocoService.translate("common.requestFailed", { error: error.error.message }));
+    this.notifications.next(this.translocoService.translate("common.requestFailed", { error: error.error.message || error.error || error.message }));
     return throwError(() => error);
   }
 
