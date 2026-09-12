@@ -150,6 +150,19 @@
     </tournament-round-editor>
   </ng-container>
 
+  <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_SLOTS) && selectedRound && selectedRound.mappool.slots.length === 0">
+    <button
+      mat-raised-button
+      class="refresh-players-button"
+      type="button"
+      color="warn"
+      [disabled]="isTourneyConcluded || requestInProgress"
+      (click)="openCopyMappoolDialog()"
+    >
+      Copy Mappool
+    </button>
+  </ng-container>
+
   <ng-container *ngIf="hasPermission(TournamentStaffPermission.MANAGE_SLOTS) && selectedRound">
     <div class="mat-headline-5 section-label">{{ "tournament.settings.slotEditor" | transloco }}</div>
     <item-selector

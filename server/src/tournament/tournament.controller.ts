@@ -442,6 +442,16 @@ export class TournamentController {
     return await this.tournamentService.getTournamentScoresheet(scoresheetId);
   }
 
+  @Post(':acronym/round/:roundId/copyMappool/:sourceRoundId')
+  @UseGuards(TournamentStaffRolesGuard)
+  @Permissions(TournamentStaffPermission.MANAGE_SLOTS)
+  async copyMappool(
+      @Param('acronym') acronym: string,
+      @Param('roundId', new ParseObjectIdPipe()) roundId: Types.ObjectId,
+      @Param('sourceRoundId', new ParseObjectIdPipe()) sourceRoundId: Types.ObjectId): Promise<Mappool> {
+    return await this.tournamentService.copyMappool(acronym, roundId, sourceRoundId);
+  }
+
   @Post(':acronym/round/:roundId/slot')
   @UseGuards(TournamentStaffRolesGuard)
   @Permissions(TournamentStaffPermission.MANAGE_SLOTS)

@@ -2,7 +2,7 @@ import { Model, Types, HydratedDocument, isValidObjectId, Document, ObjectId } f
 import { Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MappoolSlotDto, TournamentDto, TournamentMatchDto, TournamentRoundDto, TournamentPlayerDto, TournamentStaffMemberDto, TournamentStaffRoleDto, ScoreDto, TournamentTeamDto, SubmitMatchDto, OsuUserDto, EditTeamNameDto } from '../models/dtos';
-import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError, TournamentNotFound, NumPlayersError, NumTeamsError, NumStaffMembersError, NumStaffRolesError, NumRoundsError, NumMappoolSlotsError, NumRoundMatchesError, NumPodiumParticipantsError, NumSlotCategoriesError } from '../models/errors';
+import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError, TournamentNotFound, NumPlayersError, NumTeamsError, NumStaffMembersError, NumStaffRolesError, NumRoundsError, NumMappoolSlotsError, NumRoundMatchesError, NumPodiumParticipantsError, NumSlotCategoriesError, MappoolNotEmptyError, MappoolEmptyError } from '../models/errors';
 import { GameMode, TournamentProgress, TournamentStaffPermission } from '../models/enums';
 import { ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
 import { AppUser } from 'src/schemas/app-user.schema';
@@ -1221,6 +1221,47 @@ export class TournamentService {
             { path: "playerScores", populate: [{ path: "player" }, { path: "scores" }] },
             { path: "teamScores", populate: [{ path: "team" }, { path: "scores" }] }
       ]});
+  }
+
+  async copyMappool(acronym: string, roundId: Types.ObjectId, sourceRoundId: Types.ObjectId): Promise<Mappool> {
+    const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("rounds");
+
+    if ([TournamentProgress.PLANNING, TournamentProgress.CONCLUDED].includes(tourney.progress)) throw new ProgressLockedError();
+
+    const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
+    if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
+    await tourneyRound.populate({ path: "mappool" });
+    if (tourneyRound.mappool.slots.length > 0) throw new MappoolNotEmptyError();
+
+    const sourceRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${sourceRoundId}`) as HydratedDocument<TournamentRound>;
+    if (!sourceRound) throw new TournamentRoundNotFoundError();
+    await sourceRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
+    if (sourceRound.mappool.slots.length === 0) throw new MappoolEmptyError();
+
+    const newMappoolId = new mongoose.Types.ObjectId();
+    const createdMappool = new this.mappoolModel({ _id: newMappoolId, tournamentRound: tourneyRound._id, downloadUrl: sourceRound.mappool.downloadUrl });
+    const newSlots = [];
+    for (const slot of sourceRound.mappool.slots) {
+      const newSlotId = new mongoose.Types.ObjectId();
+      const newBeatmapId = new mongoose.Types.ObjectId();
+      const newBeatmap = new this.tournamentBeatmapModel({
+        ...(slot.beatmap as HydratedDocument<Beatmap>).toObject(),
+        _id: newBeatmapId
+      });
+      await newBeatmap.save();
+      const newSlot = new this.mappoolSlotModel({
+        ...(slot as HydratedDocument<MappoolSlot>).toObject(),
+        _id: newSlotId,
+        beatmap: newBeatmap,
+      });
+      await newSlot.save();
+      newSlots.push(newSlot);
+    }
+    createdMappool.slots = newSlots;
+    await createdMappool.save();
+    tourneyRound.mappool = createdMappool;
+    await tourneyRound.save();
+    return createdMappool;
   }
 
   async addMappoolSlot(acronym: string, roundId: Types.ObjectId, mappoolSlotDto: MappoolSlotDto): Promise<MappoolSlot> {

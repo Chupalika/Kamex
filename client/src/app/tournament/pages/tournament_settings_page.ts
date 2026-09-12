@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, NgModule, OnInit } from '@angular/core';
+import { Component, DestroyRef, Inject, inject, NgModule, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { MatButtonModule } from "@angular/material/button";
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -381,6 +381,12 @@ export class TournamentSettingsPage implements OnInit {
     });
   }
 
+  openCopyMappoolDialog() {
+    const dialogRef = this.dialogService.open(CopyMappoolDialog, {
+      data: { rounds: this.rounds.filter((r) => r._id !== this.selectedRound?._id) },
+    });
+  }
+
   get slotLabels() {
     return this.slots.map((slot) => slot.label) || [];
   }
@@ -501,6 +507,52 @@ export class TournamentSettingsPage implements OnInit {
 })
 export class RefreshPlayerDataDialog {}
 
+@Component({
+  selector: 'copy-mappool-dialog',
+  template: `<div class="dialog-wrapper">
+               <h2 mat-dialog-title>Copy Mappool From Round</h2>
+               <mat-dialog-content class="mat-typography">
+                 <form [formGroup]="roundPickerForm">
+                   <mat-form-field>
+                     <mat-label>Round</mat-label>
+                     <mat-select formControlName="selectedRound">
+                       <mat-option *ngFor="let round of data.rounds" [value]="round._id">{{ round.name }}</mat-option>
+                     </mat-select>
+                   </mat-form-field>
+                 </form>
+               </mat-dialog-content>
+               <mat-dialog-actions align="end" style="margin: 0 16px 12px;">
+                 <button mat-raised-button color="secondary" [mat-dialog-close]="false">Cancel</button>
+                 <button mat-raised-button color="primary" (click)="submitRequest()" [disabled]="requestInProgress || !selectedRoundFormControl.value">Copy</button>
+               </mat-dialog-actions>`,
+})
+export class CopyMappoolDialog {
+  requestInProgress: boolean = false;
+
+  roundPickerForm: FormGroup;
+  selectedRoundFormControl: FormControl;
+
+  constructor(
+    @Inject(MAT_DIALOG_DATA) public data: { rounds: TournamentRound[] },
+    private tournamentsService: TournamentsService,
+    private snackBar: MatSnackBar,
+    private dialogRef: MatDialogRef<CopyMappoolDialog>,
+  ) {
+    this.selectedRoundFormControl = new FormControl("");
+    this.roundPickerForm = new FormGroup({
+      selectedRound: this.selectedRoundFormControl,
+    });
+  }
+
+  submitRequest() {
+    this.requestInProgress = true;
+    this.tournamentsService.copyMappool(this.selectedRoundFormControl.value).subscribe((updatedMappool) => {
+      this.snackBar.open("Copied mappool!", "", { duration: 10000 });
+      this.dialogRef.close(updatedMappool);
+    });
+  }
+}
+
 @NgModule({
   imports: [
     CommonModule,
@@ -525,7 +577,7 @@ export class RefreshPlayerDataDialog {}
     TournamentTeamEditorModule,
     TranslocoModule,
   ],
-  declarations: [ TournamentSettingsPage, RefreshPlayerDataDialog ],
+  declarations: [ TournamentSettingsPage, RefreshPlayerDataDialog, CopyMappoolDialog ],
   exports: [ TournamentSettingsPage ],
   bootstrap: [ TournamentSettingsPage ]
 })

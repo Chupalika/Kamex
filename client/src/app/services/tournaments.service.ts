@@ -765,6 +765,22 @@ export class TournamentsService {
     );
   }
 
+  copyMappool(sourceRoundId: string): Observable<Mappool> {
+    return this.http.post(`${this.apiUrl}/${this.currentTournament.value!.acronym}/round/${this.currentRound.value!._id}/copyMappool/${sourceRoundId}`, {}, { withCredentials: true }).pipe(
+      tap({ subscribe: () => this.addRequest() }),
+      catchError((error) => this.notifyError(error)),
+      finalize(() => this.subtractRequest()),
+      map((data) => {
+        const mappool = processApiResponse(data) as Mappool;
+        this.refreshRoundState({
+          ...this.currentRound.value!,
+          mappool: mappool,
+        });
+        return mappool;
+      }),
+    );
+  }
+
   addTournamentSlot(beatmapId: number, formData: any): Observable<MappoolSlot> {
     return this.http.post(`${this.apiUrl}/${this.currentTournament.value!.acronym}/round/${this.currentRound.value!._id}/slot`, { ...formData, beatmap: { beatmapId } }, { withCredentials: true }).pipe(
       tap({ subscribe: () => this.addRequest() }),
