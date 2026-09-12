@@ -166,7 +166,16 @@ export class TournamentsService {
   }
 
   notifyError(error: any) {
-    this.notifications.next(this.translocoService.translate("common.requestFailed", { error: error.error.message || error.error || error.message }));
+    let errorMessage = "";
+    if (typeof error?.error?.message === "string") errorMessage = error.error.message;
+    else if (typeof error?.message === "string") errorMessage = error.message;
+    else if (typeof error?.error?.detail === "string") errorMessage = error.error.detail;
+    else if (typeof error?.error === "string") errorMessage = error.error;
+    else {
+      errorMessage = "Please check browser console";
+      console.error(error);
+    }
+    this.notifications.next(this.translocoService.translate("common.requestFailed", { error: errorMessage }));
     return throwError(() => error);
   }
 
@@ -413,8 +422,8 @@ export class TournamentsService {
     );
   }
 
-  refreshPlayers(acronym: string): Observable<boolean> {
-    return this.http.post(`${this.apiUrl}/${acronym}/refreshPlayers`, { withCredentials: true }).pipe(
+  refreshPlayers(): Observable<boolean> {
+    return this.http.post(`${this.apiUrl}/${this.currentTournament.value!.acronym}/refreshPlayers`, { withCredentials: true }).pipe(
       tap({ subscribe: () => this.addRequest() }),
       catchError((error) => this.notifyError(error)),
       finalize(() => this.subtractRequest()),
@@ -422,8 +431,8 @@ export class TournamentsService {
     );
   }
 
-  refreshPlayer(acronym: string, playerId: number): Observable<TournamentPlayer> {
-    return this.http.post(`${this.apiUrl}/${acronym}/refreshPlayer/${playerId}`, { withCredentials: true }).pipe(
+  refreshPlayer(playerId: number): Observable<TournamentPlayer> {
+    return this.http.post(`${this.apiUrl}/${this.currentTournament.value!.acronym}/refreshPlayer/${playerId}`, { withCredentials: true }).pipe(
       tap({ subscribe: () => this.addRequest() }),
       catchError((error) => this.notifyError(error)),
       finalize(() => this.subtractRequest()),

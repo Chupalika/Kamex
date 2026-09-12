@@ -16,7 +16,8 @@ export class RequestLoggingMiddleware implements NestMiddleware {
         user: req.user?.osuId,
         statusCode: res.statusCode,
       });
-      createdLog.save();
+      if (res.locals?.errorMessage) createdLog.errorMessage = res.locals.errorMessage;
+      await createdLog.save();
     });
     next();
   }

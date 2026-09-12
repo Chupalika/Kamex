@@ -135,9 +135,9 @@ export class TournamentSettingsPage implements OnInit {
     return this.tournament?.staffMembers.find((staffMember) => staffMember.playerId === this.appUser?.osuId);
   }
 
-  hasPermission(permission: TournamentStaffPermission) {
-    return (this.appUser && this.appUser.osuId === this.tournament?.ownerId) ||
-           (this.currentStaffMember && this.currentStaffMember.roles.some((role) => role.permissions.includes(permission)));
+  hasPermission(permission: TournamentStaffPermission): boolean {
+    return (this.appUser !== undefined && this.appUser.osuId === this.tournament?.ownerId) ||
+           (this.currentStaffMember !== undefined && this.currentStaffMember.roles.some((role) => role.permissions.includes(permission)));
   }
 
   isMultiMode() {
@@ -155,7 +155,7 @@ export class TournamentSettingsPage implements OnInit {
     const dialogRef = this.dialogService.open(RefreshPlayerDataDialog);
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.tournamentsService.refreshPlayers(this.tournament!.acronym).subscribe(() => {
+        this.tournamentsService.refreshPlayers().subscribe(() => {
           this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
           this.tournamentsService.loadOrRefreshTournament(this.tournament!.acronym, true);
         });
@@ -164,7 +164,7 @@ export class TournamentSettingsPage implements OnInit {
   }
 
   refreshPlayerData(player: TournamentPlayer) {
-    this.tournamentsService.refreshPlayer(this.tournament!.acronym, player.playerId).subscribe((refreshedPlayer) => {
+    this.tournamentsService.refreshPlayer(player.playerId).subscribe((refreshedPlayer) => {
       this.snackBar.open(this.translocoService.translate("tournament.settings.playerDataRefreshed"), "", { duration: 10000 });
     });
   }

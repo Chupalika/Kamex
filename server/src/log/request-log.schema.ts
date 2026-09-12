@@ -19,6 +19,9 @@ export class RequestLog {
 
   @Prop({ required: true })
   statusCode: number;
+
+  @Prop()
+  errorMessage: string;
 }
 
 export const RequestLogSchema = SchemaFactory.createForClass(RequestLog);

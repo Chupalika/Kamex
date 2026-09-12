@@ -354,7 +354,7 @@ export class TournamentParticipantsPage implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.requestInProgress = true;
-        this.tournamentsService.refreshPlayers(this.acronym)
+        this.tournamentsService.refreshPlayers()
           .pipe(catchError((error) => {
             this.requestInProgress = false;
             this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });
@@ -728,7 +728,7 @@ export class EditorDialog {
 
   refreshPlayerData(player: TournamentPlayer) {
     this.requestInProgress = true;
-    this.tournamentsService.refreshPlayer(this.data.acronym, player.playerId)
+    this.tournamentsService.refreshPlayer(player.playerId)
       .pipe(catchError((error) => {
         this.requestInProgress = false;
         this.snackBar.open(this.translocoService.translate("common.requestFailed", { error: error.error.message }), "", { duration: 10000 });

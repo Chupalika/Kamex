@@ -5,6 +5,7 @@ import * as session from 'express-session';
 import * as passport from 'passport';
 import * as fs from 'fs';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './log/http-exception.filter';
 
 const MongoDBStore = require('connect-mongodb-session')(session);
 
@@ -23,6 +24,7 @@ async function bootstrap() {
 
   app.enableCors({ origin: ['http://localhost:4200', 'https://kamex.app:4200'], credentials: true });
   app.setGlobalPrefix('api');
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.use(
     session({
       cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
