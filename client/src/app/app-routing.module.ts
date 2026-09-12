@@ -19,6 +19,7 @@ import { LMSOverlay } from './tools/lms_overlay/lms_overlay';
 import { SuijiTeamPairer } from './tools/suiji_team_pairer/suiji_team_pairer';
 import { TTFOverlay } from './tools/ttf_overlay/ttf_overlay';
 import { MappoolShowcase } from './tools/mappool_showcase/mappool_showcase';
+import { HitCounters } from './tools/hit_counters/hit_counters';
 
 const routes: Routes = [
   { path: '', component: FrontPage, title: "Kamex" },
@@ -39,6 +40,7 @@ const routes: Routes = [
   { path: 'tools/lms-overlay', component: LMSOverlay },
   { path: 'tools/ttf-overlay', component: TTFOverlay },
   { path: 'tools/mappool-showcase', component: MappoolShowcase },
+  { path: 'tools/hit-counters', component: HitCounters },
   { path: '**', component: PageNotFoundPage }
 ];
 
