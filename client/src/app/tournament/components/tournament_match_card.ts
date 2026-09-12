@@ -15,12 +15,13 @@ import { TournamentTeamCard } from '../components/tournament_team_card';
 import { TournamentStaffMemberCard } from '../components/tournament_staff_member_card';
 import { MarkdownModule } from 'ngx-markdown';
 
-import { GameMode, SubmitMatchDto, TournamentMatch, TournamentMatchEvent, TournamentMatchParticipant, TournamentPlayer, TournamentStaffMember, TournamentTeam } from '../../models/models';
+import { GameMode, SubmitMatchDto, TournamentMatch, TournamentMatchEvent, TournamentMatchParticipant, TournamentPlayer, TournamentStaffMember, TournamentStaffPermission, TournamentTeam } from '../../models/models';
 import { TournamentsService } from 'src/app/services/tournaments.service';
 import { MatchProgressionModule } from 'src/app/components/match_progression';
 import { TournamentSubmitMatchEditorModule } from './tournament_submit_match_editor';
 import { TournamentPlayerLabelModule } from '../components/tournament_player_label';
 import { TournamentTeamLabelModule } from '../components/tournament_team_label';
+import { hasPermission } from '../utils';
 
 @Component({
   selector: 'tournament-match-card',
@@ -43,6 +44,7 @@ export class TournamentMatchCard {
   @Input() streamerStatus: ""|"can_register"|"can_unregister" = "";
   @Input() commentatorStatus: ""|"can_register"|"can_unregister" = "";
   @Input() canSubmitMatch: boolean = false;
+  @Input() canEditMatch: boolean = false;
   @Input() requestInProgress: boolean = false;
   @Output() toggleSignup: EventEmitter<any> = new EventEmitter();
   @Output() toggleReferee: EventEmitter<any> = new EventEmitter();
@@ -145,7 +147,7 @@ export class TournamentMatchCard {
 
   openSubmitMatchEditor() {
     const dialogRef = this.dialogService.open(
-      SubmitMatchEditorDialog, { data: { match: this.match } }
+      SubmitMatchEditorDialog, { data: { match: this.match, hasEditMatchPermission: this.canEditMatch } }
     );
   }
 
@@ -202,6 +204,7 @@ export class MatchProgressionDialog {
                <tournament-submit-match-editor
                  [match]="data.match"
                  [requestInProgress]="requestInProgress"
+                 [hasEditMatchPermission]="data.hasEditMatchPermission"
                  (submit)="submitMatch($event)">
                </tournament-submit-match-editor>
              </mat-dialog-content>
@@ -215,7 +218,7 @@ export class SubmitMatchEditorDialog {
   readonly destroyRef = inject(DestroyRef);
   
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch },
+    @Inject(MAT_DIALOG_DATA) public data: { match: TournamentMatch, hasEditMatchPermission: boolean },
     private dialogRef: MatDialogRef<SubmitMatchEditorDialog>,
     private tournamentsService: TournamentsService,
     private snackBar: MatSnackBar,

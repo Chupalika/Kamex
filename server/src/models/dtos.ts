@@ -176,6 +176,7 @@ export class SubmitMatchDto {
   readonly id?: string;
   readonly participants?: TournamentMatchParticipant[];
   readonly matchIds?: number[];
+  readonly vodLinks?: string[];
   readonly generateMatchProgression?: boolean;
   readonly notes?: string;
 }

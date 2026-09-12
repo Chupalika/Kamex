@@ -19,6 +19,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
   @Input() matches: TournamentMatch[] = [];
   @Input() match: TournamentMatch|undefined;
   @Input() requestInProgress: boolean = false;
+  @Input() hasEditMatchPermission: boolean = false;
   @Output() submit: EventEmitter<any> = new EventEmitter();
 
   idToNameMap: Map<string, string> = new Map();
@@ -27,6 +28,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
   idFormControl: FormControl;
   participantsFormControl: FormArray;
   matchIdsFormControl: FormControl;
+  vodLinksFormControl: FormControl;
   generateMatchProgressionFormControl: FormControl;
   notesFormControl: FormControl;
 
@@ -34,12 +36,14 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
     this.idFormControl = new FormControl("", [Validators.required]);
     this.participantsFormControl = new FormArray<FormControl>([]);
     this.matchIdsFormControl = new FormControl("");
+    this.vodLinksFormControl = new FormControl("");
     this.generateMatchProgressionFormControl = new FormControl(false);
     this.notesFormControl = new FormControl("");
     this.submitMatchForm = new FormGroup({
       id: this.idFormControl,
       participants: this.participantsFormControl,
       matchIds: this.matchIdsFormControl,
+      vodLinks: this.vodLinksFormControl,
       generateMatchProgression: this.generateMatchProgressionFormControl,
       notes: this.notesFormControl,
     });
@@ -75,6 +79,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
       this.matchIdsFormControl.setValue(theMatch.matchIds.join(","));
       this.generateMatchProgressionFormControl.setValue(false);
       this.notesFormControl.setValue(theMatch.notes);
+      this.vodLinksFormControl.setValue(theMatch.vodLinks?.join(",") || "");
     }
   }
 
@@ -90,6 +95,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
       id: formValues.id,
       participants: this.getParticipantsFormGroups().map((formGroup) => this.convertParticipantForm(formGroup)),
       matchIds,
+      vodLinks: formValues.vodLinks.length > 0 ? formValues.vodLinks.split(",") : [],
       generateMatchProgression: formValues.generateMatchProgression,
       notes: formValues.notes,
     };
@@ -101,6 +107,7 @@ export class TournamentSubmitMatchEditor implements OnInit, OnChanges {
            //JSON.stringify(this.participantsFormControl.value) ||
            JSON.stringify(this.getParticipantsFormGroups().map((formGroup) => this.convertParticipantForm(formGroup))) ||
       this.currentSelectedMatch?.matchIds.join(",") !== this.matchIdsFormControl.value ||
+      this.currentSelectedMatch?.vodLinks?.join(",") !== this.vodLinksFormControl.value ||
       this.currentSelectedMatch?.notes !== this.notesFormControl.value;
   }
 

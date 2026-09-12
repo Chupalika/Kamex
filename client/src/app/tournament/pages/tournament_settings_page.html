@@ -211,6 +211,7 @@
     <tournament-submit-match-editor
       [matches]="matches"
       [requestInProgress]="requestInProgress || loadingRound"
+      [hasEditMatchPermission]="hasPermission(TournamentStaffPermission.MANAGE_MATCHES)"
       (submit)="submitMatch($event)">
     </tournament-submit-match-editor>
   </ng-container>

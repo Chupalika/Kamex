@@ -1708,6 +1708,7 @@ export class TournamentService {
 
     tourneyMatch.participants = [...tourneyMatch.participants];
     tourneyMatch.matchIds = submitMatchDto.matchIds;
+    tourneyMatch.vodLinks = submitMatchDto.vodLinks;
     tourneyMatch.notes = submitMatchDto.notes;
 
     for (let dtoParticipant of submitMatchDto.participants) {

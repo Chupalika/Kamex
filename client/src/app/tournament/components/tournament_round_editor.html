@@ -1,4 +1,5 @@
 <form [formGroup]="tournamentRoundForm" (ngSubmit)="updateTournamentRound()" class="tourney-form" autocomplete="off">
+  <p *ngIf="round" class="mat-body-2">Round ID: {{ round._id }}</p>
   <mat-form-field>
     <mat-label>Name</mat-label>
     <input matInput type="text" formControlName="name">
