@@ -1,4 +1,5 @@
 <form [formGroup]="editTeamForm" (ngSubmit)="updateTeam()" class="tourney-form" autocomplete="off">
+  <tournament-team-card *ngIf="team" class="tournament-card" [team]="team" [gameMode]="gameMode"></tournament-team-card>
   <mat-form-field>
     <mat-label>Team name</mat-label>
     <input matInput type="text" formControlName="name">

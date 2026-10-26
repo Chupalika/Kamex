@@ -13,7 +13,7 @@ import { Tournament } from 'src/app/models/models';
 export class TournamentLandingPage {
   tournaments: Tournament[];
 
-  tournamentsTableColumns = ["icon", "name", "gameMode", "teamSize", "rankRestriction", "progress"];
+  tournamentsTableColumns = ["icon", "name", "gameMode", "teamSize", "rankRestriction", "startTime", "progress"];
   
   constructor(private tournamentsService: TournamentsService) {
     this.tournaments = [];
@@ -25,7 +25,8 @@ export class TournamentLandingPage {
   
   refreshTournamentList() {
     this.tournamentsService.getTournaments().subscribe((tournaments) => {
-      this.tournaments = tournaments.reverse();
+      // sort by registration start date
+      this.tournaments = tournaments.sort((a, b) => b.registrationSettings.startDate.getTime() - a.registrationSettings.startDate.getTime());
     });
   }
 

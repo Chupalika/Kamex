@@ -1,8 +1,9 @@
 import { Component, NgModule, Input, EventEmitter, Output, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
 
 import { HovercardModule } from '../../components/hovercard';
-import { FormControl, FormGroup } from '@angular/forms';
 import { Mappool } from 'src/app/models/models';
 
 @Component({
@@ -36,12 +37,12 @@ export class TournamentMappoolEditor implements OnInit, OnChanges {
   @Output() submit: EventEmitter<any> = new EventEmitter();
   @Output() copy: EventEmitter<any> = new EventEmitter();
 
-  tournamentMappoolForm: FormGroup;
+  editMappoolForm: FormGroup;
   mappoolDownloadUrlFormControl: FormControl;
 
   constructor() {
     this.mappoolDownloadUrlFormControl = new FormControl("");
-    this.tournamentMappoolForm = new FormGroup({
+    this.editMappoolForm = new FormGroup({
       mappoolDownloadUrl: this.mappoolDownloadUrlFormControl,
     });
   }
@@ -56,12 +57,16 @@ export class TournamentMappoolEditor implements OnInit, OnChanges {
     }
   }
 
+  hasChanges(): boolean {
+    return !this.mappool || this.mappool.downloadUrl !== this.mappoolDownloadUrlFormControl.value;
+  }
+
   refreshForm() {
     this.mappoolDownloadUrlFormControl.setValue(this.mappool?.downloadUrl ?? "");
   }
 
-  updateTournamentMappool() {
-    const updatedTournamentMappool = this.tournamentMappoolForm?.getRawValue();
+  updateMappool() {
+    const updatedTournamentMappool = this.editMappoolForm?.getRawValue();
     this.submit.emit(updatedTournamentMappool);
   }
 
@@ -74,6 +79,8 @@ export class TournamentMappoolEditor implements OnInit, OnChanges {
   imports: [
     CommonModule,
     HovercardModule,
+    MatFormFieldModule,
+    ReactiveFormsModule,
   ],
   declarations: [ TournamentMappoolEditor ],
   exports:      [ TournamentMappoolEditor ],

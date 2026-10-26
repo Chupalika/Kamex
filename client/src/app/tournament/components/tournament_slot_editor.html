@@ -1,4 +1,5 @@
 <form [formGroup]="editSlotForm" (ngSubmit)="updateSlot()" class="tourney-form" autocomplete="off">
+  <tournament-slot-card *ngIf="slot" class="tournament-card" [slot]="slot" [category]="getSlotCategory()"></tournament-slot-card>
   <mat-form-field>
     <mat-label>Slot Label</mat-label>
     <input matInput type="text" formControlName="label">

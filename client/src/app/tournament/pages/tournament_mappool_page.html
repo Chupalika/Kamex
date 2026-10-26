@@ -91,7 +91,7 @@
             </ng-container>
             <ng-container matColumnDef="sr" class="table-cell">
               <mat-header-cell *matHeaderCellDef class="table-cell table-cell-m">{{ "tournament.mappools.starRating" | transloco }}</mat-header-cell>
-              <mat-cell *matCellDef="let slot" class="table-cell table-cell-m">{{ slot.beatmap.starRating }}</mat-cell>
+              <mat-cell *matCellDef="let slot" class="table-cell table-cell-m">{{ slotStarRatingWrapper(slot) }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="length" class="table-cell">
               <mat-header-cell *matHeaderCellDef class="table-cell table-cell-s">{{ "tournament.mappools.length" | transloco }}</mat-header-cell>

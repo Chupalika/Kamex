@@ -1,5 +1,6 @@
-import { Component, NgModule } from '@angular/core';
+import { Component, DestroyRef, inject, NgModule } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { TournamentsService } from '../services/tournaments.service';
 import { Tournament } from '../models/models';
@@ -37,6 +38,8 @@ export class AdminPage {
   requestInProgress = false;
   statusMessage = "";
 
+  readonly destroyRef = inject(DestroyRef);
+
   constructor(private tournamentsService: TournamentsService, private snackBar: MatSnackBar) {
     this.tournaments = [];
     this.newTournamentForm = new FormGroup({
@@ -49,28 +52,19 @@ export class AdminPage {
 
   ngOnInit() {
     this.refreshTournamentList();
+    this.tournamentsService.requestInProgress$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((requestInProgress) => { this.requestInProgress = requestInProgress; });
   }
 
   refreshTournamentList() {
-    this.tournamentsService.getTournaments().subscribe((tournaments) => {
-      this.tournaments = tournaments;
-    });
+    this.tournamentsService.getTournaments().subscribe((tournaments) => { this.tournaments = tournaments; });
   }
 
   submitNewTournamentForm(partialTournament: Partial<Tournament>) {
     if (!partialTournament.acronym) return;
-    this.requestInProgress = true;
-    this.tournamentsService.createTournament(partialTournament)
-        .pipe(catchError((error) => {
-          this.requestInProgress = false;
-          this.snackBar.open(`Request failed: ${error.error.message}`, "", { duration: 10000 });
-          return throwError(error);
-        }))
-        .subscribe((newTournament) => {
-          this.refreshTournamentList();
-          this.requestInProgress = false;
-          this.snackBar.open("Successfully edited settings.", "", { duration: 10000 });
-        });
+    this.tournamentsService.createTournament(partialTournament).subscribe((newTournament) => {
+      this.refreshTournamentList();
+      this.snackBar.open("Successfully created tournament.", "", { duration: 10000 });
+    });
   }
 }
 

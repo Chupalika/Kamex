@@ -17,8 +17,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Title } from '@angular/platform-browser';
 import { TranslocoModule } from '@jsverse/transloco';
-import { catchError } from 'rxjs/operators';
-import { Observable, throwError } from "rxjs";
+import { Observable } from "rxjs";
 
 import { ItemSelectorModule } from 'src/app/components/item_selector';
 import { TournamentRoundNavBarModule } from '../components/tournament_round_nav_bar';

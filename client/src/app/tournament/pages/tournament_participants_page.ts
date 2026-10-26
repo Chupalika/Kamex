@@ -420,6 +420,7 @@ export class TournamentParticipantsPage implements OnInit {
                  <tournament-team-editor
                    [team]="selectedTeam"
                    [players]="workingPlayers"
+                   [gameMode]="data.gameMode"
                    [requestInProgress]="requestInProgress"
                    (submit)="submitUpdateTeamForm($event)"
                    (remove)="removeTeam($event)"

@@ -1,6 +1,6 @@
 import { Component, NgModule, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, Inject, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { MappoolSlot } from '../../models/models';
+import { MappoolSlot, TournamentSlotCategory } from '../../models/models';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { TranslocoModule } from '@jsverse/transloco';
+import { TournamentSlotCardModule } from './tournament_slot_card';
 import { convertFromLazerMods, convertToLazerMods } from '../utils';
 
 @Component({
@@ -21,6 +22,7 @@ export class TournamentSlotEditor implements OnInit, OnChanges {
   @Input() requestInProgress: boolean = false;
   @Input() isMultiMode: boolean = false;
   @Input() disabled: boolean = false;
+  @Input() slotCategories: TournamentSlotCategory[] = [];
   @Output() submit: EventEmitter<any> = new EventEmitter();
   @Output() remove: EventEmitter<any> = new EventEmitter();
   @Output() refresh: EventEmitter<any> = new EventEmitter();
@@ -114,6 +116,10 @@ export class TournamentSlotEditor implements OnInit, OnChanges {
       this.slot.isCustomMap !== this.isCustomMapFormControl.value ||
       this.slot.isCustomTrack !== this.isCustomTrackFormControl.value;
   }
+
+  getSlotCategory(): TournamentSlotCategory | undefined {
+    return this.slotCategories.find(category => category.name === this.slot?.category);
+  }
 }
 
 @Component({
@@ -157,6 +163,7 @@ export class RefreshSlotDialog {}
     MatInputModule,
     MatSelectModule,
     TranslocoModule,
+    TournamentSlotCardModule,
   ],
   declarations: [ TournamentSlotEditor, RemoveSlotDialog, RefreshSlotDialog ],
   exports:      [ TournamentSlotEditor ],

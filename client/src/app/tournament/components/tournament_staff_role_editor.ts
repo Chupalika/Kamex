@@ -35,7 +35,7 @@ export class TournamentStaffRoleEditor implements OnInit, OnChanges {
     { label: "Manage Staff Roles", value: TournamentStaffPermission.MANAGE_STAFF_ROLES },
     { label: "Manage Stats", value: TournamentStaffPermission.MANAGE_STATS },
     { label: "Manage Rounds", value: TournamentStaffPermission.MANAGE_ROUNDS },
-    { label: "Manage Mappool Slots", value: TournamentStaffPermission.MANAGE_SLOTS },
+    { label: "Manage Mappool", value: TournamentStaffPermission.MANAGE_SLOTS },
     { label: "Manage Matches", value: TournamentStaffPermission.MANAGE_MATCHES },
     { label: "View WIP Mappools", value: TournamentStaffPermission.VIEW_WIP_MAPPOOLS },
     { label: "View WIP Scoresheets", value: TournamentStaffPermission.VIEW_WIP_SCORESHEETS },

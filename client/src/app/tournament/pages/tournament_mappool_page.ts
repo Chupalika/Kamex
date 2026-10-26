@@ -145,6 +145,10 @@ export class TournamentMappoolPage implements OnInit {
     return slotDisplayLength(slot);
   }
 
+  slotStarRatingWrapper(slot: MappoolSlot) {
+    return slotStarRating(slot);
+  }
+
   openSlotEditor() {
     const dialogRef = this.dialogService.open(
       SlotEditorDialog, { data: { acronym: this.acronym, roundId: this.selectedRoundId, tournament: this.tournament, slots: this.mappool.slots } }
@@ -169,6 +173,7 @@ export class TournamentMappoolPage implements OnInit {
       <tournament-slot-editor
         [slot]="selectedSlot"
         [requestInProgress]="requestInProgress"
+        [slotCategories]="data.tournament.slotCategories"
         (submit)="submitUpdateSlotForm($event)"
         (remove)="removeSlot($event)"
         (refresh)="refreshBeatmapData($event)"

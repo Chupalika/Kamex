@@ -1,10 +1,10 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { Component, NgModule, OnInit, OnChanges, Input, Output, EventEmitter, SimpleChanges, inject } from '@angular/core';
+import { Component, NgModule, OnInit, OnChanges, Input, Output, EventEmitter, SimpleChanges, inject, Inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -224,7 +224,7 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
   }
 
   advanceToNextStage() {
-    const dialogRef = this.dialogService.open(AdvanceTourneyStageDialog);
+    const dialogRef = this.dialogService.open(AdvanceTourneyStageDialog, { data: { currentProgress: this.initialTournament!.progress } });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         const updatedTournament = structuredClone(this.initialTournament)!;
@@ -427,17 +427,26 @@ export class TournamentSettingsEditor implements OnInit, OnChanges {
 
 @Component({
   selector: 'advance-tourney-stage-dialog',
-  template: `<h2 mat-dialog-title>Advance to next stage?</h2>
-             <mat-dialog-content class="mat-typography">
-               This will lock some settings in place and cannot be undone.<br>
-               Also, any unsaved changes to other settings will not be saved.
-             </mat-dialog-content>
-             <mat-dialog-actions align="end">
-               <button mat-raised-button color="secondary" [mat-dialog-close]="false">No</button>
-               <button mat-raised-button color="primary" [mat-dialog-close]="true">Yes</button>
-             </mat-dialog-actions>`,
+  template:
+   `<h2 mat-dialog-title>Advance to next stage?</h2>
+    <mat-dialog-content class="mat-typography">
+      This will lock some settings in place and cannot be undone.<br>
+      Also, any unsaved changes to other settings will not be saved.
+
+      <ng-container *ngIf="data.currentProgress === 'ongoing'">
+        Advancing to the concluded stage will lock everything in place. Please double check everything is correct.<br>
+        If the tournament is recieving official support, it's recommended to await approval before concluding, since staff may request changes.<br>
+        If you need to make changes after concluding the tournament, you will need to contact an admin.
+      </ng-container>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-raised-button color="secondary" [mat-dialog-close]="false">No</button>
+      <button mat-raised-button color="primary" [mat-dialog-close]="true">Yes</button>
+    </mat-dialog-actions>`,
 })
-export class AdvanceTourneyStageDialog {}
+export class AdvanceTourneyStageDialog {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { currentProgress: TournamentProgress }) {}
+}
 
 @NgModule({
   imports: [

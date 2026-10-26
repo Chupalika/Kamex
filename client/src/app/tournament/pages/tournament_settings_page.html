@@ -76,6 +76,7 @@
       [players]="tournament.players"
       [requestInProgress]="requestInProgress"
       [disabled]="isTourneyConcluded"
+      [gameMode]="tournament.gameMode"
       (submit)="submitUpdateTeamForm($event)"
       (remove)="removeTeam($event)"
       (uploadImage)="uploadTeamImage($event)">
@@ -176,6 +177,7 @@
       [slot]="selectedSlot"
       [requestInProgress]="requestInProgress || loadingRound"
       [isMultiMode]="isMultiMode()"
+      [slotCategories]="tournament.slotCategories"
       [disabled]="isTourneyConcluded"
       (submit)="submitUpdateSlotForm($event)"
       (remove)="removeSlot($event)"

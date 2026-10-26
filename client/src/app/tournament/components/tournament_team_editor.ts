@@ -1,6 +1,6 @@
 import { Component, NgModule, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { TournamentPlayer, TournamentTeam } from '../../models/models';
+import { GameMode, TournamentPlayer, TournamentTeam } from '../../models/models';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { TournamentTeamCardModule } from './tournament_team_card';
 
 @Component({
   selector: 'tournament-team-editor',
@@ -21,6 +22,7 @@ export class TournamentTeamEditor implements OnInit, OnChanges {
   @Input() players: TournamentPlayer[] = [];
   @Input() requestInProgress: boolean = false;
   @Input() disabled: boolean = false;
+  @Input() gameMode?: GameMode;
   @Output() submit: EventEmitter<any> = new EventEmitter();
   @Output() remove: EventEmitter<any> = new EventEmitter();
   @Output() uploadImage: EventEmitter<any> = new EventEmitter();
@@ -135,6 +137,7 @@ export class RemoveTeamDialog {}
     MatInputModule,
     MatSelectModule,
     MatTooltipModule,
+    TournamentTeamCardModule,
   ],
   declarations: [ TournamentTeamEditor, RemoveTeamDialog ],
   exports:      [ TournamentTeamEditor ],

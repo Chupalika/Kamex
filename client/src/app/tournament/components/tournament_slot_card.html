@@ -32,7 +32,10 @@
         <a target="_blank" [href]="'https://osu.ppy.sh/b/' + slot.beatmap.beatmapId">
           <img class="info-thumbnail" [src]="'https://b.ppy.sh/thumb/' + slot.beatmap.beatmapSetId + 'l.jpg'" />
         </a>
-        <div class="info-beatmap-id"><mat-icon class="icon">confirmation_number</mat-icon> {{ slot.beatmap.beatmapId }}</div>
+        <div class="info-beatmap-id">
+          <mat-icon class="icon" [matTooltip]="'Copy beatmap ID'" (click)="copyBeatmapId()">confirmation_number</mat-icon>
+          {{ slot.beatmap.beatmapId }}
+        </div>
       </div>
     </div>
     <div class="info-stats">

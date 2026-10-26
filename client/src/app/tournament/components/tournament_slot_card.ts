@@ -1,6 +1,7 @@
 import { Component, NgModule, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import tinycolor from 'tinycolor2';
 
@@ -18,10 +19,11 @@ export class TournamentSlotCard {
 
   GameMode = GameMode;
 
-  constructor() {}
+  constructor(private snackBar: MatSnackBar) {}
 
   copyBeatmapId() {
     navigator.clipboard.writeText(this.slot!.beatmap.beatmapId.toString());
+    this.snackBar.open('Beatmap ID copied to clipboard!', '', { duration: 3000 });
   }
 
   get starRating() {

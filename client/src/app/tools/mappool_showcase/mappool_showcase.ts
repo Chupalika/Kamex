@@ -179,7 +179,7 @@ export class MappoolShowcase {
     if (this.data?.beatmap === undefined) return "unknown";
     let ms = this.data.beatmap.time.lastObject - this.data.beatmap.time.firstObject;
     if (this.dtEnabled) ms /= 1.5;
-    return `${Math.floor(ms / 60000)}:${String(ms % 60000).slice(0, 2)}`;
+    return `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000 % 60)).padStart(2, "0")}`;
   }
 
   get sr() {

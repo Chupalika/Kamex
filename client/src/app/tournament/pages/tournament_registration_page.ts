@@ -171,7 +171,9 @@ export class TournamentRegistrationPage implements OnInit {
   }
 
   get canEditTeam(): boolean {
-    return this.isTeamCaptain && (this.tournament?.progress === TournamentProgress.REGISTRATION || (this.tournament?.allowTeamEdits || false));
+    return this.isTeamCaptain &&
+        (this.tournament?.allowTeamEdits || false) &&
+        (this.tournament?.progress === TournamentProgress.REGISTRATION || this.tournament?.progress === TournamentProgress.ONGOING);
   }
 
   removePlayer(team: TournamentTeam, player: TournamentPlayer) {

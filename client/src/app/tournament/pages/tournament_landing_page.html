@@ -35,6 +35,12 @@
     </mat-header-cell>
     <mat-cell *matCellDef="let tourney" class="table-cell table-cell-s">{{ getTourneyRankRestriction(tourney) }}</mat-cell>
   </ng-container>
+  <ng-container matColumnDef="startTime">
+    <mat-header-cell *matHeaderCellDef class="table-header table-cell-s">
+      <span class="tournaments-table-header-text">Start Date</span>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let tourney" class="table-cell table-cell-s">{{ tourney.registrationSettings.startDate | date:'yyyy-MM-dd' }}</mat-cell>
+  </ng-container>
   <ng-container matColumnDef="progress">
     <mat-header-cell *matHeaderCellDef class="table-header table-cell-s">
       <span class="tournaments-table-header-text">Progress</span>
