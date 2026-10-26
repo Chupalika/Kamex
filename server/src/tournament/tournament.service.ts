@@ -2,7 +2,7 @@ import { Model, Types, HydratedDocument, isValidObjectId, Document, ObjectId } f
 import { Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MappoolSlotDto, TournamentDto, TournamentMatchDto, TournamentRoundDto, TournamentPlayerDto, TournamentStaffMemberDto, TournamentStaffRoleDto, ScoreDto, TournamentTeamDto, SubmitMatchDto, OsuUserDto, EditTeamNameDto } from '../models/dtos';
-import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError, TournamentNotFound, NumPlayersError, NumTeamsError, NumStaffMembersError, NumStaffRolesError, NumRoundsError, NumMappoolSlotsError, NumRoundMatchesError, NumPodiumParticipantsError, NumSlotCategoriesError, MappoolNotEmptyError, MappoolEmptyError } from '../models/errors';
+import { NotTeamCaptainError, MatchExistsError, PlayerExistsError, PlayerNotRegisteredError, MappoolSlotLabelExistsError, MappoolSlotBeatmapIDExistsError, ProgressChangeError, ProgressChangeConflictError, ProgressLockedError, RegistrationClosedError, StaffMemberExistsError, StaffRoleExistsError, TeamExistsError, PlayerNotFoundOnTeamError, TeamMissingPlayersError, TeamNotFoundError, RankRequirementNotMetError, DiscordNotLinkedError, DiscordServerAlreadyUsedError, RefreshPlayersPartialFailure, MatchStaffAlreadyRegisteredError, StaffMemberNotFoundError, StaffRoleNotFoundError, MappoolSlotNotFoundError, AlreadySignedUpToMatchError, MatchNotFoundError, TournamentRoundNotFoundError, MatchSignupLateError, MatchSignupFullError, DiscordServerNotFoundError, DiscordServerNotSetupError, DiscordMemberNotFoundError, NotADiscordMemberError, ScoreNotFoundError, MappoolSlotScoresheetNotFoundError, PlayerOrTeamNotFoundError, SlotCategoryNotFoundError, TeamNameLengthError, TeamEditsDisabledError, PlayerAlreadyOnATeamError, PlayerJoinRequestPendingError, PlayerJoinRequestNotFoundError, TeamAtMaximumCapacityError, CountryRequirementNotMetError, MatchParticipantSignupsNotEnabledError, MatchStaffSignupsNotEnabledError, TournamentNotFound, NumPlayersError, NumTeamsError, NumStaffMembersError, NumStaffRolesError, NumRoundsError, NumMappoolSlotsError, NumRoundMatchesError, NumPodiumParticipantsError, NumSlotCategoriesError, MappoolNotEmptyError, MappoolEmptyError } from '../models/errors';
 import { GameMode, TournamentProgress, TournamentStaffPermission } from '../models/enums';
 import { ScoreMod, TournamentMatchEvent, TournamentMatchParticipant } from '../models/models';
 import { AppUser } from 'src/schemas/app-user.schema';
@@ -313,16 +313,23 @@ export class TournamentService {
     }
 
     let tournamentPlayer : Partial<TournamentPlayerDto>;
-    if (tourney.gameMode !== GameMode.ALL) {
-      const osuUser = await this.osuApiService.getUser(playerId, tourney.gameMode);
+    tournamentPlayer = {
+      playerId: 0,
+      username: "",
+      country: "",
+      seed: isForced ? tournamentPlayerDto?.seed : "",
+    };
+    const gameModes = tourney.gameMode === GameMode.ALL ? [GameMode.OSU, GameMode.TAIKO, GameMode.FRUITS, GameMode.MANIA] : [tourney.gameMode];
+    for (const gameMode of gameModes) {
+      const osuUser = await this.osuApiService.getUser(playerId, gameMode);
       tournamentPlayer = {
+        ...tournamentPlayer,
         playerId: osuUser.id,
         username: osuUser.username,
         country: osuUser.country,
-        seed: isForced ? tournamentPlayerDto?.seed : "",
       };
-      tournamentPlayer[tourney.gameMode + 'Rank'] = osuUser.statistics.globalRank;
-      tournamentPlayer[tourney.gameMode + 'PP'] = osuUser.statistics.pp;
+      tournamentPlayer[gameMode + 'Rank'] = osuUser.statistics.globalRank;
+      tournamentPlayer[gameMode + 'PP'] = osuUser.statistics.pp;
 
       if (!isForced &&
           (tourney.registrationSettings.minRank !== 0 && osuUser.statistics.globalRank < tourney.registrationSettings.minRank) ||
@@ -333,10 +340,6 @@ export class TournamentService {
       if (!isForced && (tourney.registrationSettings.allowedCountries ?? []).length > 0 && !tourney.registrationSettings.allowedCountries.includes(osuUser.country)) {
         throw new CountryRequirementNotMetError();
       }
-    }
-    // todo!
-    else {
-      throw new NotImplementedException();
     }
 
     if (tourney.players.length >= MAX_NUM_PLAYERS) throw new NumPlayersError(MAX_NUM_PLAYERS);
@@ -435,92 +438,87 @@ export class TournamentService {
   async refreshPlayer(acronym: string, playerId: number): Promise<TournamentPlayer> {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players");
     if (tourney.progress === TournamentProgress.CONCLUDED) throw new ProgressLockedError();
-    // todo!
-    if (tourney.gameMode == GameMode.ALL) throw new NotImplementedException();
 
     const player = tourney.players.find((x: TournamentPlayer) => x.playerId === playerId) as HydratedDocument<TournamentPlayer>;
     if (!player) throw new PlayerNotRegisteredError();
 
-    const osuUser = await this.osuApiService.getUser(playerId, tourney.gameMode);
-    const fields: any = {
-      username: osuUser.username,
-      country: osuUser.country,
-    };
-    fields[`${tourney.gameMode}Rank`] = osuUser.statistics.globalRank;
-    fields[`${tourney.gameMode}PP`] = osuUser.statistics.pp;
-
-    player.username = fields.username;
-    player.country = fields.country;
-    player[`${tourney.gameMode}Rank`] = fields[`${tourney.gameMode}Rank`];
-    player[`${tourney.gameMode}PP`] = fields[`${tourney.gameMode}PP`];
+    const gameModes = tourney.gameMode === GameMode.ALL ? [GameMode.OSU, GameMode.TAIKO, GameMode.FRUITS, GameMode.MANIA] : [tourney.gameMode];
+    for (const gameMode of gameModes) {
+      const osuUser = await this.osuApiService.getUser(playerId, gameMode);
+      player.username = osuUser.username;
+      player.country = osuUser.country;
+      player[`${gameMode}Rank`] = osuUser.statistics.globalRank;
+      player[`${gameMode}PP`] = osuUser.statistics.pp;
+    }
     return await player.save();
   }
 
   async refreshPlayers(acronym: string) {
     const tourney = await this.tournamentModel.findOne({ acronym: acronym.toLowerCase() }).orFail().populate("players");
     if (tourney.progress === TournamentProgress.CONCLUDED) throw new ProgressLockedError();
-    // todo!
-    if (tourney.gameMode == GameMode.ALL) throw new NotImplementedException();
 
+    const gameModes = tourney.gameMode === GameMode.ALL ? [GameMode.OSU, GameMode.TAIKO, GameMode.FRUITS, GameMode.MANIA] : [tourney.gameMode];
     const playerMap = new Map<number, TournamentPlayer>(tourney.players.map((player) => [player.playerId, player]));
     const failedUsernames: string[] = [];
     for (let i = 0; i < tourney.players.length; i += 50) {
       const batchPlayers = tourney.players.slice(i, i + 50);
       const playerIds = batchPlayers.map((p) => p.playerId);
 
-      let osuUsers: OsuUserDto[];
-      try {
-        osuUsers = await this.osuApiService.getUsers(playerIds, tourney.gameMode);
-      } catch (err) {
-        failedUsernames.push(...batchPlayers.map(player => player.username));
-        continue;
-      }
-      const returnedIds = new Set(osuUsers.map(user => user.id));
-      for (const player of batchPlayers) {
-        if (!returnedIds.has(player.playerId)) {
-          failedUsernames.push(player.username);
+      for (const gameMode of gameModes) {
+        let osuUsers: OsuUserDto[];
+        try {
+          osuUsers = await this.osuApiService.getUsers(playerIds, gameMode);
+        } catch (err) {
+          failedUsernames.push(...batchPlayers.map(player => player.username));
+          continue;
         }
-      }
-
-      const documentsToUpdate: { id: ObjectId, fields: any, username: string }[] = [];
-      for (const osuUser of osuUsers) {
-        const player = playerMap.get(osuUser.id);
-        if (!player) continue;
-
-        const fields: any = {
-          username: osuUser.username,
-          country: osuUser.country,
-        };
-        fields[`${tourney.gameMode}Rank`] = osuUser.statistics.globalRank;
-        fields[`${tourney.gameMode}PP`] = osuUser.statistics.pp;
-
-        player.username = fields.username;
-        player.country = fields.country;
-        player[`${tourney.gameMode}Rank`] = fields[`${tourney.gameMode}Rank`];
-        player[`${tourney.gameMode}PP`] = fields[`${tourney.gameMode}PP`];
-
-        documentsToUpdate.push({ id: (player as any)._id, fields, username: player.username });
-      }
-      
-      const ops = documentsToUpdate.map(document => ({
-        updateOne: {
-          filter: { _id: document.id },
-          update: { $set: document.fields },
-        }
-      }));
-
-      try {
-        await this.tournamentPlayerModel.bulkWrite(ops, { ordered: false });
-      } catch (error) {
-        if (error && error.writeErrors && Array.isArray(error.writeErrors)) {
-          for (const writeError of error.writeErrors) {
-            const index = writeError.index;
-            const failed = documentsToUpdate[index];
-            if (failed) failedUsernames.push(failed.username);
+        const returnedIds = new Set(osuUsers.map(user => user.id));
+        for (const player of batchPlayers) {
+          if (!returnedIds.has(player.playerId)) {
+            failedUsernames.push(player.username);
           }
-        } else {
-          console.log("Unexpected error: ", error);
-          throw error;
+        }
+
+        const documentsToUpdate: { id: ObjectId, fields: any, username: string }[] = [];
+        for (const osuUser of osuUsers) {
+          const player = playerMap.get(osuUser.id);
+          if (!player) continue;
+
+          const fields: any = {
+            username: osuUser.username,
+            country: osuUser.country,
+          };
+          fields[`${gameMode}Rank`] = osuUser.statistics.globalRank;
+          fields[`${gameMode}PP`] = osuUser.statistics.pp;
+
+          player.username = fields.username;
+          player.country = fields.country;
+          player[`${gameMode}Rank`] = fields[`${gameMode}Rank`];
+          player[`${gameMode}PP`] = fields[`${gameMode}PP`];
+
+          documentsToUpdate.push({ id: (player as any)._id, fields, username: player.username });
+        }
+        
+        const ops = documentsToUpdate.map(document => ({
+          updateOne: {
+            filter: { _id: document.id },
+            update: { $set: document.fields },
+          }
+        }));
+
+        try {
+          await this.tournamentPlayerModel.bulkWrite(ops, { ordered: false });
+        } catch (error) {
+          if (error && error.writeErrors && Array.isArray(error.writeErrors)) {
+            for (const writeError of error.writeErrors) {
+              const index = writeError.index;
+              const failed = documentsToUpdate[index];
+              if (failed) failedUsernames.push(failed.username);
+            }
+          } else {
+            console.log("Unexpected error: ", error);
+            throw error;
+          }
         }
       }
     }
@@ -1271,13 +1269,18 @@ export class TournamentService {
 
     const tourneyRound = tourney.rounds.find((round: HydratedDocument<TournamentRound>) => `${round._id}` === `${roundId}`) as HydratedDocument<TournamentRound>;
     if (tourneyRound === undefined) throw new TournamentRoundNotFoundError();
-    await tourneyRound.populate({ path: "mappool", populate: { path: "slots" } });
+    await tourneyRound.populate({ path: "mappool", populate: { path: "slots", populate: { path: "beatmap" } } });
 
     if (tourneyRound.mappool.slots.length >= MAX_NUM_MAPPOOL_SLOTS) throw new NumMappoolSlotsError(MAX_NUM_MAPPOOL_SLOTS);
 
     // Don't allow duplicate slot label
     if (tourneyRound.mappool.slots.find((x: MappoolSlot) => x.label === mappoolSlotDto.label)) {
-      throw new MappoolSlotExistsError();
+      throw new MappoolSlotLabelExistsError();
+    }
+
+    // Don't allow duplicate beatmap id
+    if (tourneyRound.mappool.slots.find((x: MappoolSlot) => `${x.beatmap.beatmapId}` === `${mappoolSlotDto.beatmap.beatmapId}`)) {
+      throw new MappoolSlotBeatmapIDExistsError();
     }
 
     const createdBeatmap = await this.createOrUpdateTournamentBeatmap(mappoolSlotDto.beatmap.beatmapId);
@@ -1287,12 +1290,10 @@ export class TournamentService {
       beatmap: createdBeatmap,
     };
 
-    if (mappoolSlotDto.requiredMods.length > 0) {
-      const gameMode = mappoolSlotDto.gameMode ?? tourney.gameMode;
-      const mods = mappoolSlotDto.requiredMods.map(mod => mod.acronym); // todo: figure out lazer mods
-      const difficultyAttributes = await this.osuApiService.getBeatmapDifficultyAttributes(mappoolSlotDto.beatmap.beatmapId, mods, gameMode);
-      filledSlotDto.adjustedStarRating = difficultyAttributes["starRating"];
-    }
+    const gameMode = mappoolSlotDto.gameMode ?? tourney.gameMode;
+    const mods = mappoolSlotDto.requiredMods.map(mod => mod.acronym); // todo: figure out lazer mods
+    const difficultyAttributes = await this.osuApiService.getBeatmapDifficultyAttributes(mappoolSlotDto.beatmap.beatmapId, mods, gameMode);
+    filledSlotDto.adjustedStarRating = difficultyAttributes["starRating"];
 
     //console.log(filledPickDto);
     const createdSlot = new this.mappoolSlotModel(filledSlotDto);
@@ -1317,7 +1318,12 @@ export class TournamentService {
 
     // Don't allow duplicate slot label
     if (tourneyRound.mappool.slots.find((x: HydratedDocument<MappoolSlot>) => x.label === mappoolSlotDto.label && !x._id.equals(slotId))) {
-      throw new MappoolSlotExistsError();
+      throw new MappoolSlotLabelExistsError();
+    }
+
+    // Don't allow duplicate beatmap ID
+    if (tourneyRound.mappool.slots.find((x: HydratedDocument<MappoolSlot>) => `${x.beatmap.beatmapId}` === `${mappoolSlotDto.beatmap.beatmapId}` && !x._id.equals(slotId))) {
+      throw new MappoolSlotBeatmapIDExistsError();
     }
 
     if (mappoolSlotDto.beatmap.beatmapId !== mappoolSlot.beatmap.beatmapId) {
@@ -1325,10 +1331,8 @@ export class TournamentService {
       mappoolSlot.beatmap = createdBeatmap;
     }
 
-    if (mappoolSlotDto.requiredMods.length === 0) {
-      mappoolSlot.adjustedStarRating = undefined;
-    }
-    else if (JSON.stringify(mappoolSlot.requiredMods) !== JSON.stringify(mappoolSlotDto.requiredMods)) {
+    if (JSON.stringify(mappoolSlot.requiredMods) !== JSON.stringify(mappoolSlotDto.requiredMods) ||
+             mappoolSlot.gameMode !== (mappoolSlotDto.gameMode ?? tourney.gameMode)) {
       const gameMode = mappoolSlotDto.gameMode ?? tourney.gameMode;
       const mods = mappoolSlotDto.requiredMods.map(mod => mod.acronym); // todo: figure out lazer mods
       const difficultyAttributes = await this.osuApiService.getBeatmapDifficultyAttributes(mappoolSlotDto.beatmap.beatmapId, mods, gameMode);
@@ -1384,12 +1388,10 @@ export class TournamentService {
 
     mappoolSlot.beatmap = await this.createOrUpdateTournamentBeatmap(mappoolSlot.beatmap.beatmapId, (mappoolSlot.beatmap as HydratedDocument<Beatmap>)._id);
 
-    if (mappoolSlot.requiredMods.length > 0) {
-      const gameMode = mappoolSlot.gameMode ?? tourney.gameMode;
-      const mods = mappoolSlot.requiredMods.map(mod => mod.acronym); // todo: figure out lazer mods
-      const difficultyAttributes = await this.osuApiService.getBeatmapDifficultyAttributes(mappoolSlot.beatmap.beatmapId, mods, gameMode);
-      mappoolSlot.adjustedStarRating = difficultyAttributes["starRating"];
-    }
+    const gameMode = mappoolSlot.gameMode ?? tourney.gameMode;
+    const mods = mappoolSlot.requiredMods.map(mod => mod.acronym); // todo: figure out lazer mods
+    const difficultyAttributes = await this.osuApiService.getBeatmapDifficultyAttributes(mappoolSlot.beatmap.beatmapId, mods, gameMode);
+    mappoolSlot.adjustedStarRating = difficultyAttributes["starRating"];
 
     await mappoolSlot.save();
     return mappoolSlot;

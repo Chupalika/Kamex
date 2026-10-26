@@ -20,7 +20,7 @@
   <mat-form-field *ngIf="isMultiMode">
     <mat-label>Game Mode</mat-label>
     <mat-select formControlName="gameMode">
-      <mat-option *ngFor="let gameMode of ['osu', 'taiko', 'catch', 'mania']" [value]="gameMode">{{ gameMode }}</mat-option>
+      <mat-option *ngFor="let gameMode of ['osu', 'taiko', 'fruits', 'mania']" [value]="gameMode">{{ gameMode }}</mat-option>
     </mat-select>
   </mat-form-field>
   <mat-checkbox formControlName="isCustomMap">Custom Map</mat-checkbox>

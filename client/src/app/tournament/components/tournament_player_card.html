@@ -11,16 +11,16 @@
         <a class="username-text" [href]="'https://osu.ppy.sh/users/' + player.playerId" target="_blank">{{ player.username }}</a>
       </div>
       <ng-container *ngIf="gameMode === GameMode.OSU || gameMode === GameMode.ALL">
-        <div class="info-rank"><mat-icon svgIcon="osu" class="icon"></mat-icon> #{{ player.osuRank }}</div>
+        <div class="info-rank"><mat-icon svgIcon="osu" class="icon"></mat-icon> #{{ player.osuRank ?? '?' }}</div>
       </ng-container>
       <ng-container *ngIf="gameMode === GameMode.TAIKO || gameMode === GameMode.ALL">
-        <div class="info-rank"><mat-icon svgIcon="taiko" class="icon"></mat-icon> #{{ player.taikoRank }}</div>
+        <div class="info-rank"><mat-icon svgIcon="taiko" class="icon"></mat-icon> #{{ player.taikoRank ?? '?' }}</div>
       </ng-container>
       <ng-container *ngIf="gameMode === GameMode.FRUITS || gameMode === GameMode.ALL">
-        <div class="info-rank"><mat-icon svgIcon="fruits" class="icon"></mat-icon> #{{ player.fruitsRank }}</div>
+        <div class="info-rank"><mat-icon svgIcon="fruits" class="icon"></mat-icon> #{{ player.fruitsRank ?? '?' }}</div>
       </ng-container>
       <ng-container *ngIf="gameMode === GameMode.MANIA || gameMode === GameMode.ALL">
-        <div class="info-rank"><mat-icon svgIcon="mania" class="icon"></mat-icon> #{{ player.maniaRank }}</div>
+        <div class="info-rank"><mat-icon svgIcon="mania" class="icon"></mat-icon> #{{ player.maniaRank ?? '?' }}</div>
       </ng-container>
       <div class="info-teams" *ngIf="teams.length > 0">
         <div class="team-row" *ngFor="let team of teams">

@@ -242,9 +242,15 @@ export class MappoolSlotNotFoundError extends HttpException {
   }
 }
 
-export class MappoolSlotExistsError extends HttpException {
+export class MappoolSlotLabelExistsError extends HttpException {
   constructor() {
     super("Slot with this label already exists in this mappool.", HttpStatus.CONFLICT);
+  }
+}
+
+export class MappoolSlotBeatmapIDExistsError extends HttpException {
+  constructor() {
+    super("Slot with this beatmap ID already exists in this mappool.", HttpStatus.CONFLICT);
   }
 }
 

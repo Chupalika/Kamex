@@ -1,4 +1,4 @@
-<div class="tournament-team-card mat-body-1 mat-elevation-z4">
+<div class="tournament-team-card mat-body-1 mat-elevation-z4" [ngClass]="{'wide': gameMode === GameMode.ALL}">
   <ng-container *ngIf="team">
     <div class="top-side">
       <div class="info-name" #teamName [matTooltip]="isNameOverflowing ? team.name : ''" matTooltipPosition="above">{{ team.name }}</div>
@@ -11,23 +11,25 @@
     <div class="bottom-side">
       <div class="info-players">
         <div *ngFor="let player of sortedPlayers; index as i" class="player">
-          <img
-            [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}"
-            [src]="getPlayerImage(player)"
-          >
-          <span
-            [class.captain]="player.playerId === captain!.playerId"
-            [hovercardComponent]="TournamentPlayerCard"
-            [hovercardData]="{ player: player, gameMode: gameMode }"
-          >
-            {{ player.username }}
-          </span>
+          <div class="player-wrapper">
+            <img
+              [ngClass]="{'square-avatar': !playerFlagsToggle, 'flag-avatar': playerFlagsToggle}"
+              [src]="getPlayerImage(player)"
+            >
+            <span
+              [class.captain]="player.playerId === captain!.playerId"
+              [hovercardComponent]="TournamentPlayerCard"
+              [hovercardData]="{ player: player, gameMode: gameMode }"
+            >
+              {{ player.username }}
+            </span>
+          </div>
           &nbsp;
-          <span *ngIf="gameMode === GameMode.OSU">(#{{ player.osuRank }})</span>
-          <span *ngIf="gameMode === GameMode.TAIKO">(#{{ player.taikoRank }})</span>
-          <span *ngIf="gameMode === GameMode.FRUITS">(#{{ player.fruitsRank }})</span>
-          <span *ngIf="gameMode === GameMode.MANIA">(#{{ player.maniaRank }})</span>
-          <span *ngIf="gameMode === GameMode.ALL">(#{{ player.osuRank }}/#{{ player.taikoRank }}/#{{ player.fruitsRank }}/#{{ player.maniaRank }})</span>
+          <span *ngIf="gameMode === GameMode.OSU">(#{{ player.osuRank ?? '?' }})</span>
+          <span *ngIf="gameMode === GameMode.TAIKO">(#{{ player.taikoRank ?? '?' }})</span>
+          <span *ngIf="gameMode === GameMode.FRUITS">(#{{ player.fruitsRank ?? '?' }})</span>
+          <span *ngIf="gameMode === GameMode.MANIA">(#{{ player.maniaRank ?? '?' }})</span>
+          <span *ngIf="gameMode === GameMode.ALL">(#{{ player.osuRank ?? '?' }}/#{{ player.taikoRank ?? '?' }}/#{{ player.fruitsRank ?? '?' }}/#{{ player.maniaRank ?? '?' }})</span>
           &nbsp;
           <div *ngIf="player.seed" class="info-seed">
             <span class="material-symbols-outlined icon" [class.no-seed]="!player.seed">potted_plant</span> {{ player.seed ?? "" }}

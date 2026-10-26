@@ -76,6 +76,8 @@ export class TournamentSlotEditor implements OnInit, OnChanges {
     this.isCustomMapFormControl.setValue(this.slot?.isCustomMap ?? false);
     this.isCustomTrackFormControl.setValue(this.slot?.isCustomTrack ?? false);
     if (this.disabled) this.editSlotForm.disable();
+    if (this.isMultiMode) this.gameModeFormControl.setValidators([Validators.required]);
+    else this.gameModeFormControl.clearValidators();
   }
 
   updateSlot() {

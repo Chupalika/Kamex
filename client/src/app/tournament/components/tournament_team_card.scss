@@ -7,6 +7,10 @@
   border-radius: 10px;
   padding: 10px;
 
+  &.wide {
+    width: 300px;
+  }
+
   .top-side {
     display: flex;
     justify-content: space-between;
@@ -48,7 +52,12 @@
 
       .player {
         display: flex;
-        align-items: center;
+        align-items: start;
+        
+        .player-wrapper {
+          display: flex;
+          align-items: center;
+        }
 
         .captain {
           font-weight: bold;
