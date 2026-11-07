@@ -21,7 +21,10 @@
           </ng-container>
         </div>
         <div class="info-title">{{ slot.beatmap.title }}</div>
-        <div class="info-difficulty"><mat-icon [svgIcon]="slot.gameMode ?? ''" class="icon"></mat-icon> {{ slot.beatmap.difficultyName }}</div>
+        <div class="info-difficulty">
+          <mat-icon *ngIf="slot.gameMode" [svgIcon]="slot.gameMode ?? ''" class="icon" style="font-size: 12px;"></mat-icon>
+          {{ slot.beatmap.difficultyName }}
+        </div>
         <div class="info-mapper">
           <span *ngIf="slot.isCustomMap" class="colored">Custom</span>
           <span *ngIf="!slot.isCustomMap">Mapped</span>

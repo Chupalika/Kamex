@@ -173,6 +173,7 @@ export class TournamentMappoolPage implements OnInit {
       <tournament-slot-editor
         [slot]="selectedSlot"
         [requestInProgress]="requestInProgress"
+        [isMultiMode]="isMultiMode()"
         [slotCategories]="data.tournament.slotCategories"
         (submit)="submitUpdateSlotForm($event)"
         (remove)="removeSlot($event)"
@@ -219,6 +220,10 @@ export class SlotEditorDialog {
 
   get sortedSlots() {
     return getSortedMappool(this.data.tournament, this.workingSlots);
+  }
+
+  isMultiMode() {
+    return this.data.tournament.gameMode === GameMode.ALL;
   }
 
   switchSelectedSlot(slotId: string) {
